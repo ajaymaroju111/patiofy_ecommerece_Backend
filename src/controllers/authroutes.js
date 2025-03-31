@@ -1,6 +1,7 @@
 const users = require('../models/userschema.js');
 const posts = require('../models/productschema.js');
 const Contacts = require('../models/contactschema.js');
+const errorFunction = require('../middlewares/CatchAsync.js');
 const { sendEmail } = require('../utils/sendEmail.js');
 const { generateCookie } = require('../middlewares/generateCookie.js');
 const { conformSignup, forgetPassword, forgetUsername } = require('../utils/emailTemplates.js');
