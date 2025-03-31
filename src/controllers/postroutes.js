@@ -38,8 +38,22 @@ exports.createPost = async(req , res) =>{
 //update product post  : 
 exports.updatePost = async(req , res) => {
   try {
-    const { name, description, price} = req.body;
-    
+    const { id , name, description, price} = req.params;
+    const newData = {
+      name,
+      description,
+      price,
+    }
+    await posts.findByIdAndUpdate(id , newData , {
+      new : true,
+      runValidators : true,
+      useFindAndModify: true,
+    })
+    return res.status(200).json({
+      success : true,
+      message : 'post updated successfully',
+  })
+
   } catch (error) {
     console.log(error);
     return res.status(500).json({error : ' Internal Server Error '});
@@ -76,3 +90,4 @@ exports.deletePost = async(req, res, next) =>{
       message : 'post deleted successfully'
     });
 }
+
