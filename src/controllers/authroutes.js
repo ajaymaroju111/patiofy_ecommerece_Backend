@@ -1,5 +1,6 @@
 const users = require('../models/userschema.js');
 const posts = require('../models/productschema.js');
+const Contacts = require('../models/contactschema.js');
 const { sendEmail } = require('../utils/sendEmail.js');
 const { generateCookie } = require('../middlewares/generateCookie.js');
 const { conformSignup, forgetPassword, forgetUsername } = require('../utils/emailTemplates.js');
@@ -80,7 +81,18 @@ exports.oAuthsignup = async(req , res) =>{
   try {
     
   } catch (error) {
+    console.log(error);
+    return res.status(500).json({error : "Internal Server Error"});
+  }
+}
+
+//user sign in using google 
+exports.oAuthSignIn = async(req , res) =>{
+  try {
     
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({error : "Internal Servere Error"});
   }
 }
 
@@ -249,6 +261,31 @@ exports.myProducts = async( req , res) =>{
   } catch (error) {
     console.log(error);
     return res.status(500).json({error : 'Internal Server Error'});
+  }
+}
+
+//submit contact form : 
+exports.contactForm = async(req, res) =>{
+  try {
+    const {firstname , lastname , phone , message} = req.body;
+    if(!firstname || !lastname || !phone || !message){
+      return res.status(401).json({error : "All fields are required"})
+    }
+    const userContactForm =  await Contacts.create({
+      userId : req.user._id,
+      firstname,
+      lastname,
+      phone,
+      message,
+    })
+    await userContactForm.save();
+    return res.status(200).json({
+      success : true,
+      message : "contact form submitted successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({error : "Internal Server Error"});
   }
 }
 
