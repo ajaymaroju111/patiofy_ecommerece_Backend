@@ -24,6 +24,7 @@ const userschema = new mongoose.Schema({
   },
   username : {
     type : String,
+    minlength: [4 , "user name should be greater than 4 characters"],
     required : [true , "username is required"],
     trim : true,
     unique : [true , "username is already taken"],

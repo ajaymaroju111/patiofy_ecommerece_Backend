@@ -1,11 +1,12 @@
 const mongoose = require('mongoose');
-const { applyTimestamps } = require('./userschema');
+const users = require('./userschema.js');
 
 
 
 const postSchema = new mongoose.Schema({
-  userId : {
-    type : mongoose.Types.ObjectId, 
+  userId :  { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'users',
   },
   postImages :[
     {

@@ -1,9 +1,9 @@
 const express = require('express');
 
-
 //imporing : 
-const authroutes = require('./src/controllers/authroutes.js')
-
+const authroutes = require('./src/routes/authroutes.js')
+const {dbConnnection} = require('./src/config/dbConnection.js');
+dbConnnection();
 
 
 
