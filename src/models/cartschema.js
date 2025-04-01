@@ -3,6 +3,15 @@ const posts = require('./productschema.js');
 const Users = require('./userschema.js');
 
 const cartSchema = new mongoose.Schema({
+  cartImages :[
+    {
+      name : String,
+      img : {
+        data : Buffer,
+        contentType : String,
+      }
+    }
+  ],
   productId : {
     type : mongoose.Schema.Types.ObjectId,
     ref : 'posts'

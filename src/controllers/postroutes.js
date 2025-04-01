@@ -38,7 +38,7 @@ exports.createPost = async(req , res) =>{
 //update product post  : 
 exports.updatePost = async(req , res) => {
   try {
-    const { id , name, description, price} = req.params;
+    const { id , name, description, price} = req.body;
     const newData = {
       name,
       description,
