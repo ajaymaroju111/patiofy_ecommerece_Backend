@@ -13,7 +13,7 @@ const { signUp,
   signOut,
   deleteUser,
   filterProducts,
-
+  
 } = require('../controllers/authroutes.js');
 const { 
   authenticate,
@@ -66,7 +66,7 @@ passport.serializeUser((User , done) =>{
 passport.deserializeUser(async(id, done) =>{
   const User = await users.findById(id);
   done(null, User);
-})
+});
 
 
 //user Routes : 
@@ -101,6 +101,8 @@ router.route('/delete').delete(authenticate, deleteUser);
 router.route('/filter').get(filterProducts);
 router.route('/logout').put(authenticate, signOut);
 router.route('/me/:id').put(authenticate, update);
+
+
 
 module.exports = router;
 

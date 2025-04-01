@@ -6,6 +6,7 @@ const session  = require('express-session');
 
 //functions : 
 const authroutes = require('./src/routes/userPath.js');
+const postroutes = require('./src/controllers/postroutes.js');
 const {dbConnnection} = require('./src/config/dbConnection.js');
 dbConnnection();
 
@@ -25,6 +26,7 @@ app.use(passport.session());
 
 //initializing app : 
 app.use('/patiofy/auth/user', authroutes);
+app.use('/patiofy/auth/products', );
 
 
 

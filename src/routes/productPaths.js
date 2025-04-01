@@ -9,8 +9,10 @@ const {
 
 } = require('../controllers/postroutes.js');
 
-
-router.post('/products', createPost);
-router.put('/product/edit' , updatePost);
-router.get('/products:{id}', getById);
-router.delete('/products/delete', deletePost);
+router.route('/create').post(createPost).put(updatePost);
+router.route('/:id').get(getById).delete(deletePost);
+router.route().post();
+router.route().post();
+router.route().post();
+router.route().post();
+router.route().post();
