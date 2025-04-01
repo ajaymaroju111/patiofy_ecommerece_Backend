@@ -48,3 +48,11 @@ exports.authenticate = async(req , res , next) =>{
     return resizeBy.status(500).json({error : "Internal Server Error"});
   }
 }
+
+exports.generateToken = (user) =>{
+  return jwt.sign(
+    {id : user.id, email: user.emails[0].value },
+    process.env.JWT_SECRET,
+    {expiresIn : '1d'}
+  );
+};

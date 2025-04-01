@@ -15,7 +15,10 @@ const { signUp,
   filterProducts,
 
 } = require('../controllers/authroutes.js');
-const { authenticate } = require('../middlewares/authUser.js');
+const { 
+  authenticate,
+  generateToken,
+ } = require('../middlewares/authUser.js');
 
 //OAuth2 authentication  : 
 const passport = require("passport");
@@ -67,31 +70,37 @@ passport.deserializeUser(async(id, done) =>{
 
 
 //user Routes : 
-router.post('/user/signup' , signUp);
-router.post(
-  '/google',
-  passport.authenticate('google' , {failureRedirect : '/Patiofy/auth/register'}),
-  (req , res) =>{
-    return res.status(200).json({
+router.route('/google').post(passport.authenticate('google' , {scope : ['profile' , 'email']}));
+router.get('/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/' }), 
+  (req, res) => {
+    //generate a token after authentication : 
+    const token = (req.user);
+    res.cookie('token' , token, {
+      httpOnly : true,
+      secure : process.env.NODE_ENV === 'production',
+      sameSite : true,
+      maxAge : 24*60*60*1000
+    });
+
+    res.status(200).json({
       success : true,
-      message : "user authenticated using google"
-    })
+      token,
+    });
   }
-)
-router.post('/user/verification', verify);
-router.post('/user/signin', signIn);
-router.get('/user/:id', getById);
-router.put('/user/forgetusername',frogetUsername);
-router.put('/user/forgetPassword', forgetPassword);
-router.put('/user/resetpassword', resetPassword);
-router.put('/user/{update}' , update);
-router.get('/user/products' , myProducts);
-router.post('/submitform', contactForm);
-router.delete('/user/delete', deleteUser);
-router.get('/user/filter', filterProducts);
-router.put('/user/logout', signOut);
-
-
+);
+router.route('/signup').post(signUp).put(verify);
+router.route('/signin').post(signIn);
+router.route('/me').get(authenticate, getById);
+router.route('/username/forget').get(frogetUsername);
+router.route('/password/forget').put(forgetPassword);
+router.route('/password/reset').put(resetPassword);
+router.route('/products/:id').get(authenticate, myProducts);
+router.route('/submitform').post(authenticate, contactForm);
+router.route('/delete').delete(authenticate, deleteUser);
+router.route('/filter').get(filterProducts);
+router.route('/logout').put(authenticate, signOut);
+router.route('/me/:id').put(authenticate, update);
 
 module.exports = router;
 

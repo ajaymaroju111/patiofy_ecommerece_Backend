@@ -24,7 +24,7 @@ app.use(passport.session());
 
 
 //initializing app : 
-app.use('/patiofy/auth', authroutes);
+app.use('/patiofy/auth/user', authroutes);
 
 
 
