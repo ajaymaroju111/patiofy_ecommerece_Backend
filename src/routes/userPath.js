@@ -17,13 +17,10 @@ const { signUp,
 } = require('../controllers/authroutes.js');
 const { authenticate } = require('../middlewares/authUser.js');
 
-
-
 //OAuth2 authentication  : 
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const users = require('../models/userschema.js');
-
 
 //using goolge functionality : 
 passport.use(
@@ -43,12 +40,16 @@ passport.use(
             email : profile.emails[0].value,
             avatar : profile.photos[0].value,
             status : 'active',
+            accessToken,
+            refreshToken
           });
+          User.accessToken = accessToken;
+          User.refreshToken = refreshToken;
         }
-        return done(null , User)
+        return done(null, User);
       } catch (error) {
         console.log(error);
-        return done(error , null);
+        return done(error, null);
       }
     }
   )
@@ -80,6 +81,15 @@ router.post(
 router.post('/user/verification', verify);
 router.post('/user/signin', signIn);
 router.get('/user/:id', getById);
+router.put('/user/forgetusername',frogetUsername);
+router.put('/user/forgetPassword', forgetPassword);
+router.put('/user/resetpassword', resetPassword);
+router.put('/user/{update}' , update);
+router.get('/user/products' , myProducts);
+router.post('/submitform', contactForm);
+router.delete('/user/delete', deleteUser);
+router.get('/user/filter', filterProducts);
+router.put('/user/logout', signOut);
 
 
 
