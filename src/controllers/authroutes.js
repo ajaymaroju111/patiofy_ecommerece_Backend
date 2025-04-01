@@ -1,6 +1,8 @@
 const users = require('../models/userschema.js');
 const posts = require('../models/productschema.js');
 const Contacts = require('../models/contactschema.js');
+const passport =  require('passport');
+const googleStrategy = require('passport-google-oidc')
 const errorFunction = require('../middlewares/CatchAsync.js');
 const { sendEmail } = require('../utils/sendEmail.js');
 const { generateCookie } = require('../middlewares/generateCookie.js');
@@ -330,6 +332,8 @@ exports.deleteUser = async(req , res) =>{
     return res.status(500).json({error : " Ineternal Server Error" });
   }
 }
+
+//search for products : ( NAN )
 
 
 

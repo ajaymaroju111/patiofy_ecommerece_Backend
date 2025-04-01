@@ -29,6 +29,14 @@ const postSchema = new mongoose.Schema({
     type : Number,
     require : [true, "price shouls not be empty for the post"]
   },
+  size : {
+    type : String,
+    required : [true , "size is required"],
+  },
+  fabric : {
+    type : String,
+    required :[true , "Fabric type is Required"],
+  }
 } , {timestamps : true});
 
 

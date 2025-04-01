@@ -6,7 +6,7 @@ const errorFunction = require('../middlewares/CatchAsync.js');
 //create a product post : 
 exports.createPost = async(req , res) =>{
   try {
-    const { name , description, price} = req.body;
+    const { name , description, price, size, fabric} = req.body;
     if(!req.files || req.files.length === 0){
       return res.status(401).json({message : "product pics are required"})
     }
@@ -22,7 +22,9 @@ exports.createPost = async(req , res) =>{
       postImages : postImages,
       name,
       description,
-      price
+      price,
+      size,
+      fabric,
     })
     await Post.save();
     return res.status(200).json({
