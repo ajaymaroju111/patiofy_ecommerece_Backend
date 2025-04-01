@@ -334,7 +334,14 @@ exports.deleteUser = async(req , res) =>{
 }
 
 //search for products : ( NAN )
-
+exports.filterProducts = async(req , res) =>{
+  try {
+    const {price, } = req.query;
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({error : "Internal Server Error"});
+  }
+}
 
 
 
