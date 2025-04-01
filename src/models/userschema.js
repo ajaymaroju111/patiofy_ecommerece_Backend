@@ -5,6 +5,9 @@ const bcrypt = require('bcrypt')
 
 
 const userschema = new mongoose.Schema({
+  googlrId : {
+    type : String,
+  },
   avatar : {
     name : String,
     img :{

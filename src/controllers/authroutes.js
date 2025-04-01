@@ -5,7 +5,7 @@ const passport =  require('passport');
 const googleStrategy = require('passport-google-oidc')
 const errorFunction = require('../middlewares/CatchAsync.js');
 const { sendEmail } = require('../utils/sendEmail.js');
-const { generateCookie } = require('../middlewares/generateCookie.js');
+const { generateCookie } = require('../middlewares/authUser.js');
 const { conformSignup, forgetPassword, forgetUsername } = require('../utils/emailTemplates.js');
 
 
@@ -76,26 +76,6 @@ exports.verify = async(req , res) =>{
   } catch (error) {
     console.log(error);
     return res.status(500).json({error : 'Internal Server Error'});
-  }
-}
-
-//user signup using google : 
-exports.oAuthsignup = async(req , res) =>{
-  try {
-    
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({error : "Internal Server Error"});
-  }
-}
-
-//user sign in using google 
-exports.oAuthSignIn = async(req , res) =>{
-  try {
-    
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({error : "Internal Servere Error"});
   }
 }
 
