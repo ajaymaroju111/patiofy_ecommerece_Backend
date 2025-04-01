@@ -55,6 +55,14 @@ const userschema = new mongoose.Schema({
     default : 'inactive',
     trim : true,
   },
+  accessToken : {
+    type : String,
+
+  },
+  refreshToken : {
+    type: String,
+    
+  },
   expirytime : {
     type : Date,
   }

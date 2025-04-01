@@ -1,7 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const {} = require('../controllers/authroutes.js');
-const { authenticate } = require('../middlewares/verification.js');
+const { signUp,
+  verify,
+  signIn,
+  getById,
+  frogetUsername,
+  forgetPassword,
+  resetPassword,
+  update,
+  myProducts,
+  contactForm,
+  signOut,
+  deleteUser,
+  filterProducts,
+
+} = require('../controllers/authroutes.js');
+const { authenticate } = require('../middlewares/authUser.js');
 
 
 
@@ -52,17 +66,20 @@ passport.deserializeUser(async(id, done) =>{
 
 
 //user Routes : 
-router('/register' , );
-router(
+router.post('/user/signup' , signUp);
+router.post(
   '/google',
   passport.authenticate('google' , {failureRedirect : '/Patiofy/auth/register'}),
-  (ewq , res) =>{
+  (req , res) =>{
     return res.status(200).json({
       success : true,
       message : "user authenticated using google"
     })
   }
 )
+router.post('/user/verification', verify);
+router.post('/user/signin', signIn);
+router.get('/user/:id', getById);
 
 
 

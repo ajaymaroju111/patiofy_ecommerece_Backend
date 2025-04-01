@@ -1,19 +1,22 @@
 const express = require('express');
 const app = express();
 const passport = require('passport');
-const session  = require('express-session')
-const googleStrategy = require('passport-google-oauth2').Strategy;
+const session  = require('express-session');
+
 
 //functions : 
-const authroutes = require('./src/routes/authroutes.js')
+const authroutes = require('./src/routes/userPath.js');
 const {dbConnnection} = require('./src/config/dbConnection.js');
 dbConnnection();
 
-//middlewares : 
 app.use(
   session({
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
-    keys: [process.env.JWT_SECRET], // Secret key for cookies
+    secret: process.env.JWT_SECRET, // Secret key for signing the session ID cookie
+    resave: false, // Don't save session if it wasn't modified during the request
+    saveUninitialized: false, // Don't save uninitialized sessions (good for login scenarios)
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1000, // Set cookie expiration time (1 day)
+    },
   })
 );
 app.use(passport.initialize());
@@ -21,9 +24,8 @@ app.use(passport.session());
 
 
 //initializing app : 
+app.use('/patiofy/auth', authroutes);
 
-app.use('/patiofy/user/googleSignup', );
-app.use('/patiofy/user/', authroutes);
 
 
 
