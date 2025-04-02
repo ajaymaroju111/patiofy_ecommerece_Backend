@@ -7,10 +7,10 @@ exports.dbConnnection = async() =>{
     await mongoose.connect(process.env.MONGODB_URL,
     {
       maxPoolSize : 500,
-
     })
     console.log("MongoDB Connected Successfully")
   } catch (error) {
-    console.log("mongodb connection error" , error)
+    console.log("mongodb connection error" , error);
+    process.exit(1);
   }
 }

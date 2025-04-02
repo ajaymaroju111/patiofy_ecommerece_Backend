@@ -10,7 +10,7 @@ tags:
   - name: carts
     description: operations related to carts
 servers:
-  - url: http://localhost:3001
+  - url: http://localhost:3000
     description: Local Server
   - url: http://Patiofy.com
     description: Production Server
@@ -37,6 +37,81 @@ info:
   licence: 
     name: MIT Licence
     url: http://opensource.org/licenses/MIT
-    
+paths:
+ /patiofy/auth/user/signup:
+   post:
+      summary: Register a new user
+      description: |
+        This endpoint allows a user to register by providing their first name, last name, username, email, password, and a profile photo. 
+        It checks if the username or email already exists and sends a verification email upon successful registration.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                firstname:
+                  type: string
+                  description: The user's first name.
+                lastname:
+                  type: string
+                  description: The user's last name.
+                username:
+                  type: string
+                  description: The desired username.
+                email:
+                  type: string
+                  format: email
+                  description: The user's email address.
+                password:
+                  type: string
+                  format: password
+                  description: The user's password.
+                profilePhoto:
+                  type: string
+                  format: binary
+                  description: The user's profile photo.
+      responses:
+        '200':
+          description: Verification email sent successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "verification has been sent to the email, please verify"
+        '401':
+          description: Username or email already exists.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "username already taken, try another"
+        '404':
+          description: Profile photo is required.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "profile photo is required"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal Server Error"
    
       
