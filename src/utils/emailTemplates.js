@@ -34,6 +34,7 @@ exports.conformSignup = (username , securityKey) =>{
       text-align: center;
       padding: 20px;
       font-size: 24px;
+      font-weight: bold;
     }
     .content {
       padding: 40px 20px;
@@ -42,18 +43,33 @@ exports.conformSignup = (username , securityKey) =>{
     .security-key {
       background-color: #f0f4f8;
       display: inline-block;
-      font-size: 24px;
+      font-size: 18px;
       font-weight: bold;
       color: #007bff;
       padding: 10px 20px;
       border-radius: 8px;
       margin: 20px 0;
+      word-break: break-word;
     }
     .footer {
       font-size: 12px;
       color: #777;
       text-align: center;
       padding: 20px;
+    }
+    /* Responsive Design */
+    @media screen and (max-width: 600px) {
+      .container {
+        width: 90%;
+        margin: 20px auto;
+      }
+      .content {
+        padding: 30px 15px;
+      }
+      .security-key {
+        font-size: 16px;
+        padding: 8px 16px;
+      }
     }
   </style>
 </head>

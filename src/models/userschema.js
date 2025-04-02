@@ -39,16 +39,27 @@ const userschema = new mongoose.Schema({
     unique : [true , "email is already taken"],
     match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
   },
-  password : {
+  phone : {
     type : String,
-    select : false,
-    required : [true , "password is required"],
-    minlength: [8 , "password should be atleast 8 characters"],
-    match: [
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-      'Password must contain at least 8 characters, including one uppercase letter, one lowercase letter, one number, and one special character.'
-    ]
+    required : [true , "phone number is required"],
+    maxlength : 10,
+    minlength : 10,
   },
+  password: {
+    type: String,
+    select: false,
+    required: [true, "Password is required"],
+    minlength: [8, "Password should be at least 8 characters long"],
+    trim: true,
+    validate: {
+      validator: function (value) {
+        // Skip validation if password is already hashed
+        if (value.startsWith("$2b$")) return true;
+        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(value);
+      },
+      message: "Password must contain at least 8 characters, including one uppercase letter, one lowercase letter, one number, and one special character."
+    }
+  },  
   status : {
     type : String,
     enum : ['inactive', 'active'],

@@ -7,6 +7,7 @@ const session  = require('express-session');
 const swaggerUI = require('swagger-ui-express');
 const YAML = require('yamljs');
 const SwaggerDocument = YAML.load('./api.yaml');
+const bodyParser = require('body-parser')
 
 //functions : 
 const authroutes = require('./src/routes/userPath.js');
@@ -25,6 +26,16 @@ app.use(
   })
 );
 
+//usage od limiter : 
+const limiter = Limiter({
+  windowMs: 15 * 60 * 1000, 
+  max: 100,
+  message: 'Too many requests from this IP, please try again later.',
+  headers: true,
+});
+app.use(limiter);
+app.use(bodyParser.json());
+
 //enable CORS : 
 app.use(cors({
   origin: '*',
@@ -33,6 +44,9 @@ app.use(cors({
 }));
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(express.urlencoded({
+  extended : true,
+}))
 
 
 //initializing app : 

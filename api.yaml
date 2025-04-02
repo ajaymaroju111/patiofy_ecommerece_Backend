@@ -40,10 +40,12 @@ info:
 paths:
  /patiofy/auth/user/signup:
    post:
-      summary: Register a new user
+      summary: Registration a new user
       description: |
         This endpoint allows a user to register by providing their first name, last name, username, email, password, and a profile photo. 
         It checks if the username or email already exists and sends a verification email upon successful registration.
+      tags: 
+        - users
       requestBody:
         required: true
         content:
@@ -54,20 +56,29 @@ paths:
                 firstname:
                   type: string
                   description: The user's first name.
+                  example: ajay
                 lastname:
                   type: string
                   description: The user's last name.
+                  example: Maroju
                 username:
                   type: string
                   description: The desired username.
+                  example: iam_AajY
                 email:
                   type: string
                   format: email
                   description: The user's email address.
+                  example: marojuajay111@gmail.com
+                phone: 
+                  type: string
+                  description: the user's phone number
+                  example: 9000000000
                 password:
                   type: string
                   format: password
                   description: The user's password.
+                  example: Ajay@110125cfbv
                 profilePhoto:
                   type: string
                   format: binary
@@ -113,5 +124,52 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error"
-   
+   put:
+      summary: Verify user account
+      description: |
+        This endpoint verifies a user's account by decoding the verification token sent to their email. 
+        It checks if the verification time has expired and updates the user's status to "active" upon successful verification.
+      tags: 
+        - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                verification:
+                  type: string
+                  description: The base64 encoded verification token sent to the user's email.
+      responses:
+        '200':
+          description: Account verified successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Account verified successfully"
+        '408':
+          description: Verification time expired.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Time expired, please register"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal Server Error"
       

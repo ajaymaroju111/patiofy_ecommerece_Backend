@@ -1,8 +1,8 @@
 const users = require("../models/userschema.js");
 const posts = require("../models/productschema.js");
 const Contacts = require("../models/contactschema.js");
-const passport = require("passport");
-const errorFunction = require("../middlewares/CatchAsync.js");
+const CatchAsync = require("../middlewares/CatchAsync.js");
+const ErrorHandler = require('../utils/ErrorHandler.js');
 const { sendEmail } = require("../utils/sendEmail.js");
 const { generateCookie } = require("../middlewares/authUser.js");
 const {
@@ -12,22 +12,21 @@ const {
 } = require("../utils/emailTemplates.js");
 
 //account signup for user :
-exports.signUp = async (req, res) => {
+exports.signUp = CatchAsync(async (req, res, next) => {
   try {
-    const { firstname, lastname, username, email, password } = req.body;
-    const existed = await users.find({
-      $or: [{ username }, { email }],
+    const { firstname, lastname, username, email, phone, password } = req.body;
+    const existed = await users.findOne({
+      $or: [{ username: username }, { email: email }],
     });
+
     if (existed) {
-      if (existed === username) {
-        return res
-          .status(401)
-          .json({ error: "username already taken, try another" });
+      if (existed.username === username) {
+        return next(new ErrorHandler("username already taken, try another" , 401) )
       }
-      return res.status(401).json({ error: "email is already exist" });
+      return next(new ErrorHandler('email is already exist', 401));
     }
     if (!req.file) {
-      return res.status(404).json({ message: "profile photo is required" });
+      return next( new ErrorHandler('profile photo is required' , 401))
     }
     const User = await users.create({
       avatar: {
@@ -41,10 +40,12 @@ exports.signUp = async (req, res) => {
       lastname,
       username,
       email,
+      phone,
       password,
     });
     await User.save();
     const encodedId = Buffer.from(User._id, "utf-8").toString("base64");
+    console.log(encodedId);
     await sendEmail({
       to: User.email,
       subject: "Account verification",
@@ -61,7 +62,7 @@ exports.signUp = async (req, res) => {
     console.log(error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
-};
+});
 
 //user account verification :
 exports.verify = async (req, res) => {

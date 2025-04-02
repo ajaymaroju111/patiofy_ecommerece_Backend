@@ -89,7 +89,7 @@ router.get('/google/callback',
     });
   }
 );
-router.route('/signup').post(upload.single('image'), signUp).put(verify);
+router.route('/signup').post(upload.single('profilePhoto'), signUp).put(verify);
 router.route('/signin').post(signIn);
 router.route('/me').get(authenticate, getById);
 router.route('/username/forget').get(frogetUsername);
