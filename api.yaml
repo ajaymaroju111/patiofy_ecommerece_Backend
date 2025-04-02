@@ -1,0 +1,42 @@
+openapi: "3.1.0"
+security:
+  - CookieAuth: []
+  - ApiKeyAuth: []
+tags:
+  - name: users
+    description: operations related to users
+  - name: products
+    description: operations related to products
+  - name: carts
+    description: operations related to carts
+servers:
+  - url: http://localhost:3001
+    description: Local Server
+  - url: http://Patiofy.com
+    description: Production Server
+components:
+  securitySchemes:
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+      description: Authentication cookie containing the JWT token
+    ApiKeyAuth::
+      type: apiKey
+      in: header
+      name: authorization
+      description: Api keys for accessing protected endpoints
+info:
+  title: Patiofy website Api
+  description: API for patiofy website
+  contact: 
+    name: support team
+    url: http://Patiofy.com/contactUs
+    email: ajaymaroju@techpixe.com
+  termsOfServices: http://Patiofy.com/terms
+  licence: 
+    name: MIT Licence
+    url: http://opensource.org/licenses/MIT
+    
+   
+      

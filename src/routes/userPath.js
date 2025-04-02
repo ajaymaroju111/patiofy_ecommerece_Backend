@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const upload = require("../middlewares/multer.js")
 const { signUp,
   verify,
   signIn,
@@ -17,7 +18,6 @@ const { signUp,
 } = require('../controllers/authroutes.js');
 const { 
   authenticate,
-  generateToken,
  } = require('../middlewares/authUser.js');
 
 //OAuth2 authentication  : 
@@ -89,7 +89,7 @@ router.get('/google/callback',
     });
   }
 );
-router.route('/signup').post(signUp).put(verify);
+router.route('/signup').post(upload.single('image'), signUp).put(verify);
 router.route('/signin').post(signIn);
 router.route('/me').get(authenticate, getById);
 router.route('/username/forget').get(frogetUsername);
@@ -101,8 +101,6 @@ router.route('/delete').delete(authenticate, deleteUser);
 router.route('/filter').get(filterProducts);
 router.route('/logout').put(authenticate, signOut);
 router.route('/me/:id').put(authenticate, update);
-
-
 
 module.exports = router;
 
