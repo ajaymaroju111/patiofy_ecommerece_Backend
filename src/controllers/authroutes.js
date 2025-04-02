@@ -12,7 +12,7 @@ const {
 } = require("../utils/emailTemplates.js");
 
 //account signup for user :
-exports.signUp = CatchAsync(async (req, res, next) => {
+exports.signUp = CatchAsync(async(req, res, next) => {
   try {
     const { firstname, lastname, username, email, phone, password } = req.body;
     const existed = await users.findOne({
@@ -44,15 +44,12 @@ exports.signUp = CatchAsync(async (req, res, next) => {
       password,
     });
     await User.save();
-    const encodedId = Buffer.from(User._id, "utf-8").toString("base64");
-    console.log(encodedId);
+    const encodedId = Buffer.from(User.email, "utf-8").toString("base64");
     await sendEmail({
       to: User.email,
       subject: "Account verification",
       text: conformSignup(User.username, encodedId),
     });
-    User.expirytime = Date.now() + 10 * 60 * 1000;
-    await User.save();
     return res
       .status(200)
       .json({
@@ -65,16 +62,16 @@ exports.signUp = CatchAsync(async (req, res, next) => {
 });
 
 //user account verification :
-exports.verify = async (req, res) => {
+exports.verify = CatchAsync(async(req, res, next) => {
   try {
-    const { verification } = req.body;
+    const  {verificationKey}  = req.query;
     //decode the encoded email
-    const decodedEmail = Buffer.from(verification, "base64").toString("utf-8");
-    const User = await users.findOne({ decodedEmail });
+    const decodedEmail = Buffer.from(verificationKey, "base64").toString("utf-8");
+    const User = await users.findOne({ email : decodedEmail });
     //timer for the account activation
-    if (Date.now() > User.expirytime) {
-      await users.deleteOne({ decodedEmail });
-      return res.status(408).json({ message: "Time expired, please register" });
+    if(Date.now() > User.expirytime) {
+      await users.deleteOne({ email : decodedEmail });
+      return next(new ErrorHandler("Time expired, please register" , 401))
     }
     User.status = "active";
     User.expirytime = undefined;
@@ -84,10 +81,10 @@ exports.verify = async (req, res) => {
     console.log(error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
-};
+});
 
 //user sign in
-exports.signIn = async (req, res) => {
+exports.signIn = CatchAsync(async(req, res, next) => {
   try {
     const { userOrEmail, password } = req.body;
     if (!userOrEmail || password) {
@@ -111,19 +108,19 @@ exports.signIn = async (req, res) => {
     console.log(error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
-};
+});
 
 //get user by ID :
-exports.getById = async (req, res) => {
+exports.getById = CatchAsync(async(req, res, next) => {
   const user = await users.findById(req.params.id);
   return res.status(200).json({
     sucess: true,
     user,
   });
-};
+});
 
 //forget username :
-exports.frogetUsername = async (req, res) => {
+exports.frogetUsername = CatchAsync(async(req, res, next) => {
   try {
     const { email } = req.body;
     if (!email) {
@@ -147,7 +144,7 @@ exports.frogetUsername = async (req, res) => {
     console.log(error);
     return res.status(500).json({ error: " Internal Sever Error " });
   }
-};
+});
 
 //forget password :
 exports.forgetPassword = async (req, res) => {
@@ -367,4 +364,3 @@ exports.filterProducts = async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
-

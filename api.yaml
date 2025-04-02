@@ -38,8 +38,9 @@ info:
     name: MIT Licence
     url: http://opensource.org/licenses/MIT
 paths:
- /patiofy/auth/user/signup:
-   post:
+
+  /patiofy/auth/user/signup:
+    post:
       summary: Registration a new user
       description: |
         This endpoint allows a user to register by providing their first name, last name, username, email, password, and a profile photo. 
@@ -124,23 +125,20 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error"
-   put:
+    put:
       summary: Verify user account
       description: |
-        This endpoint verifies a user's account by decoding the verification token sent to their email. 
+        This endpoint verifies a user's account by decoding the verification key sent as a query parameter. 
         It checks if the verification time has expired and updates the user's status to "active" upon successful verification.
       tags: 
         - users
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                verification:
-                  type: string
-                  description: The base64 encoded verification token sent to the user's email.
+      parameters:
+        - name: verificationKey
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The base64 encoded verification key sent to the user's email.
       responses:
         '200':
           description: Account verified successfully.
@@ -173,3 +171,711 @@ paths:
                     type: string
                     example: "Internal Server Error"
       
+  /patiofy/auth/user/signin:
+    post:
+      summary: User sign-in
+      description: |
+        This endpoint allows a user to sign in by providing their username or email and password. 
+        It verifies the credentials, generates a cookie for authentication, and returns a success message upon successful login.
+      tags: 
+        - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userOrEmail:
+                  type: string
+                  description: The user's username or email address.
+                password:
+                  type: string
+                  format: password
+                  description: The user's password.
+      responses:
+        '200':
+          description: Login successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "login successfully"
+        '400':
+          description: Missing required fields.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "All fields are required"
+        '401':
+          description: Invalid credentials.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "password doesnot match"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal Server Error"
+
+  /patiofy/auth/user/me:
+    get:
+      summary: Get user by ID
+      description: |
+        This endpoint retrieves a user's details by their unique ID.
+      tags: 
+        - users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The unique ID of the user.
+      responses:
+        '200':
+          description: User details retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  user:
+                    type: object
+                    description: The user object containing details.
+        '404':
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "User not found"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal Server Error"
+
+  /patiofy/auth/user/username/forget: 
+    post:
+      summary: Request forgotten username
+      description: |
+        This endpoint allows a user to request their forgotten username by providing their email address. 
+        If the email is valid, the username is sent to the user's email.
+      tags: 
+        - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: The user's email address.
+      responses:
+        '200':
+          description: Username sent successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "reset password link sent to the email"
+        '401':
+          description: Invalid email or missing email.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Incorrect Email"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal Server Error"
+
+  /patiofy/auth/user/password/forget:
+    post:
+      summary: Request password reset
+      description: |
+        This endpoint allows a user to request a password reset by providing their username and email address. 
+        If the credentials are valid, a password reset link is sent to the user's email.
+      tags: 
+        - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: The user's username.
+                email:
+                  type: string
+                  format: email
+                  description: The user's email address.
+      responses:
+        '200':
+          description: Password reset link sent successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "reset password link sent to the email"
+        '400':
+          description: Missing required fields.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "all fields are required"
+        '401':
+          description: Invalid credentials.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Incorrect Username or Email"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal Server Error"
+
+  /patiofy/auth/user/password/reset:
+    post:
+      summary: Reset user password
+      description: |
+        This endpoint allows a user to reset their password by providing their old password and a new password. 
+        If the old password matches, the new password is updated, and the user is logged out.
+      tags: 
+        - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldpassword:
+                  type: string
+                  description: The user's current password.
+                newpassword:
+                  type: string
+                  description: The new password to set.
+      responses:
+        '200':
+          description: Password updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "password updated successfully, Please Login"
+        '400':
+          description: Missing required fields.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "all fields are required"
+        '401':
+          description: Old password does not match.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "password does not match"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal Server Error"
+
+  /patiofy/auth/user/me/:id:
+    put:
+      summary: Update user profile
+      description: |
+        This endpoint allows a user to update their profile information, including first name, last name, username, email, and avatar. 
+        If the username or email is already taken, an error is returned.
+      tags: 
+        - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstname:
+                  type: string
+                  description: The user's first name.
+                lastname:
+                  type: string
+                  description: The user's last name.
+                username:
+                  type: string
+                  description: The user's new username.
+                email:
+                  type: string
+                  format: email
+                  description: The user's new email address.
+                avatar:
+                  type: string
+                  description: The user's new avatar (optional).
+      responses:
+        '200':
+          description: Profile updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "profile updated successfully"
+        '401':
+          description: Username or email already taken.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "username not available or email is already taken"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Internal Server Error"
+
+  /patiofy/auth/user/products/:id:
+    get:
+      summary: Get user's products
+      description: |
+        This endpoint retrieves all products associated with the authenticated user. 
+        The products are populated with the user's details (username, first name, last name, and email).
+      tags: 
+        - users
+      responses:
+        '200':
+          description: Products retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  products:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          description: The product's unique ID.
+                        userId:
+                          type: object
+                          properties:
+                            username:
+                              type: string
+                              description: The user's username.
+                            firstname:
+                              type: string
+                              description: The user's first name.
+                            lastname:
+                              type: string
+                              description: The user's last name.
+                            email:
+                              type: string
+                              format: email
+                              description: The user's email address.
+                        # Add other product fields as needed
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal Server Error"
+
+  /patiofy/auth/user/submitform:
+    post:
+      summary: Submit a contact form
+      description: |
+        This endpoint allows a user to submit a contact form with their first name, last name, phone number, and message. 
+        All fields are required, and the form is associated with the authenticated user.
+      tags: 
+        - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstname:
+                  type: string
+                  description: The user's first name.
+                lastname:
+                  type: string
+                  description: The user's last name.
+                phone:
+                  type: string
+                  description: The user's phone number.
+                message:
+                  type: string
+                  description: The user's message.
+      responses:
+        '200':
+          description: Contact form submitted successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "contact form submitted successfully"
+        '401':
+          description: Missing required fields.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "All fields are required"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal Server Error"
+ 
+  /patiofy/auth/user/delete:
+    delete:
+      summary: Delete user account
+      description: |
+        This endpoint allows a user to delete their account. 
+        The user must provide their password for verification. 
+        If the password is correct, the account is deleted, and the authentication token is cleared.
+      tags: 
+        - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  description: The user's password for verification.
+      responses:
+        '200':
+          description: User account deleted successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "User account deleted successfully"
+        '401':
+          description: Password is required or incorrect.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "password is required or Incorrect password"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal Server Error" 
+
+  /patiofy/auth/user/filter:
+    get:
+      summary: Filter products
+      description: |
+        This endpoint allows filtering products based on query parameters such as name, price range, size, and fabric. 
+        The results are sorted by price in ascending order and include only the specified fields (name, price, size, fabric).
+      tags: 
+        - users
+      parameters:
+        - name: name
+          in: query
+          description: Filter products by name (case-insensitive).
+          required: false
+          schema:
+            type: string
+        - name: price
+          in: query
+          description: Filter products by price range (format-min_max).
+          required: false
+          schema:
+            type: string
+        - name: size
+          in: query
+          description: Filter products by size.
+          required: false
+          schema:
+            type: string
+        - name: fabric
+          in: query
+          description: Filter products by fabric.
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Products filtered successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  products:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          description: The product's name.
+                        price:
+                          type: number
+                          description: The product's price.
+                        size:
+                          type: string
+                          description: The product's size.
+                        fabric:
+                          type: string
+                          description: The product's fabric.
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal Server Error"
+
+  /patiofy/auth/user/logout:
+    post:
+      summary: Sign out user
+      description: |
+        This endpoint logs out the user by clearing the authentication token cookie. 
+        The cookie is configured with `httpOnly`, `secure`, and `sameSite` attributes for security.
+      tags: 
+        - users
+      responses:
+        '200':
+          description: User logged out successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "user logged out successfully"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal Server Error"
+
+
+#product routes : 
+ 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

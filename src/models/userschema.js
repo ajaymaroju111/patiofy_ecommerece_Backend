@@ -76,6 +76,7 @@ const userschema = new mongoose.Schema({
   },
   expirytime : {
     type : Date,
+    default : (Date.now() + 30*60*1000),
   }
 } , {timestamps : true});
 

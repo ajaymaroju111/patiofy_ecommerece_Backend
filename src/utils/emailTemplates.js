@@ -1,8 +1,6 @@
 
 
 
-
-
 exports.conformSignup = (username , securityKey) =>{
   return `
   <!DOCTYPE html>
