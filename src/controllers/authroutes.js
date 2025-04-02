@@ -1,5 +1,6 @@
 const users = require("../models/userschema.js");
 const posts = require("../models/productschema.js");
+const toAddress = require('../models/addressschema.js')
 const Contacts = require("../models/contactschema.js");
 const CatchAsync = require("../middlewares/CatchAsync.js");
 const ErrorHandler = require('../utils/ErrorHandler.js');
@@ -364,3 +365,30 @@ exports.filterProducts = async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
+//*********************   DELIVERY ADDRESS:    ************************ */
+
+exports.addAddress = CatchAsync(async(req, res, next) =>{
+try {
+  const productId = req.params.id;
+  const {country, firstname, lastname, phone, address, city, state} = req.body;
+  const addressList = await toAddress.create({
+    userId : req.User._id,
+    productId: req,
+    email: req.User.email,
+    phone: phone,
+    Shipping_Adderss: {
+      country: country,
+      firstname: firstname,
+      lastname: lastname,
+      address: address,
+      city: city,
+      state: state,
+
+    }
+  })
+} catch (error) {
+  
+}
+});

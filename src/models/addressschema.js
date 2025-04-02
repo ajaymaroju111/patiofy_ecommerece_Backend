@@ -18,8 +18,7 @@ const addressSchaema = new mongoose.Schema({
   phone : {
     type : String,
     required : [true , "phone number is required"],
-    minlength : [10 , "mobile number shouldnot be less than 10 characters"],
-    maxlength : [10 , "mobile number should not greater than 10 characters"],
+    ref : 'users',
   },
   Shipping_Adderss : {
     country : {

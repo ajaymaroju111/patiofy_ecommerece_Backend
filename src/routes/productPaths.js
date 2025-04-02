@@ -14,8 +14,8 @@ const {
   deleteCart,
 } = require('../controllers/postroutes.js');
 
-router.route('/create').post(multipleUploads, createPost).put(updatePost);
-router.route('/:id').get(getById).delete(deletePost);
+router.route('/create').post(multipleUploads, createPost);
+router.route('/:id').get(getById).delete(deletePost).put(updatePost);
 router.route('/cart').post(addToCart);
 router.route('/cart/:id').get(getCartById).put(updateCart).delete(deleteCart);
 
