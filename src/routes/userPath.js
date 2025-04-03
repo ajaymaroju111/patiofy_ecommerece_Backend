@@ -14,6 +14,13 @@ const { signUp,
   signOut,
   deleteUser,
   filterProducts,
+  addAddress,
+  updateAddress,
+  getAddress,
+  deleteAddress,
+  viewAllAddresses,
+  contactUs
+
   
 } = require('../controllers/authroutes.js');
 const { 
@@ -101,7 +108,13 @@ router.route('/delete').delete(authenticate, deleteUser);
 router.route('/filter').get(filterProducts);
 router.route('/logout').put(authenticate, signOut);
 router.route('/me/:id').put(authenticate, update);
-
+//address form : 
+router.route('/address').post(authenticate, addAddress)
+router.route('/address/:id').put(authenticate, updateAddress).get(authenticate, getAddress).delete(authenticate, deleteAddress);
+router.route('/adress/list').get(authenticate, viewAllAddresses);
+ 
+//Contact _ Us 
+router.route('/feedback').post(authenticate, contactUs);
 module.exports = router;
 
 

@@ -12,13 +12,11 @@ const contactSchema = new mongoose.Schema({
   },
   lastname : {
     type : String,
-    required : [true , 'lastname is required'],
+    ref : 'users',
   },
   phone : {
     type : String,
-    maxlength : 10,
-    minlength : 10,
-    required : [true , 'phone number is required'],
+    ref : 'users',
   },
   message : {
     type : String,

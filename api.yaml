@@ -3,12 +3,18 @@ security:
   - CookieAuth: []
   - ApiKeyAuth: []
 tags:
+  - name: Authentication_OAuth20
+    description: operations related to OAuth20
   - name: users
     description: operations related to users
   - name: products
     description: operations related to products
-  - name: carts
+  - name: Cart
     description: operations related to carts
+  - name: Address
+    description: operations related to Addresses
+  - name: Contact
+    description: operations related to Contact
 servers:
   - url: http://localhost:3000
     description: Local Server
@@ -38,6 +44,53 @@ info:
     name: MIT Licence
     url: http://opensource.org/licenses/MIT
 paths:
+
+  /patiofy/auth/user/google:
+    post:
+      summary: Authenticate with Google
+      description: Initiates Google OAuth 2.0 authentication.
+      tags:
+        - Authentication_OAuth20
+      security:
+        - CookieAuth: []
+      responses:
+        302:
+          description: Redirects to Google authentication page.
+        500:
+          description: Internal Server Error.
+
+  /patiofy/auth/user/callback:
+    get:
+      summary: Google OAuth Callback
+      description: Callback route for handling Google OAuth response.
+      tags:
+        - Authentication_OAuth20
+      security: []
+      parameters:
+        - name: code
+          in: query
+          required: true
+          description: Authorization code received from Google.
+          schema:
+            type: string
+      responses:
+        200:
+          description: Successfully authenticated and token generated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        401:
+          description: Authentication failed.
+        500:
+          description: Internal Server Error.
 
   /patiofy/auth/user/signup:
     post:
@@ -179,6 +232,8 @@ paths:
         It verifies the credentials, generates a cookie for authentication, and returns a success message upon successful login.
       tags: 
         - users
+      security:
+        - CookieAuth: []
       requestBody:
         required: true
         content:
@@ -245,6 +300,8 @@ paths:
         This endpoint retrieves a user's details by their unique ID.
       tags: 
         - users
+      security:
+        - CookieAuth: []
       parameters:
         - name: id
           in: path
@@ -295,6 +352,8 @@ paths:
         If the email is valid, the username is sent to the user's email.
       tags: 
         - users
+      security:
+        - CookieAuth: []
       requestBody:
         required: true
         content:
@@ -349,6 +408,8 @@ paths:
         If the credentials are valid, a password reset link is sent to the user's email.
       tags: 
         - users
+      security:
+        - CookieAuth: []
       requestBody:
         required: true
         content:
@@ -416,6 +477,8 @@ paths:
         If the old password matches, the new password is updated, and the user is logged out.
       tags: 
         - users
+      security:
+        - CookieAuth: []
       requestBody:
         required: true
         content:
@@ -479,6 +542,8 @@ paths:
         If the username or email is already taken, an error is returned.
       tags: 
         - users
+      security:
+        - CookieAuth: []
       requestBody:
         required: true
         content:
@@ -537,7 +602,7 @@ paths:
                     type: string
                     example: "Internal Server Error"
 
-  /patiofy/auth/user/products/:id:
+  /patiofy/auth/user/products/{id}:
     get:
       summary: Get user's products
       description: |
@@ -545,6 +610,8 @@ paths:
         The products are populated with the user's details (username, first name, last name, and email).
       tags: 
         - users
+      security:
+        - CookieAuth: []
       responses:
         '200':
           description: Products retrieved successfully.
@@ -597,6 +664,8 @@ paths:
         All fields are required, and the form is associated with the authenticated user.
       tags: 
         - users
+      security:
+        - CookieAuth: []
       requestBody:
         required: true
         content:
@@ -660,6 +729,8 @@ paths:
         If the password is correct, the account is deleted, and the authentication token is cleared.
       tags: 
         - users
+      security:
+        - CookieAuth: []
       requestBody:
         required: true
         content:
@@ -713,6 +784,8 @@ paths:
         The results are sorted by price in ascending order and include only the specified fields (name, price, size, fabric).
       tags: 
         - users
+      security:
+        - CookieAuth: []
       parameters:
         - name: name
           in: query
@@ -785,6 +858,8 @@ paths:
         The cookie is configured with `httpOnly`, `secure`, and `sameSite` attributes for security.
       tags: 
         - users
+      security:
+        - CookieAuth: []
       responses:
         '200':
           description: User logged out successfully.
@@ -811,7 +886,7 @@ paths:
                     example: "Internal Server Error"
 
 
-#product routes yaml  : 
+#product routes YAML  : 
 
   /patiofy/auth/products/create:
     post:
@@ -819,6 +894,8 @@ paths:
       description: Adds a new product post with images.
       tags: 
         - products
+      security:
+        - CookieAuth: []
       operationId: createPost
       requestBody:
         required: true
@@ -889,12 +966,14 @@ paths:
                     type: string
                     example: "Internal Server Error"
     
-  /patiofy/auth/products/:id:
+  /patiofy/auth/products/{id}:
     get:
       summary: Retrieve a post by ID
       description: Fetches the details of a specific product post using its ID.
       tags: 
         - products
+      security:
+        - CookieAuth: []
       operationId: getById
       parameters:
         - name: id
@@ -976,6 +1055,8 @@ paths:
       description: Removes a post by its ID.
       tags: 
         - products
+      security:
+        - CookieAuth: []
       operationId: deletePost
       parameters:
         - name: id
@@ -1033,6 +1114,8 @@ paths:
       description: Updates the details of a product post.
       tags: 
         - products
+      security:
+        - CookieAuth: []
       operationId: updatePost
       parameters:
         - name: id
@@ -1094,6 +1177,8 @@ paths:
       description: Adds a product to the user's cart based on the given product ID.
       tags:
         - Cart
+      security:
+        - CookieAuth: []
       parameters:
         - in: path
           name: productId
@@ -1101,8 +1186,6 @@ paths:
           schema:
             type: string
           description: The ID of the product to be added to the cart.
-      security:
-        - bearerAuth: []
       responses:
         200:
           description: Product added to cart successfully.
@@ -1128,17 +1211,446 @@ paths:
                     type: string
                     example: "Internal Server Error"
 
+  /patiofy/auth/products/cart/{id}:
+    get:
+      summary: Get Cart by ID
+      description: Retrieve a shopping cart using its unique ID.
+      tags:
+        - Cart
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: cartId
+          in: path
+          required: true
+          description: The unique identifier of the cart.
+          schema:
+            type: string
+      responses:
+        200:
+          description: Successfully retrieved the cart.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  cart:
+                    type: object
+                    example:
+                      _id: "60d9c6e4b5f1b23a4c8d4f6b"
+                      items:
+                        - productId: "60d9c7e8b5f1b23a4c8d4f6c"
+                          quantity: 2
+                          price: 19.99
+                      total: 39.98
+        400:
+          description: Bad request, invalid cart ID format.
+        404:
+          description: Cart not found.
+        500:
+          description: Server error.
+    put:
+      summary: Update Cart Quantity
+      description: Update the quantity of items in the cart by cart ID.
+      tags:
+        - Cart
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: cartId
+          in: path
+          required: true
+          description: The unique identifier of the cart.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: integer
+                  example: 3
+      responses:
+        200:
+          description: Successfully updated the cart.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  cart:
+                    type: object
+                    example:
+                      _id: "60d9c6e4b5f1b23a4c8d4f6b"
+                      items:
+                        - productId: "60d9c7e8b5f1b23a4c8d4f6c"
+                          quantity: 3
+                          price: 19.99
+                      total: 59.97
+        400:
+          description: Bad request, invalid input.
+        404:
+          description: Cart not found.
+        500:
+          description: Internal Server Error.
+    delete:
+      summary: Delete Cart by ID
+      description: Delete a shopping cart using its unique ID.
+      tags:
+        - Cart
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: cartId
+          in: path
+          required: true
+          description: The unique identifier of the cart to delete.
+          schema:
+            type: string
+      responses:
+        200:
+          description: Successfully deleted the cart.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Cart deleted successfully."
+        400:
+          description: Bad request, invalid cart ID format.
+        404:
+          description: Cart not found.
+        500:
+          description: Internal Server Error.
 
+#Address routes YAML : 
 
+  /patiofy/auth/user/address:
+    post:
+      summary: Add Shipping Address
+      description: Adds a new shipping address for the user.
+      tags:
+        - Address
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The product ID associated with the address.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                country:
+                  type: string
+                  example: "USA"
+                firstname:
+                  type: string
+                  example: "John"
+                lastname:
+                  type: string
+                  example: "Doe"
+                phone:
+                  type: string
+                  example: "+1234567890"
+                address:
+                  type: string
+                  example: "1234 Elm Street"
+                city:
+                  type: string
+                  example: "New York"
+                state:
+                  type: string
+                  example: "NY"
+      responses:
+        200:
+          description: Address added successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Address added successfully"
+        400:
+          description: Bad request, invalid input.
+        401:
+          description: Unauthorized, user not logged in.
+        500:
+          description: Internal Server Error.
 
+  /patiofy/auth/user/address/{id}:
+    get:
+      summary: Get Address by ID
+      description: Retrieve a user's shipping address using its unique ID.
+      tags:
+        - Address
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: addressId
+          in: path
+          required: true
+          description: The unique identifier of the address.
+          schema:
+            type: string
+      responses:
+        200:
+          description: Successfully retrieved the address.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  address:
+                    type: object
+                    example:
+                      _id: "60d9c6e4b5f1b23a4c8d4f6b"
+                      userId: "60d9c7e8b5f1b23a4c8d4f6c"
+                      email: "user@example.com"
+                      phone: "+1234567890"
+                      Shipping_Address:
+                        country: "USA"
+                        firstname: "John"
+                        lastname: "Doe"
+                        address: "1234 Elm Street"
+                        city: "New York"
+                        state: "NY"
+        400:
+          description: Bad request, invalid address ID format.
+        404:
+          description: Address not found.
+        500:
+          description: Internal Server Error.
+    delete:
+      summary: Delete Address by ID
+      description: Delete a user's shipping address using its unique ID.
+      tags:
+        - Address
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: addressId
+          in: path
+          required: true
+          description: The unique identifier of the address to delete.
+          schema:
+            type: string
+      responses:
+        200:
+          description: Successfully deleted the address.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Address deleted"
+        400:
+          description: Bad request, invalid address ID format.
+        404:
+          description: Address not found.
+        500:
+          description: Internal Server Error.
+    put:
+      summary: Update Address by ID
+      description: Updates an address using its unique ID.
+      tags:
+        - Address
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique ID of the address to update.
+          schema:
+            type: string
+            example: "661d9a2f5d5b6c001cbdb999"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                country:
+                  type: string
+                  example: "USA"
+                firstname:
+                  type: string
+                  example: "John"
+                lastname:
+                  type: string
+                  example: "Doe"
+                phone:
+                  type: string
+                  example: "+1234567890"
+                address:
+                  type: string
+                  example: "123 Main St"
+                city:
+                  type: string
+                  example: "New York"
+                state:
+                  type: string
+                  example: "NY"
+      responses:
+        200:
+          description: Successfully updated the address.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "updated successfully"
+        400:
+          description: Bad request, invalid input.
+        401:
+          description: Unauthorized, user not logged in.
+        404:
+          description: Address not found.
+        500:
+          description: Internal Server Error.
 
+  /patiofy/auth/user/address/all:
+    get:
+      summary: View All Addresses
+      description: Retrieve all shipping addresses associated with the authenticated user.
+      tags:
+        - Address
+      security:
+        - CookieAuth: []
+      responses:
+        200:
+          description: Successfully retrieved all addresses.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  all:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: "60d9c6e4b5f1b23a4c8d4f6b"
+                        userId:
+                          type: string
+                          example: "60d9c7e8b5f1b23a4c8d4f6c"
+                        email:
+                          type: string
+                          example: "user@example.com"
+                        phone:
+                          type: string
+                          example: "+1234567890"
+                        Shipping_Address:
+                          type: object
+                          properties:
+                            country:
+                              type: string
+                              example: "USA"
+                            firstname:
+                              type: string
+                              example: "John"
+                            lastname:
+                              type: string
+                              example: "Doe"
+                            address:
+                              type: string
+                              example: "1234 Elm Street"
+                            city:
+                              type: string
+                              example: "New York"
+                            state:
+                              type: string
+                              example: "NY"
+        401:
+          description: Unauthorized, user not logged in.
+        500:
+          description: Internal Server Error.
 
+#contact us form : 
 
-
-
-
-
-
+  /patiofy/auth/user/feedback:
+    post:
+      summary: Submit a Contact Us Message
+      description: Allows an authenticated user to submit a message via the contact form.
+      tags:
+        - Contact
+      security:
+        - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "I have an issue with my order."
+      responses:
+        200:
+          description: Successfully submitted the contact message.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Submitted successfully"
+        400:
+          description: Bad request, missing or invalid input.
+        401:
+          description: Unauthorized, user not logged in.
+        500:
+          description: Internal Server Error.
 
 
 

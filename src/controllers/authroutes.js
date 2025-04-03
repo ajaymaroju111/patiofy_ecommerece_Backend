@@ -1,9 +1,9 @@
 const users = require("../models/userschema.js");
 const posts = require("../models/productschema.js");
-const toAddress = require('../models/addressschema.js')
+const toAddress = require("../models/addressschema.js");
 const Contacts = require("../models/contactschema.js");
 const CatchAsync = require("../middlewares/CatchAsync.js");
-const ErrorHandler = require('../utils/ErrorHandler.js');
+const ErrorHandler = require("../utils/ErrorHandler.js");
 const { sendEmail } = require("../utils/sendEmail.js");
 const { generateCookie } = require("../middlewares/authUser.js");
 const {
@@ -11,9 +11,10 @@ const {
   forgetPassword,
   forgetUsername,
 } = require("../utils/emailTemplates.js");
+const { response } = require("express");
 
 //account signup for user :
-exports.signUp = CatchAsync(async(req, res, next) => {
+exports.signUp = CatchAsync(async (req, res, next) => {
   try {
     const { firstname, lastname, username, email, phone, password } = req.body;
     const existed = await users.findOne({
@@ -22,12 +23,14 @@ exports.signUp = CatchAsync(async(req, res, next) => {
 
     if (existed) {
       if (existed.username === username) {
-        return next(new ErrorHandler("username already taken, try another" , 401) )
+        return next(
+          new ErrorHandler("username already taken, try another", 401)
+        );
       }
-      return next(new ErrorHandler('email is already exist', 401));
+      return next(new ErrorHandler("email is already exist", 401));
     }
     if (!req.file) {
-      return next( new ErrorHandler('profile photo is required' , 401))
+      return next(new ErrorHandler("profile photo is required", 401));
     }
     const User = await users.create({
       avatar: {
@@ -51,11 +54,9 @@ exports.signUp = CatchAsync(async(req, res, next) => {
       subject: "Account verification",
       text: conformSignup(User.username, encodedId),
     });
-    return res
-      .status(200)
-      .json({
-        message: "verification has been send to the email , please verify",
-      });
+    return res.status(200).json({
+      message: "verification has been send to the email , please verify",
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "Internal Server Error" });
@@ -63,16 +64,18 @@ exports.signUp = CatchAsync(async(req, res, next) => {
 });
 
 //user account verification :
-exports.verify = CatchAsync(async(req, res, next) => {
+exports.verify = CatchAsync(async (req, res, next) => {
   try {
-    const  {verificationKey}  = req.query;
+    const { verificationKey } = req.query;
     //decode the encoded email
-    const decodedEmail = Buffer.from(verificationKey, "base64").toString("utf-8");
-    const User = await users.findOne({ email : decodedEmail });
+    const decodedEmail = Buffer.from(verificationKey, "base64").toString(
+      "utf-8"
+    );
+    const User = await users.findOne({ email: decodedEmail });
     //timer for the account activation
-    if(Date.now() > User.expirytime) {
-      await users.deleteOne({ email : decodedEmail });
-      return next(new ErrorHandler("Time expired, please register" , 401))
+    if (Date.now() > User.expirytime) {
+      await users.deleteOne({ email: decodedEmail });
+      return next(new ErrorHandler("Time expired, please register", 401));
     }
     User.status = "active";
     User.expirytime = undefined;
@@ -85,7 +88,7 @@ exports.verify = CatchAsync(async(req, res, next) => {
 });
 
 //user sign in
-exports.signIn = CatchAsync(async(req, res, next) => {
+exports.signIn = CatchAsync(async (req, res, next) => {
   try {
     const { userOrEmail, password } = req.body;
     if (!userOrEmail || password) {
@@ -101,7 +104,7 @@ exports.signIn = CatchAsync(async(req, res, next) => {
       return res.status(401).json({ error: "password doesnot match" });
     }
     await generateCookie(User);
-    User.jwtExpiry = Date.now() + 24*60*60*1000;
+    User.jwtExpiry = Date.now() + 24 * 60 * 60 * 1000;
     await User.save();
     return res.status(200).json({
       success: true,
@@ -114,7 +117,7 @@ exports.signIn = CatchAsync(async(req, res, next) => {
 });
 
 //get user by ID :
-exports.getById = CatchAsync(async(req, res, next) => {
+exports.getById = CatchAsync(async (req, res, next) => {
   const user = await users.findById(req.params.id);
   return res.status(200).json({
     sucess: true,
@@ -123,7 +126,7 @@ exports.getById = CatchAsync(async(req, res, next) => {
 });
 
 //forget username :
-exports.frogetUsername = CatchAsync(async(req, res, next) => {
+exports.frogetUsername = CatchAsync(async (req, res, next) => {
   try {
     const { email } = req.body;
     if (!email) {
@@ -344,53 +347,158 @@ exports.filterProducts = async (req, res) => {
         filter.price = { $gte: min };
       }
     }
-    
-    if(size){
+
+    if (size) {
       filter.size = size;
     }
-    if(fabric){
+    if (fabric) {
       filter.fabric = fabric;
     }
 
     //usage of aggregations pipelines :
     const products = await posts.aggregate([
-      {$match : filter},
-      {$sort : {price : 1}},
-      {$project : {name : 1, price : 1, size : 1, fabric : 1} },
+      { $match: filter },
+      { $sort: { price: 1 } },
+      { $project: { name: 1, price: 1, size: 1, fabric: 1 } },
     ]);
     return res.status(200).json({
-      success : true,
+      success: true,
       products,
-    })
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-
 //*********************   DELIVERY ADDRESS:    ************************ */
 
-exports.addAddress = CatchAsync(async(req, res, next) =>{
-try {
-  const productId = req.params.id;
-  const {country, firstname, lastname, phone, address, city, state} = req.body;
-  const addressList = await toAddress.create({
-    userId : req.User._id,
-    productId: req,
-    email: req.User.email,
-    phone: phone,
-    Shipping_Adderss: {
-      country: country,
-      firstname: firstname,
-      lastname: lastname,
-      address: address,
-      city: city,
-      state: state,
+exports.addAddress = CatchAsync(async (req, res, next) => {
+  try {
+    const productId = req.params.id;
+    const { country, firstname, lastname, phone, address, city, state } =
+      req.body;
+    const addressList = await toAddress.create({
+      userId: req.User._id,
+      productId: productId,
+      email: req.User.email,
+      phone: phone,
+      Shipping_Adderss: {
+        country: country,
+        firstname: firstname,
+        lastname: lastname,
+        address: address,
+        city: city,
+        state: state,
+      },
+    });
+    await addressList.save();
+    return res.status(200).json({
+      success: true,
+      message: "address added successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ Server: "Internal Server Error" });
+  }
+});
 
-    }
-  })
-} catch (error) {
-  
-}
+exports.updateAddress = CatchAsync(async (req, res, next) => {
+  try {
+    const productId = req.params.id;
+    const { country, firstname, lastname, phone, address, city, state } =
+      req.body;
+    const newData = {
+      country,
+      firstname,
+      lastname,
+      phone,
+      address,
+      city,
+      state,
+    };
+    const updateAdd = await toAddress.findOneAndUpdate({ productId }, newData, {
+      new: true,
+      runValidators: true,
+      useFindAndModify: true,
+    });
+    await updateAdd.save();
+    return res.status(200).json({
+      success : true,
+      message : "updated successfully"
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+exports.getAddress = CatchAsync(async(req, res, next) =>{
+  try {
+    const {addressId} = req.params;
+    const address = toAddress.findById(addressId);
+    return res.status(200).json({
+      success : true,
+      address,
+    })
+  } catch (error) {
+    console.log(error);
+    return res.status.json({
+      error : 'Internal Server Error'
+    });
+  }
+});
+
+exports.deleteAddress = CatchAsync(async(req, res, next) =>{
+  try {
+    const {addressId} = req.params;
+    await toAddress.findByIdAndDelete(addressId);
+    return res.status(200).json({
+      success : true,
+      message: 'address Deleted'
+    })
+  } catch (error) {
+    console.log(error);
+    return res.status(200).json({
+      error : 'Internal Server Error'
+    })
+  }
+});
+
+exports.viewAllAddresses = CatchAsync(async(req , res , next) =>{
+  try {
+    const all = await toAddress.find({ userId: req.User._id});
+    return res.status(200).json({
+      success: true,
+      all
+    })
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      error : "Internal Server Error",
+    });
+  }
+});
+
+//********************   Submitting Contact Form :  ********************** */
+
+exports.contactUs = CatchAsync(async (req, res, next) => {
+  try {
+    const { message } = req.body;
+    const contactUs = await Contacts.create({
+      userId: req.User._id,
+      firstname: req.User.firstname,
+      lastname: req.User.lastname,
+      phone: req.User.phone,
+      message: message,
+    });
+    await contactUs.save();
+    return res.status(200).json({
+      success: true,
+      message: "submitted successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
 });
