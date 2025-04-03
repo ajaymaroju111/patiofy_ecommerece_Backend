@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 const upload = require("../middlewares/multer.js")
 const { signUp,
   verify,
@@ -19,7 +20,8 @@ const { signUp,
   getAddress,
   deleteAddress,
   viewAllAddresses,
-  contactUs
+  contactUs,
+  resend
 
   
 } = require('../controllers/authroutes.js');
@@ -38,27 +40,32 @@ passport.use(
     {
       clientID : process.env.GOOGLE_CLIENT_ID,
       clientSecret : process.env.GOOGLE_SECRET_KEY,
-      callbackURL : "/auth/google/callback",
+      callbackURL : 'http://localhost:3001/auth/google/callback', //this should be redirected from the google console : 
     },
     async (accessToken , refreshToken, profile, done) =>{
       try {
         const User = await users.findOne({ googlrId : profile.id});
         if(!User){
           const User = await users.create({
-            googlrId : profile.id,
+            googleId : profile.id,
             username : profile.displayName,
             email : profile.emails[0].value,
             avatar : profile.photos[0].value,
             status : 'active',
             accessToken,
-            refreshToken
+            refreshToken,
           });
-          User.accessToken = accessToken;
-          User.refreshToken = refreshToken;
         }
-        return done(null, User);
+        //generate a jwt token : 
+        const token = jwt.sign(
+          {id : User._id, email: User.email},
+          process.env.JWT_SECRET,
+          {expiresIn: '1d'}
+        )
+
+        return done(null, {User, token});
       } catch (error) {
-        console.log(error);
+        console.log("OAuth Error", error);
         return done(error, null);
       }
     }
@@ -77,26 +84,25 @@ passport.deserializeUser(async(id, done) =>{
 
 
 //user Routes : 
-router.route('/google').post(passport.authenticate('google' , {scope : ['profile' , 'email']}));
-router.get('/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/' }), 
+router.route('/google').get(passport.authenticate('google' , {scope : ['profile' , 'email']}));
+router.route('/google/callback').get(passport.authenticate('google', { failureRedirect: '/' }), 
   (req, res) => {
     //generate a token after authentication : 
     const token = (req.user);
     res.cookie('token' , token, {
       httpOnly : true,
-      secure : process.env.NODE_ENV === 'production',
+      secure : true,
       sameSite : true,
       maxAge : 24*60*60*1000
     });
-
     res.status(200).json({
       success : true,
       token,
     });
   }
 );
-router.route('/signup').post(upload.single('profilePhoto'), signUp).put(verify);
+router.route('/signup').post(upload.single('profilePhoto'), signUp).get(verify);
+router.route('/resend').post(resend);
 router.route('/signin').post(signIn);
 router.route('/me').get(authenticate, getById);
 router.route('/username/forget').get(frogetUsername);

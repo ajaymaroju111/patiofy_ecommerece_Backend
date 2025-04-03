@@ -3,7 +3,7 @@ security:
   - CookieAuth: []
   - ApiKeyAuth: []
 tags:
-  - name: Authentication_OAuth20
+  - name: Authentication_OAuth2.0
     description: operations related to OAuth20
   - name: users
     description: operations related to users
@@ -46,13 +46,11 @@ info:
 paths:
 
   /patiofy/auth/user/google:
-    post:
+    get:
       summary: Authenticate with Google
       description: Initiates Google OAuth 2.0 authentication.
       tags:
-        - Authentication_OAuth20
-      security:
-        - CookieAuth: []
+        - Authentication_OAuth2.0
       responses:
         302:
           description: Redirects to Google authentication page.
@@ -62,9 +60,9 @@ paths:
   /patiofy/auth/user/callback:
     get:
       summary: Google OAuth Callback
-      description: Callback route for handling Google OAuth response.
+      description: Handles Google OAuth authentication callback.
       tags:
-        - Authentication_OAuth20
+        - Authentication_OAuth2.0
       security: []
       parameters:
         - name: code
@@ -132,7 +130,7 @@ paths:
                   type: string
                   format: password
                   description: The user's password.
-                  example: Ajay@110125cfbv
+                  example: Ajay@110125
                 profilePhoto:
                   type: string
                   format: binary
@@ -178,7 +176,7 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error"
-    put:
+    get:
       summary: Verify user account
       description: |
         This endpoint verifies a user's account by decoding the verification key sent as a query parameter. 
@@ -223,7 +221,44 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error"
-      
+  
+  /patiofy/auth/user/resend:
+    post:
+      summary: Resend Account Verification Email
+      description: Sends a verification email with a new expiration time.
+      tags: 
+        - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  example: "660e4f12a5b5f2b8c9b2a3d1"
+      responses:
+        200:
+          description: Email sent successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Link sent to the email successfully."
+        400:
+          description: Bad request (invalid input).
+        404:
+          description: User not found.
+        500:
+          description: Internal Server Error.
+
   /patiofy/auth/user/signin:
     post:
       summary: User sign-in

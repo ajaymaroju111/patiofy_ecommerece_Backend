@@ -11,7 +11,6 @@ const {
   forgetPassword,
   forgetUsername,
 } = require("../utils/emailTemplates.js");
-const { response } = require("express");
 
 //account signup for user :
 exports.signUp = CatchAsync(async (req, res, next) => {
@@ -48,12 +47,15 @@ exports.signUp = CatchAsync(async (req, res, next) => {
       password,
     });
     await User.save();
-    const encodedId = Buffer.from(User.email, "utf-8").toString("base64");
+    const encodedId = Buffer.from(User._id, "utf-8").toString("base64");
     await sendEmail({
       to: User.email,
       subject: "Account verification",
       text: conformSignup(User.username, encodedId),
     });
+    User.expirytime = Date.now() + 30*60*1000;
+    await User.save();
+    console.log(encodedId);
     return res.status(200).json({
       message: "verification has been send to the email , please verify",
     });
@@ -63,18 +65,43 @@ exports.signUp = CatchAsync(async (req, res, next) => {
   }
 });
 
+//ressnd verification link to the user : 
+exports.resend = CatchAsync( async(req, res, next) =>{
+  try {
+    const userId = req.body;
+    const User = await users.findByIdAndUpdate(userId, {expirytime : Date.now()+30*60*1000});
+    const encodedId = Buffer.from(User._id, "utf-8").toString("base64");
+    await sendEmail({
+      to: User.email,
+      subject: "Account verification",
+      text: conformSignup(User.username, encodedId),
+    });
+    User.expirytime = Date.now() + 30*60*1000;
+    await User.save();
+    console.log(encodedId);
+    return res.status(200).json({
+      success : true,
+      message : "link send to the email successfully",
+    })
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      error : 'Internal Server Error'
+    })
+  }
+})
+
 //user account verification :
 exports.verify = CatchAsync(async (req, res, next) => {
   try {
     const { verificationKey } = req.query;
     //decode the encoded email
-    const decodedEmail = Buffer.from(verificationKey, "base64").toString(
+    const decodedId = Buffer.from(verificationKey, "base64").toString(
       "utf-8"
     );
-    const User = await users.findOne({ email: decodedEmail });
+    const User = await users.findById(decodedId);
     //timer for the account activation
     if (Date.now() > User.expirytime) {
-      await users.deleteOne({ email: decodedEmail });
       return next(new ErrorHandler("Time expired, please register", 401));
     }
     User.status = "active";
