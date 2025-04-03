@@ -279,10 +279,12 @@ paths:
                 userOrEmail:
                   type: string
                   description: The user's username or email address.
+                  example: marojuajay111@gmail.com
                 password:
                   type: string
                   format: password
                   description: The user's password.
+                  example: Ajay@110125
       responses:
         '200':
           description: Login successful.
