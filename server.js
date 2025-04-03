@@ -41,7 +41,7 @@ app.use(bodyParser.json());
 //initializing scheduler :
 corn.schedule("*/5 * * * * *", async () => {
   try {
-    console.log('this is running for every 5 second');
+    // console.log('this is running for every 5 second');
     const expiredUsers = await users.find({ jwtExpiry: { $lt: Date.now() } });
     if (expiredUsers.length > 0) {
       for (const user of expiredUsers) {
