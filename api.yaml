@@ -1088,7 +1088,7 @@ paths:
 
  # cart routes yaml :         
 
-  /patiofy/auth/products/:
+  /patiofy/auth/products/cart:
     post:
       summary: Add a product to the cart
       description: Adds a product to the user's cart based on the given product ID.

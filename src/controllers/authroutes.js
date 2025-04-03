@@ -101,6 +101,8 @@ exports.signIn = CatchAsync(async(req, res, next) => {
       return res.status(401).json({ error: "password doesnot match" });
     }
     await generateCookie(User);
+    User.jwtExpiry = Date.now() + 24*60*60*1000;
+    await User.save();
     return res.status(200).json({
       success: true,
       message: "login successfully",
