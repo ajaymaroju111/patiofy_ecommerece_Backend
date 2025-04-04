@@ -387,9 +387,7 @@ paths:
                     example: "Internal Server Error"
     put:
       summary: Update user profile
-      description: |
-        This endpoint allows a user to update their profile information, including first name, last name, username, email, and avatar. 
-        If the username or email is already taken, an error is returned.
+      description: Updates the authenticated user's profile details and avatar.
       tags: 
         - users
       security:
@@ -403,24 +401,23 @@ paths:
               properties:
                 firstname:
                   type: string
-                  description: The user's first name.
+                  example: John
                 lastname:
                   type: string
-                  description: The user's last name.
+                  example: Doe
                 username:
                   type: string
-                  description: The user's new username.
+                  example: johndoe123
                 email:
                   type: string
                   format: email
-                  description: The user's new email address.
+                  example: john@example.com
                 avatar:
                   type: string
                   format: binary
-                  description: The user's new avatar image (optional).
       responses:
         '200':
-          description: Profile updated successfully.
+          description: Profile updated successfully
           content:
             application/json:
               schema:
@@ -431,9 +428,11 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Profile updated successfully"
-        '401':
-          description: Username or email already taken.
+                    example: Profile updated successfully
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Validation error (e.g., email or username taken)
           content:
             application/json:
               schema:
@@ -441,9 +440,9 @@ paths:
                 properties:
                   error:
                     type: string
-                    example: "Username not available or email is already taken"
+                    example: Username is already taken
         '500':
-          description: Internal server error.
+          description: Internal Server Error
           content:
             application/json:
               schema:
@@ -451,7 +450,7 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: "Internal Server Error"
+                    example: Internal Server Error
 
   /patiofy/auth/user/username/forget: 
     post:

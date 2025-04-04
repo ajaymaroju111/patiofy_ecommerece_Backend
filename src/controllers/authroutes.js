@@ -32,12 +32,11 @@ exports.signUp = CatchAsync(async (req, res, next) => {
     if (!req.file) {
       return next(new ErrorHandler("profile photo is required", 401));
     }
-    const hashedData = bcrypt.hash(req.file.buffer, 10)
     const User = await users.create({
       avatar: {
         name: req.file.originalname,
         img: {
-          data: (await hashedData).toString(),
+          data: req.file.buffer,
           contentType: req.file.mimetype,
         },
       },
@@ -243,39 +242,52 @@ exports.resetPassword = async (req, res) => {
 //update user profile using ID :
 exports.update = async (req, res) => {
   try {
-    const { firstname, lastname, username, email } = req.body;
+    const { firstname, lastname, username, email, avatar } = req.body;
+
     const updatedData = {
       firstname,
       lastname,
       username,
       email,
     };
-    const userExist = await users.findOne({
+
+    // Check if username or email is taken by another user
+    const existingUser = await users.findOne({
       $or: [{ username }, { email }],
+      _id: { $ne: req.User._id }, // Exclude current user
     });
-    if (userExist && userExist._id.toString() === req.User._id.toString()) {
-      if (userExist.username === username) {
-        return res.status(401).json({ error: "username not available" });
+
+    if (existingUser) {
+      if (existingUser.username === username) {
+        return res.status(400).json({ error: "Username is already taken" });
       }
-      return res.status(401).json({ error: "email is already taken" });
+      if (existingUser.email === email) {
+        return res.status(400).json({ error: "Email is already taken" });
+      }
     }
-    if (req.body.avatar !== "") {
-      const user = await users.findById(req.User._id);
-      updatedData.avatar = req.files;
+
+    // Handle avatar update if provided : 
+    if (avatar && req.files?.avatar) {
+      updatedData.avatar = req.files.avatar[0]; // Assuming avatar is uploaded as a single file
     }
-    await users.findByIdAndUpdate(req.user._id, updatedData, {
+
+    const updatedUser = await users.findByIdAndUpdate(req.user._id, updatedData, {
       new: true,
       runValidators: true,
     });
+
     return res.status(200).json({
-      Success: true,
-      message: "profile updated successfully",
+      success: true,
+      message: "Profile updated successfully",
+      user: updatedUser,
     });
+
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 //list all posts of a user :
 exports.myProducts = async (req, res) => {
