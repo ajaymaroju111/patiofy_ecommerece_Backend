@@ -4,7 +4,12 @@ require('dotenv').config();
 
 exports.dbConnnection = async() =>{
   try {
-    await mongoose.connect(process.env.MONGODB_URL,
+    const dbURI =
+      process.env.NODE_ENV === "production"
+        ? process.env.MONGODB_PRODUCTION
+        : process.env.MONGODB_LOCAL;
+
+    await mongoose.connect(process.env.MONGODB_PRODUCTION,
     {
       maxPoolSize : 500,
     })

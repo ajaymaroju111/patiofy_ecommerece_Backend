@@ -15,8 +15,9 @@ const cookieParser = require('cookie-parser');
 //functions :
 const authroutes = require("./src/routes/userPath.js");
 const postroutes = require("./src/routes/productPaths.js");
-const { dbConnnection } = require("./src/config/dbConnection.js");
+const { dbConnnection } = require("./config/dbConnection.js");
 dbConnnection();
+
 
 app.use(
   session({
@@ -40,21 +41,21 @@ const limiter = Limiter({
 app.use(limiter);
 app.use(bodyParser.json());
 
-//initializing scheduler :
-corn.schedule("*/5 * * * * *", async () => {
-  try {
-    // console.log('this is running for every 5 second');
-    const expiredUsers = await users.find({ jwtExpiry: { $lt: Date.now() } });
-    if (expiredUsers.length > 0) {
-      for (const user of expiredUsers) {
-        user.cookie = null;
-        await user.save();
-      }
-    }
-  } catch (error) {
-    console.log(error);
-  }
-});
+// //initializing scheduler :
+// corn.schedule("*/5 * * * * *", async () => {
+//   try {
+//     // console.log('this is running for every 5 second');
+//     const expiredUsers = await users.find({ jwtExpiry: { $lt: Date.now() } });
+//     if (expiredUsers.length > 0) {
+//       for (const user of expiredUsers) {
+//         user.cookie = null;
+//         await user.save();
+//       }
+//     }
+//   } catch (error) {
+//     console.log(error);
+//   }
+// });
 
 //enable CORS :
 app.use(

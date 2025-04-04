@@ -5,7 +5,7 @@ const { conformSignup } = require('../utils/emailTemplates.js');
 
 const userschema = new mongoose.Schema(
   {
-    googlrId: {
+    googleId: {
       type: String,
     },
     avatar: {

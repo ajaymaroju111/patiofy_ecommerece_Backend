@@ -28,77 +28,29 @@ const { authenticate } = require("../middlewares/authUser.js");
 
 //OAuth2 authentication  :
 const passport = require("passport");
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const users = require("../models/userschema.js");
-const { route } = require("./userPath.js");
 
-// Google OAuth Strategy
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_SECRET_KEY,
-      callbackURL: process.env.CALLBACK_URL, // Redirect URL set in Google Console
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        let User = await users.findOne({ googleId: profile.id }); // ✅ Fix Typo in googleId
-
-        if (!User) {
-          User = await users.create({
-            googleId: profile.id, // ✅ Fix Typo
-            username: profile.displayName,
-            email: profile.emails[0].value,
-            avatar: profile.photos[0].value,
-            status: "active",
-            accessToken, // Optional: Storing tokens in DB is not recommended
-            refreshToken,
-          });
-        }
-
-        // Generate a JWT token
-        const token = jwt.sign(
-          { id: User._id, email: User.email },
-          process.env.JWT_SECRET,
-          { expiresIn: "1d" }
-        );
-
-        return done(null, { User, token }); //  Ensure correct return format
-      } catch (error) {
-        console.log("OAuth Error", error);
-        return done(error, null);
-      }
-    }
-  )
-);
-
-//serialize and deserialize users :
-passport.serializeUser((User, done) => {
-  done(null, User.id);
-});
-
-passport.deserializeUser(async (id, done) => {
-  const User = await users.findById(id);
-  done(null, User);
-});
 
 //user Routes :
 router.get(
   "/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
+  passport.authenticate("google", { scope: ["Profile", "email"] })
 );
+
+// Google OAuth Callback Route
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "patiofy/auth/signIn" }),
+  passport.authenticate("google", { failureRedirect: "/patiofy/auth/signIn" }),
   (req, res) => {
-    //generate a token after authentication :
-    const token = req.User;
+    // Generate a token after authentication
+    const token = req.user.token; // ✅ Fix: Use req.user.token instead of req.User
+
     res.cookie("token", token, {
       httpOnly: true,
       secure: true,
-      sameSite: true,
-      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: "strict", 
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
+
     res.redirect("/success");
   }
 );
@@ -106,6 +58,8 @@ router.get("/success", (req, res) => {
   const { token } = req.cookies;
   return res.status(200).send(" Welcome :", token);
 });
+
+
 router.post("/signup", upload.single("profilePhoto"), signUp);
 router.get("/veriy", verify);
 router.post("/resend", resend);
