@@ -22,7 +22,6 @@ const { signUp,
   viewAllAddresses,
   contactUs,
   resend
-
   
 } = require('../controllers/authroutes.js');
 const { 
@@ -104,21 +103,20 @@ router.route('/google/callback').get(passport.authenticate('google', { failureRe
 router.route('/signup').post(upload.single('profilePhoto'), signUp).get(verify);
 router.route('/resend').post(resend);
 router.route('/signin').post(signIn);
-router.route('/me').get(authenticate, getById);
+router.route('/me/:id').get(authenticate, getById);
 router.route('/username/forget').get(frogetUsername);
 router.route('/password/forget').put(forgetPassword);
 router.route('/password/reset').put(resetPassword);
-router.route('/products/:id').get(authenticate, myProducts);
+router.route('/products/:id').put(authenticate, upload.single("avatar"), update).get(authenticate, myProducts);
 router.route('/submitform').post(authenticate, contactForm);
 router.route('/delete').delete(authenticate, deleteUser);
 router.route('/filter').get(filterProducts);
 router.route('/logout').put(authenticate, signOut);
-router.route('/me/:id').put(authenticate, update);
 //address form : 
 router.route('/address').post(authenticate, addAddress)
 router.route('/address/:id').put(authenticate, updateAddress).get(authenticate, getAddress).delete(authenticate, deleteAddress);
 router.route('/adress/list').get(authenticate, viewAllAddresses);
- 
+
 //Contact _ Us 
 router.route('/feedback').post(authenticate, contactUs);
 module.exports = router;

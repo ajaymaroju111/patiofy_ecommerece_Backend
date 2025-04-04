@@ -4,22 +4,28 @@ const users = require("../models/userschema.js");
 const corn = require("node-cron");
 
 //genenrate a cookie when a user is aurhtenticated :
-exports.generateCookie = async (req, res, user, next) => {
+exports.generateCookie = async (req, res, next, user) => {
   try {
     const data = {
       id: user._id,
       status: user.status,
     };
+
     const key = process.env.JWT_SECRET;
     const expiry = { expiresIn: "1d" };
+
     const token = jwt.sign(data, key, expiry);
-    //cookie is generated :
-    await res.cookie("token", token, {
+
+    // Set the cookie
+    res.cookie("token", token, {
       httpOnly: true,
-      secure: true,
-      samesite: true,
+      // secure: process.env.NODE_ENV === "production", // Secure in production
+      sameSite: "Strict", // Use "Lax" if needed
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
-    next();
+    user.jwtExpiry = Date.now() + 24 * 60 * 60 * 1000;
+    await user.save();
+    if (next) next(); // Call next() only if it's defined
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "Internal Server Error" });
@@ -62,7 +68,7 @@ exports.authenticate = async (req, res, next) => {
       sameSite: "strict",
     });
     console.log(error);
-    return resizeBy.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 

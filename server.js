@@ -10,6 +10,7 @@ const YAML = require("yamljs");
 const SwaggerDocument = YAML.load("./api.yaml");
 const bodyParser = require("body-parser");
 const users = require("./src/models/userschema.js");
+const cookieParser = require('cookie-parser');
 
 //functions :
 const authroutes = require("./src/routes/userPath.js");
@@ -28,6 +29,7 @@ app.use(
   })
 );
 
+app.use(cookieParser());
 //usage od limiter :
 const limiter = Limiter({
   windowMs: 15 * 60 * 1000,

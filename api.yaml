@@ -1,7 +1,6 @@
 openapi: "3.1.0"
 security:
   - CookieAuth: []
-  - ApiKeyAuth: []
 tags:
   - name: Authentication_OAuth2.0
     description: operations related to OAuth20
@@ -27,11 +26,6 @@ components:
       in: cookie
       name: token
       description: Authentication cookie containing the JWT token
-    ApiKeyAuth::
-      type: apiKey
-      in: header
-      name: authorization
-      description: Api keys for accessing protected endpoints
 info:
   title: Patiofy website Api
   description: API for patiofy website
@@ -330,7 +324,7 @@ paths:
                     type: string
                     example: "Internal Server Error"
 
-  /patiofy/auth/user/me:
+  /patiofy/auth/user/me/{id}:
     get:
       summary: Get user by ID
       description: |
@@ -339,13 +333,8 @@ paths:
         - users
       security:
         - CookieAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
           schema:
             type: string
-          description: The unique ID of the user.
       responses:
         '200':
           description: User details retrieved successfully.
@@ -360,6 +349,16 @@ paths:
                   user:
                     type: object
                     description: The user object containing details.
+                    properties:
+                      _id:
+                        type: string
+                        example: "65a2d5e2f1c3a12b34f6a789"
+                      name:
+                        type: string
+                        example: "John Doe"
+                      email:
+                        type: string
+                        example: "johndoe@example.com"
         '404':
           description: User not found.
           content:
@@ -367,7 +366,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  error:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
                     type: string
                     example: "User not found"
         '500':
@@ -377,7 +379,77 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: false
                   error:
+                    type: string
+                    example: "Internal Server Error"
+    put:
+      summary: Update user profile
+      description: |
+        This endpoint allows a user to update their profile information, including first name, last name, username, email, and avatar. 
+        If the username or email is already taken, an error is returned.
+      tags: 
+        - users
+      security:
+        - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                firstname:
+                  type: string
+                  description: The user's first name.
+                lastname:
+                  type: string
+                  description: The user's last name.
+                username:
+                  type: string
+                  description: The user's new username.
+                email:
+                  type: string
+                  format: email
+                  description: The user's new email address.
+                avatar:
+                  type: string
+                  format: binary
+                  description: The user's new avatar image (optional).
+      responses:
+        '200':
+          description: Profile updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Profile updated successfully"
+        '401':
+          description: Username or email already taken.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Username not available or email is already taken"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
                     type: string
                     example: "Internal Server Error"
 
@@ -568,74 +640,6 @@ paths:
                 type: object
                 properties:
                   error:
-                    type: string
-                    example: "Internal Server Error"
-
-  /patiofy/auth/user/me/:id:
-    put:
-      summary: Update user profile
-      description: |
-        This endpoint allows a user to update their profile information, including first name, last name, username, email, and avatar. 
-        If the username or email is already taken, an error is returned.
-      tags: 
-        - users
-      security:
-        - CookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                firstname:
-                  type: string
-                  description: The user's first name.
-                lastname:
-                  type: string
-                  description: The user's last name.
-                username:
-                  type: string
-                  description: The user's new username.
-                email:
-                  type: string
-                  format: email
-                  description: The user's new email address.
-                avatar:
-                  type: string
-                  description: The user's new avatar (optional).
-      responses:
-        '200':
-          description: Profile updated successfully.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  Success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "profile updated successfully"
-        '401':
-          description: Username or email already taken.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "username not available or email is already taken"
-        '500':
-          description: Internal server error.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
                     type: string
                     example: "Internal Server Error"
 

@@ -6,6 +6,7 @@ const CatchAsync = require("../middlewares/CatchAsync.js");
 const ErrorHandler = require("../utils/ErrorHandler.js");
 const { sendEmail } = require("../utils/sendEmail.js");
 const { generateCookie } = require("../middlewares/authUser.js");
+const bcrypt = require('bcrypt');
 const {
   conformSignup,
   forgetPassword,
@@ -31,11 +32,12 @@ exports.signUp = CatchAsync(async (req, res, next) => {
     if (!req.file) {
       return next(new ErrorHandler("profile photo is required", 401));
     }
+    const hashedData = bcrypt.hash(req.file.buffer, 10)
     const User = await users.create({
       avatar: {
         name: req.file.originalname,
         img: {
-          data: req.file.buffer,
+          data: (await hashedData).toString(),
           contentType: req.file.mimetype,
         },
       },
@@ -118,7 +120,7 @@ exports.verify = CatchAsync(async (req, res, next) => {
 exports.signIn = CatchAsync(async (req, res, next) => {
   try {
     const { userOrEmail, password } = req.body;
-    if (!userOrEmail || password) {
+    if (!userOrEmail || !password) {
       return res.status(400).json({ error: "All fields are required" });
     }
     const User = await users
@@ -130,13 +132,12 @@ exports.signIn = CatchAsync(async (req, res, next) => {
     if (!isValidPassword) {
       return res.status(401).json({ error: "password doesnot match" });
     }
-    await generateCookie(User);
-    User.jwtExpiry = Date.now() + 24 * 60 * 60 * 1000;
-    await User.save();
-    return res.status(200).json({
-      success: true,
-      message: "login successfully",
-    });
+    await generateCookie(req, res, () => {
+      return res.status(200).json({
+        success: true,
+        message: "Login successful",
+      });
+    }, User);
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "Internal Server Error" });
@@ -145,11 +146,12 @@ exports.signIn = CatchAsync(async (req, res, next) => {
 
 //get user by ID :
 exports.getById = CatchAsync(async (req, res, next) => {
-  const user = await users.findById(req.params.id);
-  return res.status(200).json({
-    sucess: true,
-    user,
-  });
+    const user = await users.findById(req.User._id); //always mention :id in the route if params involved
+    console.log(user);
+    return res.status(200).json({
+      success: true,  // Fixed typo: "sucess" → "success"
+      user,
+    });
 });
 
 //forget username :
@@ -249,7 +251,7 @@ exports.update = async (req, res) => {
       email,
     };
     const userExist = await users.findOne({
-      $or: [{ username }, { password }],
+      $or: [{ username }, { email }],
     });
     if (userExist && userExist._id.toString() === req.User._id.toString()) {
       if (userExist.username === username) {
