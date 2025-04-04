@@ -1,7 +1,7 @@
 const users = require("../models/userschema.js");
 const posts = require("../models/productschema.js");
 const toAddress = require("../models/addressschema.js");
-const Contacts = require("../models/contactschema.js");
+const queries = require("../models/contactschema.js");
 const CatchAsync = require("../middlewares/CatchAsync.js");
 const ErrorHandler = require("../utils/ErrorHandler.js");
 const { sendEmail } = require("../utils/sendEmail.js");
@@ -12,6 +12,7 @@ const {
   forgetPassword,
   forgetUsername,
 } = require("../utils/emailTemplates.js");
+const { default: mongoose } = require("mongoose");
 
 //account signup for user :
 exports.signUp = CatchAsync(async (req, res, next) => {
@@ -33,7 +34,7 @@ exports.signUp = CatchAsync(async (req, res, next) => {
       return next(new ErrorHandler("profile photo is required", 401));
     }
     const User = await users.create({
-      avatar: {
+      avatar: {  
         name: req.file.originalname,
         img: {
           data: req.file.buffer,
@@ -154,9 +155,9 @@ exports.getById = CatchAsync(async (req, res, next) => {
 });
 
 //forget username :
-exports.frogetUsername = CatchAsync(async (req, res, next) => {
+exports.forgetUsername = CatchAsync(async (req, res, next) => {
   try {
-    const { email } = req.body;
+    const  {email}  = req.body;
     if (!email) {
       return res.status(401).json({ errror: " Internal Server Error" });
     }
@@ -166,11 +167,11 @@ exports.frogetUsername = CatchAsync(async (req, res, next) => {
     }
     const fullname = `${user.firstname} + ${user.lastname}`;
     await sendEmail({
-      to: req.User.email,
+      to: email,
       subject: "forget Username request",
       text: forgetUsername(fullname, user.username),
     });
-    return res.status.json({
+    return res.status(200).json({
       success: true,
       message: "reset password link sent to the email",
     });
@@ -181,7 +182,7 @@ exports.frogetUsername = CatchAsync(async (req, res, next) => {
 });
 
 //forget password :
-exports.forgetPassword = async (req, res) => {
+exports.forgetPassword = CatchAsync(async (req, res, next) => {
   try {
     const { username, email } = req.body;
     if (!username || !email) {
@@ -197,11 +198,11 @@ exports.forgetPassword = async (req, res) => {
       return res.status(401).json({ error: "incorrect email" });
     }
     await sendEmail({
-      to: req.User.email,
+      to: email,
       subject: "forget password link",
-      text: forgetPassword(req.User.username),
+      text: forgetPassword(username),
     });
-    return res.status.json({
+    return res.status(200).json({
       success: true,
       message: "reset password link sent to the email",
     });
@@ -209,10 +210,10 @@ exports.forgetPassword = async (req, res) => {
     console.log(error);
     return res.status(500).json({ error: " Internal Server Error " });
   }
-};
+});
 
 // reset the password using old password :
-exports.resetPassword = async (req, res) => {
+exports.resetPassword = CatchAsync(async (req, res) => {
   try {
     const { oldpassword, newpassword } = req.body;
     if (!oldpassword || !newpassword) {
@@ -237,10 +238,10 @@ exports.resetPassword = async (req, res) => {
     console.log(error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
-};
+});
 
 //update user profile using ID :
-exports.update = async (req, res) => {
+exports.update = CatchAsync(async (req, res, next) => {
   try {
     const { firstname, lastname, username, email, avatar } = req.body;
 
@@ -248,7 +249,6 @@ exports.update = async (req, res) => {
       firstname,
       lastname,
       username,
-      email,
     };
 
     // Check if username or email is taken by another user
@@ -268,13 +268,15 @@ exports.update = async (req, res) => {
 
     // Handle avatar update if provided : 
     if (avatar && req.files?.avatar) {
-      updatedData.avatar = req.files.avatar[0]; // Assuming avatar is uploaded as a single file
+      updatedData.avatar = req.files; // Assuming avatar is uploaded as a single file
     }
 
-    const updatedUser = await users.findByIdAndUpdate(req.user._id, updatedData, {
+    const updatedUser = await users.findByIdAndUpdate(req.User._id, updatedData, {
       new: true,
       runValidators: true,
     });
+    updatedUser.email = email;
+    updatedUser.save();
 
     return res.status(200).json({
       success: true,
@@ -286,7 +288,7 @@ exports.update = async (req, res) => {
     console.error(error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
-};
+});
 
 
 //list all posts of a user :
@@ -307,15 +309,15 @@ exports.myProducts = async (req, res) => {
 //submit contact form :
 exports.contactForm = async (req, res) => {
   try {
-    const { firstname, lastname, phone, message } = req.body;
-    if (!firstname || !lastname || !phone || !message) {
+    const { message } = req.body;
+    if (!message) {
       return res.status(401).json({ error: "All fields are required" });
     }
-    const userContactForm = await Contacts.create({
-      userId: req.user._id,
-      firstname,
-      lastname,
-      phone,
+    const userContactForm = await queries.create({
+      userId: req.User._id,
+      firstname: req.User.firstname,
+      lastname: req.User.lastname,
+      phone: req.User._id,
       message,
     });
     await userContactForm.save();
@@ -348,27 +350,42 @@ exports.signOut = async (req, res) => {
 };
 
 //deleting user account :
-exports.deleteUser = async (req, res) => {
+exports.deleteUser = CatchAsync (async(req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction(); // Start transaction
   try {
     const { password } = req.body;
     if (!password) {
-      return res.status(401).json({ message: "password is required" });
+      return next(new ErrorHandler('Password is required', 401));
     }
-    const isPasswordMatch = req.User.comparePassword(password);
+    const user = await users.findById(req.User._id).select('+password');
+    const isPasswordMatch = await user.comparePassword(password);
     if (!isPasswordMatch) {
       return res.status(401).json({ message: "Incorrect password" });
     }
-    await users.findByIdAndDelete(req.User._id);
+
+    const deleted = await users.deleteOne({_id: req.User._id}).session('session');
+    if(deleted.deletedCount === 0){
+      next(new ErrorHandler('User not Found'));
+    }
+    await queries.deleteMany({_id: req.User_id}).session('session');
+    await posts.deleteMany({_id: req.User_id}).session('session');
+    await toAddress.deleteMany({_id: req.User_id}).session('session');
+
+    await session.commitTransaction();
     res.clearCookie("token", {
       httpOnly: true,
       secure: true,
       sameSite: true,
     });
   } catch (error) {
+    session.abortTransaction();
     console.log(error);
-    return res.status(500).json({ error: " Ineternal Server Error" });
+    return res.status(500).json({ error: "Internal Server Error"});
+  }finally{
+    session.endSession();
   }
-};
+});
 
 //search for products : ( NAN )
 exports.filterProducts = async (req, res) => {
@@ -526,7 +543,7 @@ exports.viewAllAddresses = CatchAsync(async(req , res , next) =>{
 exports.contactUs = CatchAsync(async (req, res, next) => {
   try {
     const { message } = req.body;
-    const contactUs = await Contacts.create({
+    const contactUs = await queries.create({
       userId: req.User._id,
       firstname: req.User.firstname,
       lastname: req.User.lastname,

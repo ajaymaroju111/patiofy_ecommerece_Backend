@@ -41,48 +41,12 @@ paths:
 
   /patiofy/auth/user/google:
     get:
-      summary: Authenticate with Google
-      description: Initiates Google OAuth 2.0 authentication.
-      tags:
-        - Authentication_OAuth2.0
+      summary: Redirect to Google OAuth
+      description: Initiates the Google authentication process.
       responses:
-        302:
-          description: Redirects to Google authentication page.
-        500:
-          description: Internal Server Error.
+        "302":
+          description: Redirects to Google's authentication page
 
-  /patiofy/auth/user/callback:
-    get:
-      summary: Google OAuth Callback
-      description: Handles Google OAuth authentication callback.
-      tags:
-        - Authentication_OAuth2.0
-      security: []
-      parameters:
-        - name: code
-          in: query
-          required: true
-          description: Authorization code received from Google.
-          schema:
-            type: string
-      responses:
-        200:
-          description: Successfully authenticated and token generated.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  token:
-                    type: string
-                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-        401:
-          description: Authentication failed.
-        500:
-          description: Internal Server Error.
 
   /patiofy/auth/user/signup:
     post:
@@ -170,6 +134,8 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error"
+
+  /patiofy/auth/user/veriy:
     get:
       summary: Verify user account
       description: |
@@ -385,6 +351,8 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error"
+
+  /patiofy/auth/user/update:
     put:
       summary: Update user profile
       description: Updates the authenticated user's profile details and avatar.
@@ -401,17 +369,17 @@ paths:
               properties:
                 firstname:
                   type: string
-                  example: John
+                  example: arjun
                 lastname:
                   type: string
-                  example: Doe
+                  example: Das
                 username:
                   type: string
-                  example: johndoe123
+                  example: iam_arjun
                 email:
                   type: string
                   format: email
-                  example: john@example.com
+                  example: marojuajay222@gmail.com
                 avatar:
                   type: string
                   format: binary
@@ -473,6 +441,7 @@ paths:
                   type: string
                   format: email
                   description: The user's email address.
+                  example: marojuajay111@gmail.com
       responses:
         '200':
           description: Username sent successfully.
@@ -528,10 +497,12 @@ paths:
                 username:
                   type: string
                   description: The user's username.
+                  example: iam_arjun
                 email:
                   type: string
                   format: email
                   description: The user's email address.
+                  example: marojuajay111@gmail.com
       responses:
         '200':
           description: Password reset link sent successfully.
@@ -713,15 +684,6 @@ paths:
             schema:
               type: object
               properties:
-                firstname:
-                  type: string
-                  description: The user's first name.
-                lastname:
-                  type: string
-                  description: The user's last name.
-                phone:
-                  type: string
-                  description: The user's phone number.
                 message:
                   type: string
                   description: The user's message.
@@ -781,6 +743,7 @@ paths:
                 password:
                   type: string
                   description: The user's password for verification.
+                  example: Ajay@110125
       responses:
         '200':
           description: User account deleted successfully.

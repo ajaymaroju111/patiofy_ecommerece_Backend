@@ -62,11 +62,11 @@ exports.authenticate = async (req, res, next) => {
     req.User = User;
     next();
   } catch (error) {
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-    });
+    // res.clearCookie("token", {
+    //   httpOnly: true,
+    //   secure: true,
+    //   sameSite: "strict",
+    // });
     console.log(error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
@@ -79,3 +79,5 @@ exports.generateToken = (user) => {
     { expiresIn: "1d" }
   );
 };
+
+

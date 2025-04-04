@@ -17,9 +17,13 @@ const {
   deleteCart,
 } = require('../controllers/postroutes.js');
 
-router.route('/create').post(multipleUploads, authenticate, createPost);
-router.route('/:id').get(getById).delete(authenticate, deletePost).put(authenticate, updatePost);
-router.route('/cart').post(authenticate, addToCart);
-router.route('/cart/:id').get(authenticate, getCartById).put(authenticate, updateCart).delete(authenticate, deleteCart);
+router.post('/create', authenticate, multipleUploads, createPost);
+router.get('/:id', getById)
+router.delete('/:id', authenticate, deletePost)
+router.put('/:id', authenticate, updatePost);
+router.post('/cart', authenticate, addToCart);
+router.get('/cart/:id', authenticate, getCartById)
+router.put('/cart/:id', authenticate, updateCart)
+router.delete('/cart/:id', authenticate, deleteCart);
 
 module.exports = router;

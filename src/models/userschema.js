@@ -1,8 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
-const sendEmail = require("../utils/sendEmail.js");
+const { sendEmail } = require("../utils/sendEmail.js");
 const { conformSignup } = require('../utils/emailTemplates.js');
-const { status } = require("init");
 
 const userschema = new mongoose.Schema(
   {
@@ -93,7 +92,7 @@ userschema.methods.comparePassword = function (plainPassword) {
 
 //Hash all the incomming images :
 userschema.pre("save", async function (next) {
-  if (this.isModified("avatar.img.data")) {
+  if (this.isModified("avatar")) {
     this.avatar.img.data = await bcrypt(this.avatar.img.data, 10);
   }
   next();
@@ -102,16 +101,17 @@ userschema.pre("save", async function (next) {
 //send the verification mail every time when email get updated :
 userschema.pre("save", async function (next) {
   if (this.isModified("email")) {
-    const encodedId = Buffer.from(this._id, "utf-8").toString("base64");
+    const encodedId = Buffer.from(this._id.toString(), "utf-8").toString("base64");
+    this.expirytime = Date.now() + 30 * 60 * 1000;
+    this.status = 'inactive';
     await sendEmail({
       to: this.email,
       subject: "Account verification",
       text: conformSignup(this.username, encodedId),
     });
-    this.expirytime = Date.now() + 30 * 60 * 1000;
-    this.status = 'inactive';
     console.log('Email updated in the DB, EncodedID : ', encodedId);
   }
+  next();
 });
 
 //hash all in comming password Strings :
