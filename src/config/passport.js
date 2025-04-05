@@ -1,14 +1,16 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const jwt = require("jsonwebtoken"); // Ensure you have this installed
-const users = require("../models/userschema.js"); // Import your user model
+const jwt = require("jsonwebtoken"); 
+const users = require("../models/userschema.js");
+
+//genenrate password : 
 
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_SECRET_KEY,
-      callbackURL: process.env.CALLBACK_URL, // Redirect URL set in Google Console
+      callbackURL: process.env.CALLBACK_URL, // Redirect URL set in Google Console and should be same as callback route with same port 
     },
     async (accessToken, refreshToken, profile, done) => {
       try {

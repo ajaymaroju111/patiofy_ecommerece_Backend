@@ -8,6 +8,7 @@ exports.generateCookie = async (req, res, next, user) => {
   try {
     const data = {
       id: user._id,
+      email : user.email,
       status: user.status,
     };
 
@@ -19,13 +20,13 @@ exports.generateCookie = async (req, res, next, user) => {
     // Set the cookie
     res.cookie("token", token, {
       httpOnly: true,
-      // secure: process.env.NODE_ENV === "production", // Secure in production
-      sameSite: "Strict", // Use "Lax" if needed
+      secure: process.env.NODE_ENV === "production", // Secure in production
+      sameSite: "Strict", 
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
     user.jwtExpiry = Date.now() + 24 * 60 * 60 * 1000;
     await user.save();
-    if (next) next(); // Call next() only if it's defined
+    if (next) next();
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "Internal Server Error" });
@@ -58,15 +59,15 @@ exports.authenticate = async (req, res, next) => {
         .status(401)
         .json({ error: "account is inactive please verify" });
     }
-    const User = await users.findById(decode.id);
-    req.User = User;
+    const user = await users.findById(decode.id);
+    req.user = user;
     next();
   } catch (error) {
-    // res.clearCookie("token", {
-    //   httpOnly: true,
-    //   secure: true,
-    //   sameSite: "strict",
-    // });
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+    });
     console.log(error);
     return res.status(500).json({ error: "Internal Server Error" });
   }

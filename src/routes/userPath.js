@@ -3,6 +3,7 @@ const router = express.Router();
 const jwt = require("jsonwebtoken");
 const upload = require("../middlewares/multer.js");
 const {
+  setNewPassword,
   signUp,
   verify,
   signIn,
@@ -46,31 +47,24 @@ router.get(
     // 🔹 Extract user & token from req.user
     const { user, token } = req.user;
 
-    // ✅ Set JWT token in cookies for authentication
+    // Set JWT token in cookies for authentication
     res.cookie("token", token, {
       httpOnly: true, // Prevents XSS attacks
-      // secure: process.env.NODE_ENV === "production", // Secure only in production
-      secure: 'secure', // Secure only in production
+      secure: process.env.NODE_ENV === "production", // Secure only in production
       sameSite: "strict",
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
-
-    // ✅ Redirect to success page
-    res.redirect("/patiofy/auth/success");
+    res.redirect("/patiofy/auth/user/google/password");
   }
 );
 
-// 🔹 Step 3: Success Route (After Authentication)
-router.get("/success", (req, res) => {
-  return res.status(200).json({ message: "Welcome!", user: req.user });
-});
 
 // 🔹 Step 4: Failure Route
 router.get("/failed", (req, res) => {
   return res.status(401).json({ error: "Authentication Failed" });
 });
 
-
+router.post('/google/password', setNewPassword)
 router.post("/signup", upload.single("profilePhoto"), signUp);
 router.get("/veriy", verify);
 router.post("/resend", resend);
@@ -79,12 +73,13 @@ router.put("/update", authenticate, upload.single("avatar"), update);
 router.post("/username/forget", forgetUsername);
 router.get("/me/:id", authenticate, getById);
 router.post("/password/forget", forgetPassword);
-router.post("/password/reset", resetPassword);
+router.post("/password/reset", authenticate, resetPassword);
 router.get("/products/:id", authenticate, myProducts);
 router.post("/submitform", authenticate, contactForm);
 router.delete("/delete", authenticate, deleteUser);
 router.get("/filter", filterProducts);
 router.put("/logout", authenticate, signOut);
+
 //address form :
 router.post("/address", authenticate, addAddress);
 router.put("/address/:id", authenticate, updateAddress);

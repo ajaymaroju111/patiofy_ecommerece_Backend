@@ -48,6 +48,68 @@ paths:
       responses:
         "302":
           description: Redirects to Google's authentication page
+  /patiofy/auth/user/google/password:
+    put:
+      summary: Set a new password for the authenticated user
+      description: Allows an authenticated user to update their password.
+      tags:
+        - Authentication_OAuth2.0
+      security:
+        - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  format: password
+                  example: "newSecurePassword123"
+              required:
+                - password
+      responses:
+        '200':
+          description: Password updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password updated successfully"
+        '400':
+          description: Bad request, possibly due to missing password field
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "password is required"
+        '401':
+          description: Unauthorized, authentication token is missing or invalid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal Server Error"
 
   /patiofy/auth/user/signup:
     post:

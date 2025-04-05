@@ -1,11 +1,12 @@
 const posts = require('../models/productschema');
 const errorFunction = require('../middlewares/CatchAsync.js');
 const carts = require('../models/cartschema.js');
+const CatchAsync = require('../middlewares/CatchAsync.js');
 
 
 
 //create a product post : 
-exports.createPost = async(req , res) =>{
+exports.createPost = CatchAsync(async(req , res, next) =>{
   try {
     const { name , description, price, size, fabric} = req.body;
     if(!req.files || req.files.length === 0){
@@ -19,7 +20,7 @@ exports.createPost = async(req , res) =>{
       },
     }));
     const Post = await posts.create({
-      userId : req.User._id,
+      userId : req.user._id,
       postImages : postImages,
       name,
       description,
@@ -36,10 +37,10 @@ exports.createPost = async(req , res) =>{
     console.log(error);
     return res.status(500).json({error : 'Internal Server Error'});
   }
-}
+});
 
 //update product post  : 
-exports.updatePost = async(req , res) => {
+exports.updatePost = CatchAsync( async(req , res, next) => {
   try {
     const { id , name, description, price} = req.body;
     const newData = {
@@ -61,10 +62,10 @@ exports.updatePost = async(req , res) => {
     console.log(error);
     return res.status(500).json({error : ' Internal Server Error '});
   }
-}
+});
 
 //get product by Id : 
-exports.getById = async(req , res) =>{
+exports.getById = CatchAsync( async(req , res, next) =>{
   try {
     const {id} = req.params.id;
     if(!id){
@@ -79,7 +80,7 @@ exports.getById = async(req , res) =>{
     console.log(error);
     return res.status(500).json({error : 'Internal Server Error'});
   }
-}
+})
 
 //delete a post : 
 exports.deletePost = async(req, res, next) =>{

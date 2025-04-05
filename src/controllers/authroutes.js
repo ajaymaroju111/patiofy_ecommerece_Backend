@@ -14,6 +14,25 @@ const {
 } = require("../utils/emailTemplates.js");
 const { default: mongoose } = require("mongoose");
 
+//set password after google oauth signup : 
+exports.setNewPassword = CatchAsync(async(req, res, next) => {
+  try {
+    const { password } = req.body;
+    if(!password){
+      return next(new ErrorHandler('password is required' , 401));
+    }
+    await users.findByIdAndUpdate(req.user._id, {password: password}, (err, user) =>{
+      if(err){
+        return next(new ErrorHandler('error in password updation', 402))
+      }
+      res.status(200).json({message : 'password updated successfully'});
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({error : 'Internal Server Error'});
+  }
+})
+
 //account signup for user :
 exports.signUp = CatchAsync(async (req, res, next) => {
   try {
@@ -146,7 +165,7 @@ exports.signIn = CatchAsync(async (req, res, next) => {
 
 //get user by ID :
 exports.getById = CatchAsync(async (req, res, next) => {
-    const user = await users.findById(req.User._id); //always mention :id in the route if params involved
+    const user = await users.findById(req.user._id); //always mention :id in the route if params involved
     console.log(user);
     return res.status(200).json({
       success: true,  // Fixed typo: "sucess" → "success"
@@ -219,7 +238,7 @@ exports.resetPassword = CatchAsync(async (req, res) => {
     if (!oldpassword || !newpassword) {
       return res.status(400).json({ error: "all fields are required" });
     }
-    const user = await users.findById(req.User._id).select("+password");
+    const user = await users.findById(req.user._id).select("+password");
     const isPassword = user.comparePassword(oldpassword);
     if (!isPassword) {
       return res.status(401).json({ message: "password doesnot match" });
@@ -243,18 +262,19 @@ exports.resetPassword = CatchAsync(async (req, res) => {
 //update user profile using ID :
 exports.update = CatchAsync(async (req, res, next) => {
   try {
-    const { firstname, lastname, username, email, avatar } = req.body;
+    const { firstname, lastname, username, phone, avatar } = req.body;
 
     const updatedData = {
       firstname,
       lastname,
       username,
+      phone
     };
 
     // Check if username or email is taken by another user
     const existingUser = await users.findOne({
-      $or: [{ username }, { email }],
-      _id: { $ne: req.User._id }, // Exclude current user
+      $or: [{ username }],
+      _id: { $ne: req.user._id }, // Exclude current user
     });
 
     if (existingUser) {
@@ -271,12 +291,10 @@ exports.update = CatchAsync(async (req, res, next) => {
       updatedData.avatar = req.files; // Assuming avatar is uploaded as a single file
     }
 
-    const updatedUser = await users.findByIdAndUpdate(req.User._id, updatedData, {
+    const updatedUser = await users.findByIdAndUpdate(req.user._id, updatedData, {
       new: true,
       runValidators: true,
     });
-    updatedUser.email = email;
-    updatedUser.save();
 
     return res.status(200).json({
       success: true,
@@ -290,11 +308,10 @@ exports.update = CatchAsync(async (req, res, next) => {
   }
 });
 
-
 //list all posts of a user :
 exports.myProducts = async (req, res) => {
   try {
-    const id = req.User._id;
+    const id = req.user._id;
     const products = await posts
       .find({ id })
       .populate("userId", "username firstname lastname email")
@@ -314,10 +331,10 @@ exports.contactForm = async (req, res) => {
       return res.status(401).json({ error: "All fields are required" });
     }
     const userContactForm = await queries.create({
-      userId: req.User._id,
-      firstname: req.User.firstname,
-      lastname: req.User.lastname,
-      phone: req.User._id,
+      userId: req.user._id,
+      firstname: req.user.firstname,
+      lastname: req.user.lastname,
+      phone: req.user._id,
       message,
     });
     await userContactForm.save();
@@ -350,7 +367,7 @@ exports.signOut = async (req, res) => {
 };
 
 //deleting user account :
-exports.deleteUser = CatchAsync (async(req, res, next) => {
+exports.deleteUser = CatchAsync(async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction(); // Start transaction
   try {
@@ -358,19 +375,19 @@ exports.deleteUser = CatchAsync (async(req, res, next) => {
     if (!password) {
       return next(new ErrorHandler('Password is required', 401));
     }
-    const user = await users.findById(req.User._id).select('+password');
+    const user = await users.findById(req.user._id).select('+password');
     const isPasswordMatch = await user.comparePassword(password);
     if (!isPasswordMatch) {
       return res.status(401).json({ message: "Incorrect password" });
     }
 
-    const deleted = await users.deleteOne({_id: req.User._id}).session('session');
+    const deleted = await users.deleteOne({_id: req.user._id}).session('session');
     if(deleted.deletedCount === 0){
       next(new ErrorHandler('User not Found'));
     }
-    await queries.deleteMany({_id: req.User_id}).session('session');
-    await posts.deleteMany({_id: req.User_id}).session('session');
-    await toAddress.deleteMany({_id: req.User_id}).session('session');
+    await queries.deleteMany({_id: req.user._id}).session('session');
+    await posts.deleteMany({_id: req.user._id}).session('session');
+    await toAddress.deleteMany({_id: req.user._id}).session('session');
 
     await session.commitTransaction();
     res.clearCookie("token", {
@@ -437,9 +454,9 @@ exports.addAddress = CatchAsync(async (req, res, next) => {
     const { country, firstname, lastname, phone, address, city, state } =
       req.body;
     const addressList = await toAddress.create({
-      userId: req.User._id,
+      userId: req.user._id,
       productId: productId,
-      email: req.User.email,
+      email: req.user.email,
       phone: phone,
       Shipping_Adderss: {
         country: country,
@@ -525,7 +542,7 @@ exports.deleteAddress = CatchAsync(async(req, res, next) =>{
 
 exports.viewAllAddresses = CatchAsync(async(req , res , next) =>{
   try {
-    const all = await toAddress.find({ userId: req.User._id});
+    const all = await toAddress.find({ userId: req.user._id});
     return res.status(200).json({
       success: true,
       all
@@ -544,10 +561,10 @@ exports.contactUs = CatchAsync(async (req, res, next) => {
   try {
     const { message } = req.body;
     const contactUs = await queries.create({
-      userId: req.User._id,
-      firstname: req.User.firstname,
-      lastname: req.User.lastname,
-      phone: req.User.phone,
+      userId: req.user._id,
+      firstname: req.user.firstname,
+      lastname: req.user.lastname,
+      phone: req.user.phone,
       message: message,
     });
     await contactUs.save();
