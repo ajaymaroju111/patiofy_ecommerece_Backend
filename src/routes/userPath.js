@@ -25,38 +25,49 @@ const {
   resend,
 } = require("../controllers/authroutes.js");
 const { authenticate } = require("../middlewares/authUser.js");
-
-//OAuth2 authentication  :
 const passport = require("passport");
 
 
-//user Routes :
+// 🔹 Step 1: Google OAuth Login Route
 router.get(
   "/google",
-  passport.authenticate("google", { scope: ["Profile", "email"] })
+  passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// Google OAuth Callback Route
+// 🔹 Step 2: Google OAuth Callback Route
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/patiofy/auth/signIn" }),
+  passport.authenticate("google", { failureRedirect: "/patiofy/auth/user/failed" }),
   (req, res) => {
-    // Generate a token after authentication
-    const token = req.user.token; // ✅ Fix: Use req.user.token instead of req.User
+    if (!req.user) {
+      return res.redirect("/patiofy/auth/user/failed");
+    }
 
+    // 🔹 Extract user & token from req.user
+    const { user, token } = req.user;
+
+    // ✅ Set JWT token in cookies for authentication
     res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict", 
+      httpOnly: true, // Prevents XSS attacks
+      // secure: process.env.NODE_ENV === "production", // Secure only in production
+      secure: 'secure', // Secure only in production
+      sameSite: "strict",
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
-    res.redirect("/success");
+    // ✅ Redirect to success page
+    res.redirect("/patiofy/auth/success");
   }
 );
+
+// 🔹 Step 3: Success Route (After Authentication)
 router.get("/success", (req, res) => {
-  const { token } = req.cookies;
-  return res.status(200).send(" Welcome :", token);
+  return res.status(200).json({ message: "Welcome!", user: req.user });
+});
+
+// 🔹 Step 4: Failure Route
+router.get("/failed", (req, res) => {
+  return res.status(401).json({ error: "Authentication Failed" });
 });
 
 

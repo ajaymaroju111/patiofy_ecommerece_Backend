@@ -17,7 +17,7 @@ tags:
 servers:
   - url: http://localhost:3000
     description: Local Server
-  - url: http://Patiofy.com
+  - url: http://147.93.97.20:3000/api-docs/#/
     description: Production Server
 components:
   securitySchemes:
@@ -43,10 +43,11 @@ paths:
     get:
       summary: Redirect to Google OAuth
       description: Initiates the Google authentication process.
+      tags:
+        - Authentication_OAuth2.0
       responses:
         "302":
           description: Redirects to Google's authentication page
-
 
   /patiofy/auth/user/signup:
     post:

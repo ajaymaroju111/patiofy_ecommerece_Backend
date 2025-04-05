@@ -9,7 +9,7 @@ exports.dbConnnection = async() =>{
         ? process.env.MONGODB_PRODUCTION
         : process.env.MONGODB_LOCAL;
 
-    await mongoose.connect(process.env.MONGODB_PRODUCTION,
+    await mongoose.connect(dbURI,
     {
       maxPoolSize : 500,
     })

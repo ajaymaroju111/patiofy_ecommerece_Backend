@@ -3,19 +3,18 @@ const app = express();
 const Limiter = require("express-rate-limit");
 const cors = require("cors");
 const corn = require("node-cron");
-const passport = require("passport");
+const passport = require('./src/config/passport.js');
 const session = require("express-session");
 const swaggerUI = require("swagger-ui-express");
 const YAML = require("yamljs");
 const SwaggerDocument = YAML.load("./api.yaml");
 const bodyParser = require("body-parser");
-const users = require("./src/models/userschema.js");
 const cookieParser = require('cookie-parser');
-
+require('./src/config/passport.js');
 //functions :
 const authroutes = require("./src/routes/userPath.js");
 const postroutes = require("./src/routes/productPaths.js");
-const { dbConnnection } = require("./config/dbConnection.js");
+const { dbConnnection } = require("./src/config/dbConnection.js");
 dbConnnection();
 
 
@@ -24,9 +23,6 @@ app.use(
     secret: process.env.JWT_SECRET, // Secret key for signing the session ID cookie
     resave: false, // Don't save session if it wasn't modified during the request
     saveUninitialized: false, // Don't save uninitialized sessions (good for login scenarios)
-    cookie: {
-      maxAge: 24 * 60 * 60 * 1000, // Set cookie expiration time (1 day)
-    },
   })
 );
 
@@ -81,7 +77,7 @@ app.use("/patiofy/auth/products", postroutes);
 //usage of swagger eith yaml code :
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(SwaggerDocument));
 
-const port = process.env.PORT;
+const port = process.env.PORT || 3001;
 app.listen(port, () => {
   console.log(`Server is Running on the port : ${port}`);
   console.log(
