@@ -1,19 +1,22 @@
-const mongoose = require("mongoose");
-require("dotenv").config();
+const mongoose = require('mongoose');
+require('dotenv').config();
 
-exports.dbConnnection = async () => {
+const dbConnnection = async () => {
   try {
-    const dbURI =
-      process.env.NODE_ENV === "production"
+    const mongoURI =
+      process.env.NODE_ENV === 'production'
         ? process.env.MONGODB_PRODUCTION
         : process.env.MONGODB_LOCAL;
 
-    await mongoose.connect(dbURI, {
-      maxPoolSize: 500,
+    await mongoose.connect(mongoURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     });
-    console.log("MongoDB Connected Successfully ✅");
+    console.log('✅ MongoDB Connected Successfully');
   } catch (error) {
-    console.log("mongodb connection error ❌", error);
+    console.error('❌ MongoDB Connection Error:', error);
     process.exit(1);
   }
 };
+
+module.exports = { dbConnnection };

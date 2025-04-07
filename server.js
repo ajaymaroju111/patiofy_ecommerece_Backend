@@ -15,7 +15,6 @@ require('./src/config/passport.js');
 const authroutes = require("./src/routes/userPath.js");
 const postroutes = require("./src/routes/productPaths.js");
 const { dbConnnection } = require("./src/config/dbConnection.js");
-const MongoStore = require('connect-mongo');
 dbConnnection();
 
 app.use(

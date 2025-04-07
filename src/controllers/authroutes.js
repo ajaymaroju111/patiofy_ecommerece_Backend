@@ -6,7 +6,6 @@ const CatchAsync = require("../middlewares/CatchAsync.js");
 const ErrorHandler = require("../utils/ErrorHandler.js");
 const { sendEmail } = require("../utils/sendEmail.js");
 const { generateCookie } = require("../middlewares/authUser.js");
-const bcrypt = require('bcrypt');
 const {
   conformSignup,
   forgetPassword,
