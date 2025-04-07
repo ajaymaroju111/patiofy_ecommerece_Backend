@@ -4,33 +4,40 @@ const users = require("../models/userschema.js");
 const corn = require("node-cron");
 
 //genenrate a cookie when a user is aurhtenticated :
-exports.generateCookie = async (req, res, next, user) => {
+exports.generateCookie = async (user, res, next) => {
   try {
     const data = {
       id: user._id,
-      email : user.email,
+      email: user.email,
       status: user.status,
     };
-
+  
     const key = process.env.JWT_SECRET;
-    const expiry = { expiresIn: "1d" };
-
-    const token = jwt.sign(data, key, expiry);
-
+    const expiryOptions = { expiresIn: "1d" };
+  
+    const token = jwt.sign(data, key, expiryOptions);
+  
     // Set the cookie
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Secure in production
-      sameSite: "Strict", 
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      secure: process.env.NODE_ENV === "production", // HTTPS only in production
+      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
     });
-    user.jwtExpiry = Date.now() + 24 * 60 * 60 * 1000;
+  
+    // Optionally store JWT expiry in DB
+    user.jwtExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await user.save();
+  
     if (next) next();
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
+  
 };
 
 //authenticate user before every route :
@@ -42,8 +49,8 @@ exports.authenticate = async (req, res, next) => {
     }
     //Verify the token :
     const decode = jwt.verify(token, process.env.JWT_SECRET);
-     //check if decode is not verified :
 
+     //check if decode is not verified :
     if (!decode) {
       res.clearCookie("token", {
         httpOnly: true,

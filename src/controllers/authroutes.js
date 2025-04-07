@@ -146,21 +146,21 @@ exports.signIn = CatchAsync(async (req, res, next) => {
     if (!userOrEmail || !password) {
       return next(new ErrorHandler('All fileds are requiured', 401))
     }
-    const User = await users
+    const user = await users
       .findOne({
         $or: [{ username: userOrEmail }, { email: userOrEmail }],
       })
       .select("+password");
-    const isValidPassword = await User.comparePassword(password);
+    const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
       return next(new ErrorHandler('password doesnot match', 401))
     }
-    await generateCookie(req, res, () => {
+    await generateCookie(user, res, () => {
       return res.status(200).json({
         success: true,
         message: "Login successful",
       });
-    }, User);
+    });
   } catch (error) {
     return res.status(500).json({
       success : false,
