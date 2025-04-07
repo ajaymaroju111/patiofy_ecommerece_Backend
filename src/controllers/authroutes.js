@@ -71,15 +71,6 @@ exports.signUp = CatchAsync(async (req, res, next) => {
       password,
     });
     await User.save();
-    const encodedId = Buffer.from(User._id, "utf-8").toString("base64");
-    await sendEmail({
-      to: User.email,
-      subject: "Account verification",
-      text: conformSignup(User.username, encodedId),
-    });
-    User.expirytime = Date.now() + 30*60*1000;
-    await User.save();
-    console.log(encodedId);
     return res.status(200).json({
       success : true,
       message: "verification has been send to the email, please verify",
