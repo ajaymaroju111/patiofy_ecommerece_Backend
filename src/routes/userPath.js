@@ -13,7 +13,6 @@ const {
   resetPassword,
   update,
   myProducts,
-  contactForm,
   signOut,
   deleteUser,
   filterProducts,
@@ -43,8 +42,7 @@ router.get(
     if (!req.user) {
       return res.redirect("/patiofy/auth/user/failed");
     }
-
-    // 🔹 Extract user & token from req.user
+    //extract token and user from the req.user
     const { user, token } = req.user;
 
     // Set JWT token in cookies for authentication
@@ -75,7 +73,6 @@ router.get("/me/:id", authenticate, getById);
 router.post("/password/forget", forgetPassword);
 router.post("/password/reset", authenticate, resetPassword);
 router.get("/products/:id", authenticate, myProducts);
-router.post("/submitform", authenticate, contactForm);
 router.delete("/delete", authenticate, deleteUser);
 router.get("/filter", filterProducts);
 router.put("/logout", authenticate, signOut);
@@ -88,6 +85,6 @@ router.delete("/address/:id", authenticate, deleteAddress);
 router.get("/adress/list", authenticate, viewAllAddresses);
 
 //Contact _ Us :
-router.post("/feedback", authenticate, contactUs);
+router.post("/query", authenticate, contactUs);
 
 module.exports = router;

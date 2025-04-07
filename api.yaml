@@ -17,7 +17,7 @@ tags:
 servers:
   - url: http://localhost:3000
     description: Local Server
-  - url: http://147.93.97.20:3000/api-docs/#/
+  - url: http://147.93.97.20:3000
     description: Production Server
 components:
   securitySchemes:
@@ -48,6 +48,7 @@ paths:
       responses:
         "302":
           description: Redirects to Google's authentication page
+
   /patiofy/auth/user/google/password:
     put:
       summary: Set a new password for the authenticated user
@@ -730,61 +731,6 @@ paths:
                     type: string
                     example: "Internal Server Error"
 
-  /patiofy/auth/user/submitform:
-    post:
-      summary: Submit a contact form
-      description: |
-        This endpoint allows a user to submit a contact form with their first name, last name, phone number, and message. 
-        All fields are required, and the form is associated with the authenticated user.
-      tags: 
-        - users
-      security:
-        - CookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                message:
-                  type: string
-                  description: The user's message.
-      responses:
-        '200':
-          description: Contact form submitted successfully.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "contact form submitted successfully"
-        '401':
-          description: Missing required fields.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "All fields are required"
-        '500':
-          description: Internal server error.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Internal Server Error"
- 
   /patiofy/auth/user/delete:
     delete:
       summary: Delete user account
@@ -917,7 +863,7 @@ paths:
                     example: "Internal Server Error"
 
   /patiofy/auth/user/logout:
-    post:
+    put:
       summary: Sign out user
       description: |
         This endpoint logs out the user by clearing the authentication token cookie. 
@@ -1679,7 +1625,7 @@ paths:
 
 #contact us form : 
 
-  /patiofy/auth/user/feedback:
+  /patiofy/auth/user/query:
     post:
       summary: Submit a Contact Us Message
       description: Allows an authenticated user to submit a message via the contact form.

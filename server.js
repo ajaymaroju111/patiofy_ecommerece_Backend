@@ -15,16 +15,18 @@ require('./src/config/passport.js');
 const authroutes = require("./src/routes/userPath.js");
 const postroutes = require("./src/routes/productPaths.js");
 const { dbConnnection } = require("./src/config/dbConnection.js");
+const MongoStore = require('connect-mongo');
 dbConnnection();
-
 
 app.use(
   session({
-    secret: process.env.JWT_SECRET, // Secret key for signing the session ID cookie
-    resave: false, // Don't save session if it wasn't modified during the request
-    saveUninitialized: false, // Don't save uninitialized sessions (good for login scenarios)
+    secret: process.env.JWT_SECRET, 
+    resave: false, 
+    saveUninitialized: false,
   })
 );
+
+
 
 app.use(cookieParser());
 //usage od limiter :
@@ -53,7 +55,7 @@ app.use(bodyParser.json());
 //   }
 // });
 
-//enable CORS :
+// enable CORS :
 app.use(
   cors({
     origin: "*",
@@ -77,10 +79,22 @@ app.use("/patiofy/auth/products", postroutes);
 //usage of swagger eith yaml code :
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(SwaggerDocument));
 
+app.use((err, req, res, next) => {
+  console.error('Internal Error:', err.stack);
+  res.status(500).send('Something broke!');
+});
+
+
 const port = process.env.PORT || 3001;
-app.listen(port, () => {
+app.listen(port,'0.0.0.0', () => {
   console.log(`Server is Running on the port : ${port}`);
-  console.log(
-    `Swagger - Docs are running on http://localhost:${port}/api-docs`
-  );
+  if(process.env.NODE_ENV === 'production'){
+    console.log(
+      `Swagger - Docs are running on Production server: http://147.93.97.20:${port}/api-docs 🚀 `
+    );
+  }else{
+    console.log(
+      `Swagger - Docs are running on Local server: http://localhost:${port}/api-docs ✅`
+    );
+  }
 });

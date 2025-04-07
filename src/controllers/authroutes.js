@@ -28,8 +28,11 @@ exports.setNewPassword = CatchAsync(async(req, res, next) => {
       res.status(200).json({message : 'password updated successfully'});
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({error : 'Internal Server Error'});
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 })
 
@@ -78,11 +81,15 @@ exports.signUp = CatchAsync(async (req, res, next) => {
     await User.save();
     console.log(encodedId);
     return res.status(200).json({
-      message: "verification has been send to the email , please verify",
+      success : true,
+      message: "verification has been send to the email, please verify",
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 });
 
@@ -105,10 +112,11 @@ exports.resend = CatchAsync( async(req, res, next) =>{
       message : "link send to the email successfully",
     })
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
-      error : 'Internal Server Error'
-    })
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 })
 
@@ -128,10 +136,16 @@ exports.verify = CatchAsync(async (req, res, next) => {
     User.status = "active";
     User.expirytime = undefined;
     await User.save();
-    return res.status(200).json({ message: "Account verified successfully" });
+    return res.status(200).json({ 
+      success : true,
+      message: "Account verified successfully", 
+    });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 });
 
@@ -140,7 +154,7 @@ exports.signIn = CatchAsync(async (req, res, next) => {
   try {
     const { userOrEmail, password } = req.body;
     if (!userOrEmail || !password) {
-      return res.status(400).json({ error: "All fields are required" });
+      return next(new ErrorHandler('All fileds are requiured', 401))
     }
     const User = await users
       .findOne({
@@ -149,7 +163,7 @@ exports.signIn = CatchAsync(async (req, res, next) => {
       .select("+password");
     const isValidPassword = await User.comparePassword(password);
     if (!isValidPassword) {
-      return res.status(401).json({ error: "password doesnot match" });
+      return next(new ErrorHandler('password doesnot match', 401))
     }
     await generateCookie(req, res, () => {
       return res.status(200).json({
@@ -158,17 +172,19 @@ exports.signIn = CatchAsync(async (req, res, next) => {
       });
     }, User);
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 });
 
 //get user by ID :
 exports.getById = CatchAsync(async (req, res, next) => {
-    const user = await users.findById(req.user._id); //always mention :id in the route if params involved
-    console.log(user);
+    const user = await users.findById(req.user._id);
     return res.status(200).json({
-      success: true,  // Fixed typo: "sucess" → "success"
+      success: true,
       user,
     });
 });
@@ -178,11 +194,11 @@ exports.forgetUsername = CatchAsync(async (req, res, next) => {
   try {
     const  {email}  = req.body;
     if (!email) {
-      return res.status(401).json({ errror: " Internal Server Error" });
+      return next( new ErrorHandler('email is required', 401));
     }
     const user = await users.findOne({ email });
     if (!user) {
-      return res.status(401).json({ error: " Incorrect Email " });
+      return next(new ErrorHandler('user does not exist', 404))
     }
     const fullname = `${user.firstname} + ${user.lastname}`;
     await sendEmail({
@@ -195,8 +211,11 @@ exports.forgetUsername = CatchAsync(async (req, res, next) => {
       message: "reset password link sent to the email",
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: " Internal Sever Error " });
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 });
 
@@ -205,16 +224,16 @@ exports.forgetPassword = CatchAsync(async (req, res, next) => {
   try {
     const { username, email } = req.body;
     if (!username || !email) {
-      return res.status(400).json({ error: "all fields are required" });
+      return next(new ErrorHandler('All fields are required'))
     }
     const user = await users.findOne({
       $and: [{ username }, { email }],
     });
     if (!user) {
       if (user !== username) {
-        return res.status(401).json({ error: " Incorrect Username" });
+        return next(new ErrorHandler('incorrect username', 401))
       }
-      return res.status(401).json({ error: "incorrect email" });
+      return next(new ErrorHandler('incorrect password',401));
     }
     await sendEmail({
       to: email,
@@ -226,22 +245,25 @@ exports.forgetPassword = CatchAsync(async (req, res, next) => {
       message: "reset password link sent to the email",
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: " Internal Server Error " });
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 });
 
 // reset the password using old password :
-exports.resetPassword = CatchAsync(async (req, res) => {
+exports.resetPassword = CatchAsync(async (req, res, next) => {
   try {
     const { oldpassword, newpassword } = req.body;
-    if (!oldpassword || !newpassword) {
-      return res.status(400).json({ error: "all fields are required" });
+    if (!oldpassword || !newpassword){
+      return next(new ErrorHandler('All fields are required'));
     }
     const user = await users.findById(req.user._id).select("+password");
     const isPassword = user.comparePassword(oldpassword);
     if (!isPassword) {
-      return res.status(401).json({ message: "password doesnot match" });
+      return next(new ErrorHandler('incorrect password', 401))
     }
     user.password = newpassword;
     await user.save();
@@ -254,8 +276,11 @@ exports.resetPassword = CatchAsync(async (req, res) => {
       .status(200)
       .json({ message: "password updated successfully, Please Login" });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 });
 
@@ -268,15 +293,13 @@ exports.update = CatchAsync(async (req, res, next) => {
       firstname,
       lastname,
       username,
-      phone
+      phone,
     };
-
     // Check if username or email is taken by another user
     const existingUser = await users.findOne({
       $or: [{ username }],
       _id: { $ne: req.user._id }, // Exclude current user
     });
-
     if (existingUser) {
       if (existingUser.username === username) {
         return res.status(400).json({ error: "Username is already taken" });
@@ -285,31 +308,35 @@ exports.update = CatchAsync(async (req, res, next) => {
         return res.status(400).json({ error: "Email is already taken" });
       }
     }
-
-    // Handle avatar update if provided : 
-    if (avatar && req.files?.avatar) {
-      updatedData.avatar = req.files; // Assuming avatar is uploaded as a single file
+    if (req.file) {
+      updatedData.avatar = {
+        name: req.file.originalname,
+        img: {
+          data: req.file.buffer,
+          contentType: req.file.mimetype,
+        },
+      };
     }
-
     const updatedUser = await users.findByIdAndUpdate(req.user._id, updatedData, {
       new: true,
       runValidators: true,
     });
-
     return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
-      user: updatedUser,
+      updatedUser,
     });
-
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 });
 
 //list all posts of a user :
-exports.myProducts = async (req, res) => {
+exports.myProducts = CatchAsync(async (req, res, next) => {
   try {
     const id = req.user._id;
     const products = await posts
@@ -318,38 +345,16 @@ exports.myProducts = async (req, res) => {
       .exec();
     return res.status(200).json({ products });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-};
-
-//submit contact form :
-exports.contactForm = async (req, res) => {
-  try {
-    const { message } = req.body;
-    if (!message) {
-      return res.status(401).json({ error: "All fields are required" });
-    }
-    const userContactForm = await queries.create({
-      userId: req.user._id,
-      firstname: req.user.firstname,
-      lastname: req.user.lastname,
-      phone: req.user._id,
-      message,
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
     });
-    await userContactForm.save();
-    return res.status(200).json({
-      success: true,
-      message: "contact form submitted successfully",
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal Server Error" });
   }
-};
+});
 
 // user sign out :
-exports.signOut = async (req, res) => {
+exports.signOut = CatchAsync(async(req, res, next) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
@@ -361,10 +366,13 @@ exports.signOut = async (req, res) => {
       message: "user logged out successfully",
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
-};
+});
 
 //deleting user account :
 exports.deleteUser = CatchAsync(async (req, res, next) => {
@@ -378,12 +386,12 @@ exports.deleteUser = CatchAsync(async (req, res, next) => {
     const user = await users.findById(req.user._id).select('+password');
     const isPasswordMatch = await user.comparePassword(password);
     if (!isPasswordMatch) {
-      return res.status(401).json({ message: "Incorrect password" });
+      return next(new ErrorHandler('incorrect password', 401));
     }
 
     const deleted = await users.deleteOne({_id: req.user._id}).session('session');
     if(deleted.deletedCount === 0){
-      next(new ErrorHandler('User not Found'));
+      next(new ErrorHandler('User not Found', 404));
     }
     await queries.deleteMany({_id: req.user._id}).session('session');
     await posts.deleteMany({_id: req.user._id}).session('session');
@@ -397,8 +405,11 @@ exports.deleteUser = CatchAsync(async (req, res, next) => {
     });
   } catch (error) {
     session.abortTransaction();
-    console.log(error);
-    return res.status(500).json({ error: "Internal Server Error"});
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }finally{
     session.endSession();
   }
@@ -441,12 +452,15 @@ exports.filterProducts = async (req, res) => {
       products,
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 };
 
-//*********************   DELIVERY ADDRESS:    ************************ */
+//*********************     DELIVERY ADDRESS:       ****************** */
 
 exports.addAddress = CatchAsync(async (req, res, next) => {
   try {
@@ -473,8 +487,11 @@ exports.addAddress = CatchAsync(async (req, res, next) => {
       message: "address added successfully",
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ Server: "Internal Server Error" });
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 });
 
@@ -503,8 +520,11 @@ exports.updateAddress = CatchAsync(async (req, res, next) => {
       message : "updated successfully"
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 });
 
@@ -517,9 +537,10 @@ exports.getAddress = CatchAsync(async(req, res, next) =>{
       address,
     })
   } catch (error) {
-    console.log(error);
-    return res.status.json({
-      error : 'Internal Server Error'
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
     });
   }
 });
@@ -533,47 +554,55 @@ exports.deleteAddress = CatchAsync(async(req, res, next) =>{
       message: 'address Deleted'
     })
   } catch (error) {
-    console.log(error);
-    return res.status(200).json({
-      error : 'Internal Server Error'
-    })
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 });
 
 exports.viewAllAddresses = CatchAsync(async(req , res , next) =>{
   try {
-    const all = await toAddress.find({ userId: req.user._id});
+    const alladdresses = await toAddress.find({ userId: req.user._id});
     return res.status(200).json({
       success: true,
-      all
+      alladdresses,
     })
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
-      error : "Internal Server Error",
+      success : false,
+      message : 'Internal Server Error',
+      error : error
     });
   }
 });
 
-//********************   Submitting Contact Form :  ********************** */
+//*********************   Submitting Contact Form :  ********************** */
 
-exports.contactUs = CatchAsync(async (req, res, next) => {
+exports.contactUs = CatchAsync(async(req, res, next) => {
   try {
     const { message } = req.body;
-    const contactUs = await queries.create({
+    if (!message) {
+      return next(new ErrorHandler('message cannot be empty'));
+    }
+    const userContactForm = await queries.create({
       userId: req.user._id,
       firstname: req.user.firstname,
       lastname: req.user.lastname,
       phone: req.user.phone,
-      message: message,
+      message,
     });
-    await contactUs.save();
+    await userContactForm.save();
     return res.status(200).json({
       success: true,
-      message: "submitted successfully",
+      message: "contact form submitted successfully",
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 });

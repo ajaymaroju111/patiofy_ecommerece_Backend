@@ -41,9 +41,9 @@ const userschema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: [true, "phone number is required"],
-      maxlength: 10,
-      minlength: 10,
+      // required: [true, "phone number is required"],
+      // maxlength: 10,
+      // minlength: 10,
     },
     password: {
       type: String,
@@ -69,12 +69,6 @@ const userschema = new mongoose.Schema(
       default: "inactive",
       trim: true,
     },
-    accessToken: {
-      type: String,
-    },
-    refreshToken: {
-      type: String,
-    },
     expirytime: {
       type: Date,
     },
@@ -93,23 +87,25 @@ userschema.methods.comparePassword = function (plainPassword) {
 //Hash all the incomming images :
 userschema.pre("save", async function (next) {
   if (this.isModified("avatar")) {
-    this.avatar.img.data = await bcrypt(this.avatar.img.data, 10);
+    this.avatar.img.data = await bcrypt.hash(this.avatar.img.data, 10);
   }
   next();
 });
 
 //send the verification mail every time when email get updated :
 userschema.pre("save", async function (next) {
-  if (this.isModified("email")) {
-    const encodedId = Buffer.from(this._id.toString(), "utf-8").toString("base64");
-    this.expirytime = Date.now() + 30 * 60 * 1000;
-    this.status = 'inactive';
-    await sendEmail({
-      to: this.email,
-      subject: "Account verification",
-      text: conformSignup(this.username, encodedId),
-    });
-    console.log('Email updated in the DB, EncodedID : ', encodedId);
+  if(this.googleId === undefined){
+    if (this.isModified("email")) {
+      const encodedId = Buffer.from(this._id.toString(), "utf-8").toString("base64");
+      this.expirytime = Date.now() + 30 * 60 * 1000;
+      this.status = 'inactive';
+      await sendEmail({
+        to: this.email,
+        subject: "Account verification",
+        text: conformSignup(this.username, encodedId),
+      });
+      console.log('Email updated in the DB, EncodedID : ', encodedId);
+    }
   }
   next();
 });

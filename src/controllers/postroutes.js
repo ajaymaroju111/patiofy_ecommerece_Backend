@@ -2,6 +2,7 @@ const posts = require('../models/productschema');
 const errorFunction = require('../middlewares/CatchAsync.js');
 const carts = require('../models/cartschema.js');
 const CatchAsync = require('../middlewares/CatchAsync.js');
+const ErrorHandler = require('../utils/ErrorHandler.js');
 
 
 
@@ -10,7 +11,7 @@ exports.createPost = CatchAsync(async(req , res, next) =>{
   try {
     const { name , description, price, size, fabric} = req.body;
     if(!req.files || req.files.length === 0){
-      return res.status(401).json({message : "product pics are required"})
+      return next(new ErrorHandler('post photos are required', 400))
     }
     const postImages = req.files.map((file) => ({
       name: file.originalname,
@@ -34,8 +35,11 @@ exports.createPost = CatchAsync(async(req , res, next) =>{
       message : "product added successfully",
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({error : 'Internal Server Error'});
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 });
 
@@ -57,10 +61,12 @@ exports.updatePost = CatchAsync( async(req , res, next) => {
       success : true,
       message : 'post updated successfully',
   })
-
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({error : ' Internal Server Error '});
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 });
 
@@ -68,26 +74,23 @@ exports.updatePost = CatchAsync( async(req , res, next) => {
 exports.getById = CatchAsync( async(req , res, next) =>{
   try {
     const {id} = req.params.id;
-    if(!id){
-      return res.status(401).json({message : 'id is required'})
-    }
     const post = await posts.findById(id).populate('userId' , 'firstname lastname username email').exec();
     return res.status(200).json({
       success : true,
       post,
     })
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({error : 'Internal Server Error'});
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 })
 
 //delete a post : 
 exports.deletePost = async(req, res, next) =>{
     const { id } = req.params.id;
-    if(!id){
-      return next(new errorFunction('Id not received ', 401))
-    }
     await posts.findByIdAndDelete( id );
     return res.status(200).json({
       success : true,
@@ -115,8 +118,11 @@ exports.addToCart = async(req , res) =>{
       message : 'product added to cart successfully'
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({error : 'Internal Server Error'});
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 }
 
@@ -140,8 +146,11 @@ exports.updateCart = async(req, res) =>{
       runValidators : true,
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({error : ' Internal Server Error '});
+    return res.status(500).json({
+      success : false,
+      message : 'Internal Server Error',
+      error : error
+    });
   }
 }
 
