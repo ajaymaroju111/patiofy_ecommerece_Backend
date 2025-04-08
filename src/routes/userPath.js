@@ -23,6 +23,7 @@ const {
   viewAllAddresses,
   contactUs,
   resend,
+  
 } = require("../controllers/authroutes.js");
 const { authenticate } = require("../middlewares/authUser.js");
 const passport = require("passport");

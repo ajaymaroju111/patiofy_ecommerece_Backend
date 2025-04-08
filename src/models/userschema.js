@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const { sendEmail } = require("../utils/sendEmail.js");
 const { conformSignup } = require('../utils/emailTemplates.js');
+const crypto = require('crypto');
 
 const userschema = new mongoose.Schema(
   {
@@ -13,6 +14,7 @@ const userschema = new mongoose.Schema(
       img: {
         data: Buffer,
         contentType: String,
+        hash : String,
       },
     },
     firstname: {
@@ -85,12 +87,21 @@ userschema.methods.comparePassword = function (plainPassword) {
 };
 
 //Hash all the incomming images :
+
+
 userschema.pre("save", async function (next) {
-  if (this.isModified("avatar")) {
-    this.avatar.img.data = await bcrypt.hash(this.avatar.img.data, 10);
+  if (this.isModified("avatar") && this.avatar?.img?.data) {
+    const hash = crypto
+      .createHash("sha256")
+      .update(this.avatar.img.data)
+      .digest("hex");
+
+    // Store the hash alongside the image data (or however you want)
+    this.avatar.img.hash = hash;
   }
   next();
 });
+
 
 //send the verification mail every time when email get updated :
 userschema.pre("save", async function (next) {

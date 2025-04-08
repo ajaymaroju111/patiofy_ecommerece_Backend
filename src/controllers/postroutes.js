@@ -3,6 +3,7 @@ const errorFunction = require('../middlewares/CatchAsync.js');
 const carts = require('../models/cartschema.js');
 const CatchAsync = require('../middlewares/CatchAsync.js');
 const ErrorHandler = require('../utils/ErrorHandler.js');
+const { default: mongoose } = require('mongoose');
 
 
 
@@ -103,14 +104,18 @@ exports.deletePost = CatchAsync(async(req, res, next) =>{
 //adding to the cart : 
 exports.addToCart = async(req , res) =>{
   try {
-    const { productId } = req.params;
+    const  {productId}  = req.body;
     const post = await posts.findById(productId);
+    if(!post){
+      return res.status(404).json({
+        message : 'product not found'
+      })
+    }
     const cart = await carts.create({
-      cartImages : [post.postImages],
+      cartImages : post.postImages,
       userId : req.user._id,
       productId : post._id,
       price : post.price,
-      quantity,
     })
     await cart.save();
     return res.status(200).json({
@@ -118,6 +123,7 @@ exports.addToCart = async(req , res) =>{
       message : 'product added to cart successfully'
     });
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       success : false,
       message : 'Internal Server Error',
@@ -128,12 +134,42 @@ exports.addToCart = async(req , res) =>{
 
 //get cart details by id : 
 exports.getCartById = async(req , res) => {
-    const { cartId } = req.params.id;
-    const cart = await carts.findById(cartId);
+  try {
+    const {id}  = req.params;
+    console.log(id);
+        // ✅ Validate ObjectId
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid cart ID format",
+          });
+        }
+    
+    // const cart = await carts.findById(id)
+    // .populate('productId') // optional: populate related product
+    // .populate('userId');    // optional: populate related user
+    const cart = await carts.findById(id);
+
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart not found",
+      });
+    }
+
     return res.status(200).json({
-      success : true,
+      success: true,
       cart,
     });
+
+  } catch (error) {
+    console.error("Error in getCartById:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message || error,
+    });
+  }
 }
 
 //update cart by id : 

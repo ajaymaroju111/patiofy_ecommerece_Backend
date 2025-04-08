@@ -15,6 +15,7 @@ const {
   getCartById,
   updateCart,
   deleteCart,
+  
 } = require('../controllers/postroutes.js');
 
 router.post('/create', authenticate, multipleUploads, createPost);

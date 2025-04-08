@@ -36,7 +36,7 @@ exports.setNewPassword = CatchAsync(async(req, res, next) => {
 })
 
 //account signup for user :
-exports.signUp = CatchAsync(async (req, res, next) => {
+exports.signUp = CatchAsync(async(req, res, next) => {
   try {
     const { firstname, lastname, username, email, phone, password } = req.body;
     const existed = await users.findOne({
@@ -190,7 +190,7 @@ exports.forgetUsername = CatchAsync(async (req, res, next) => {
     if (!user) {
       return next(new ErrorHandler('user does not exist', 404))
     }
-    const fullname = `${user.firstname} + ${user.lastname}`;
+    const fullname = `${user.firstname}  ${user.lastname}`;
     await sendEmail({
       to: email,
       subject: "forget Username request",
@@ -277,7 +277,7 @@ exports.resetPassword = CatchAsync(async (req, res, next) => {
 //update user profile using ID :
 exports.update = CatchAsync(async (req, res, next) => {
   try {
-    const { firstname, lastname, username, phone, avatar } = req.body;
+    const { firstname, lastname, username, phone } = req.body;
 
     const updatedData = {
       firstname,
@@ -518,15 +518,22 @@ exports.updateAddress = CatchAsync(async (req, res, next) => {
   }
 });
 
-exports.getAddress = CatchAsync(async(req, res, next) =>{
+exports.getAddress = CatchAsync(async (req, res, next) =>{
   try {
-    const {addressId} = req.params;
-    const address = toAddress.findById(addressId);
+    const   {id}  = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid address ID format",
+      });
+    }
+    const address = await toAddress.findById(id);
     return res.status(200).json({
       success : true,
       address,
     })
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       success : false,
       message : 'Internal Server Error',
@@ -586,7 +593,7 @@ exports.contactUs = CatchAsync(async(req, res, next) => {
     await userContactForm.save();
     return res.status(200).json({
       success: true,
-      message: "contact form submitted successfully",
+      message: "query submitted successfully",
     });
   } catch (error) {
     return res.status(500).json({

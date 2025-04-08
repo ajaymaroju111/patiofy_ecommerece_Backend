@@ -29,12 +29,12 @@ components:
 info:
   title: Patiofy website Api
   description: API for patiofy website
-  contact: 
+  contact:
     name: support team
     url: http://Patiofy.com/contactUs
     email: ajaymaroju@techpixe.com
   termsOfServices: http://Patiofy.com/terms
-  licence: 
+  licence:
     name: MIT Licence
     url: http://opensource.org/licenses/MIT
 paths:
@@ -70,7 +70,7 @@ paths:
               required:
                 - password
       responses:
-        '200':
+        "200":
           description: Password updated successfully
           content:
             application/json:
@@ -80,7 +80,7 @@ paths:
                   message:
                     type: string
                     example: "Password updated successfully"
-        '400':
+        "400":
           description: Bad request, possibly due to missing password field
           content:
             application/json:
@@ -90,7 +90,7 @@ paths:
                   error:
                     type: string
                     example: "password is required"
-        '401':
+        "401":
           description: Unauthorized, authentication token is missing or invalid
           content:
             application/json:
@@ -100,7 +100,7 @@ paths:
                   error:
                     type: string
                     example: "Unauthorized"
-        '500':
+        "500":
           description: Internal server error
           content:
             application/json:
@@ -117,7 +117,7 @@ paths:
       description: |
         This endpoint allows a user to register by providing their first name, last name, username, email, password, and a profile photo. 
         It checks if the username or email already exists and sends a verification email upon successful registration.
-      tags: 
+      tags:
         - users
       requestBody:
         required: true
@@ -143,7 +143,7 @@ paths:
                   format: email
                   description: The user's email address.
                   example: marojuajay111@gmail.com
-                phone: 
+                phone:
                   type: string
                   description: the user's phone number
                   example: 9000000000
@@ -157,7 +157,7 @@ paths:
                   format: binary
                   description: The user's profile photo.
       responses:
-        '200':
+        "200":
           description: Verification email sent successfully.
           content:
             application/json:
@@ -167,7 +167,7 @@ paths:
                   message:
                     type: string
                     example: "verification has been sent to the email, please verify"
-        '401':
+        "401":
           description: Username or email already exists.
           content:
             application/json:
@@ -177,7 +177,7 @@ paths:
                   error:
                     type: string
                     example: "username already taken, try another"
-        '404':
+        "404":
           description: Profile photo is required.
           content:
             application/json:
@@ -187,7 +187,7 @@ paths:
                   message:
                     type: string
                     example: "profile photo is required"
-        '500':
+        "500":
           description: Internal server error.
           content:
             application/json:
@@ -204,7 +204,7 @@ paths:
       description: |
         This endpoint verifies a user's account by decoding the verification key sent as a query parameter. 
         It checks if the verification time has expired and updates the user's status to "active" upon successful verification.
-      tags: 
+      tags:
         - users
       parameters:
         - name: verificationKey
@@ -214,7 +214,7 @@ paths:
             type: string
           description: The base64 encoded verification key sent to the user's email.
       responses:
-        '200':
+        "200":
           description: Account verified successfully.
           content:
             application/json:
@@ -224,7 +224,7 @@ paths:
                   message:
                     type: string
                     example: "Account verified successfully"
-        '408':
+        "408":
           description: Verification time expired.
           content:
             application/json:
@@ -234,7 +234,7 @@ paths:
                   message:
                     type: string
                     example: "Time expired, please register"
-        '500':
+        "500":
           description: Internal server error.
           content:
             application/json:
@@ -244,12 +244,12 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error"
-  
+
   /patiofy/auth/user/resend:
     post:
       summary: Resend Account Verification Email
       description: Sends a verification email with a new expiration time.
-      tags: 
+      tags:
         - users
       requestBody:
         required: true
@@ -288,7 +288,7 @@ paths:
       description: |
         This endpoint allows a user to sign in by providing their username or email and password. 
         It verifies the credentials, generates a cookie for authentication, and returns a success message upon successful login.
-      tags: 
+      tags:
         - users
       security:
         - CookieAuth: []
@@ -309,7 +309,7 @@ paths:
                   description: The user's password.
                   example: Ajay@110125
       responses:
-        '200':
+        "200":
           description: Login successful.
           content:
             application/json:
@@ -322,7 +322,7 @@ paths:
                   message:
                     type: string
                     example: "login successfully"
-        '400':
+        "400":
           description: Missing required fields.
           content:
             application/json:
@@ -332,7 +332,7 @@ paths:
                   error:
                     type: string
                     example: "All fields are required"
-        '401':
+        "401":
           description: Invalid credentials.
           content:
             application/json:
@@ -342,7 +342,7 @@ paths:
                   error:
                     type: string
                     example: "password doesnot match"
-        '500':
+        "500":
           description: Internal server error.
           content:
             application/json:
@@ -358,14 +358,14 @@ paths:
       summary: Get user by ID
       description: |
         This endpoint retrieves a user's details by their unique ID.
-      tags: 
+      tags:
         - users
       security:
         - CookieAuth: []
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: User details retrieved successfully.
           content:
             application/json:
@@ -388,7 +388,7 @@ paths:
                       email:
                         type: string
                         example: "johndoe@example.com"
-        '404':
+        "404":
           description: User not found.
           content:
             application/json:
@@ -401,7 +401,7 @@ paths:
                   message:
                     type: string
                     example: "User not found"
-        '500':
+        "500":
           description: Internal server error.
           content:
             application/json:
@@ -418,8 +418,8 @@ paths:
   /patiofy/auth/user/update:
     put:
       summary: Update user profile
-      description: Updates the authenticated user's profile details and avatar.
-      tags: 
+      description: Updates the current user's profile details including username, name, phone, and optionally an avatar.
+      tags:
         - users
       security:
         - CookieAuth: []
@@ -432,22 +432,21 @@ paths:
               properties:
                 firstname:
                   type: string
-                  example: arjun
+                  example: John
                 lastname:
                   type: string
-                  example: Das
+                  example: Doe
                 username:
                   type: string
-                  example: iam_arjun
-                email:
+                  example: johndoe123
+                phone:
                   type: string
-                  format: email
-                  example: marojuajay222@gmail.com
+                  example: "+1234567890"
                 avatar:
                   type: string
                   format: binary
       responses:
-        '200':
+        "200":
           description: Profile updated successfully
           content:
             application/json:
@@ -460,10 +459,10 @@ paths:
                   message:
                     type: string
                     example: Profile updated successfully
-                  user:
-                    $ref: '#/components/schemas/User'
-        '400':
-          description: Validation error (e.g., email or username taken)
+                  updatedUser:
+                    $ref: "#/components/schemas/User"
+        "400":
+          description: Username or email is already taken
           content:
             application/json:
               schema:
@@ -472,24 +471,60 @@ paths:
                   error:
                     type: string
                     example: Username is already taken
-        '500':
-          description: Internal Server Error
+        "500":
+          description: Internal server error
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: false
                   message:
                     type: string
                     example: Internal Server Error
+                  error:
+                    type: object
+            components:
+              schemas:
+                User:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                      example: "660feab4e3ac384ac4743b8f"
+                    firstname:
+                      type: string
+                    lastname:
+                      type: string
+                    username:
+                      type: string
+                    phone:
+                      type: string
+                    email:
+                      type: string
+                    avatar:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        img:
+                          type: object
+                          properties:
+                            data:
+                              type: string
+                              format: byte
+                            contentType:
+                              type: string
 
-  /patiofy/auth/user/username/forget: 
+  /patiofy/auth/user/username/forget:
     post:
       summary: Request forgotten username
       description: |
         This endpoint allows a user to request their forgotten username by providing their email address. 
         If the email is valid, the username is sent to the user's email.
-      tags: 
+      tags:
         - users
       security:
         - CookieAuth: []
@@ -506,7 +541,7 @@ paths:
                   description: The user's email address.
                   example: marojuajay111@gmail.com
       responses:
-        '200':
+        "200":
           description: Username sent successfully.
           content:
             application/json:
@@ -519,7 +554,7 @@ paths:
                   message:
                     type: string
                     example: "reset password link sent to the email"
-        '401':
+        "401":
           description: Invalid email or missing email.
           content:
             application/json:
@@ -529,7 +564,7 @@ paths:
                   error:
                     type: string
                     example: "Incorrect Email"
-        '500':
+        "500":
           description: Internal server error.
           content:
             application/json:
@@ -546,7 +581,7 @@ paths:
       description: |
         This endpoint allows a user to request a password reset by providing their username and email address. 
         If the credentials are valid, a password reset link is sent to the user's email.
-      tags: 
+      tags:
         - users
       security:
         - CookieAuth: []
@@ -567,7 +602,7 @@ paths:
                   description: The user's email address.
                   example: marojuajay111@gmail.com
       responses:
-        '200':
+        "200":
           description: Password reset link sent successfully.
           content:
             application/json:
@@ -580,7 +615,7 @@ paths:
                   message:
                     type: string
                     example: "reset password link sent to the email"
-        '400':
+        "400":
           description: Missing required fields.
           content:
             application/json:
@@ -590,7 +625,7 @@ paths:
                   error:
                     type: string
                     example: "all fields are required"
-        '401':
+        "401":
           description: Invalid credentials.
           content:
             application/json:
@@ -600,7 +635,7 @@ paths:
                   error:
                     type: string
                     example: "Incorrect Username or Email"
-        '500':
+        "500":
           description: Internal server error.
           content:
             application/json:
@@ -617,7 +652,7 @@ paths:
       description: |
         This endpoint allows a user to reset their password by providing their old password and a new password. 
         If the old password matches, the new password is updated, and the user is logged out.
-      tags: 
+      tags:
         - users
       security:
         - CookieAuth: []
@@ -635,7 +670,7 @@ paths:
                   type: string
                   description: The new password to set.
       responses:
-        '200':
+        "200":
           description: Password updated successfully.
           content:
             application/json:
@@ -645,7 +680,7 @@ paths:
                   message:
                     type: string
                     example: "password updated successfully, Please Login"
-        '400':
+        "400":
           description: Missing required fields.
           content:
             application/json:
@@ -655,7 +690,7 @@ paths:
                   error:
                     type: string
                     example: "all fields are required"
-        '401':
+        "401":
           description: Old password does not match.
           content:
             application/json:
@@ -665,7 +700,7 @@ paths:
                   message:
                     type: string
                     example: "password does not match"
-        '500':
+        "500":
           description: Internal server error.
           content:
             application/json:
@@ -682,12 +717,12 @@ paths:
       description: |
         This endpoint retrieves all products associated with the authenticated user. 
         The products are populated with the user's details (username, first name, last name, and email).
-      tags: 
+      tags:
         - users
       security:
         - CookieAuth: []
       responses:
-        '200':
+        "200":
           description: Products retrieved successfully.
           content:
             application/json:
@@ -719,7 +754,7 @@ paths:
                               format: email
                               description: The user's email address.
                         # Add other product fields as needed
-        '500':
+        "500":
           description: Internal server error.
           content:
             application/json:
@@ -737,7 +772,7 @@ paths:
         This endpoint allows a user to delete their account. 
         The user must provide their password for verification. 
         If the password is correct, the account is deleted, and the authentication token is cleared.
-      tags: 
+      tags:
         - users
       security:
         - CookieAuth: []
@@ -753,7 +788,7 @@ paths:
                   description: The user's password for verification.
                   example: Ajay@110125
       responses:
-        '200':
+        "200":
           description: User account deleted successfully.
           content:
             application/json:
@@ -766,7 +801,7 @@ paths:
                   message:
                     type: string
                     example: "User account deleted successfully"
-        '401':
+        "401":
           description: Password is required or incorrect.
           content:
             application/json:
@@ -776,7 +811,7 @@ paths:
                   message:
                     type: string
                     example: "password is required or Incorrect password"
-        '500':
+        "500":
           description: Internal server error.
           content:
             application/json:
@@ -785,7 +820,7 @@ paths:
                 properties:
                   error:
                     type: string
-                    example: "Internal Server Error" 
+                    example: "Internal Server Error"
 
   /patiofy/auth/user/filter:
     get:
@@ -793,7 +828,7 @@ paths:
       description: |
         This endpoint allows filtering products based on query parameters such as name, price range, size, and fabric. 
         The results are sorted by price in ascending order and include only the specified fields (name, price, size, fabric).
-      tags: 
+      tags:
         - users
       security:
         - CookieAuth: []
@@ -823,7 +858,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Products filtered successfully.
           content:
             application/json:
@@ -850,7 +885,7 @@ paths:
                         fabric:
                           type: string
                           description: The product's fabric.
-        '500':
+        "500":
           description: Internal server error.
           content:
             application/json:
@@ -867,12 +902,12 @@ paths:
       description: |
         This endpoint logs out the user by clearing the authentication token cookie. 
         The cookie is configured with `httpOnly`, `secure`, and `sameSite` attributes for security.
-      tags: 
+      tags:
         - users
       security:
         - CookieAuth: []
       responses:
-        '200':
+        "200":
           description: User logged out successfully.
           content:
             application/json:
@@ -885,7 +920,7 @@ paths:
                   message:
                     type: string
                     example: "user logged out successfully"
-        '500':
+        "500":
           description: Internal server error.
           content:
             application/json:
@@ -896,14 +931,13 @@ paths:
                     type: string
                     example: "Internal Server Error"
 
-
-#product routes YAML  : 
+  #product routes YAML  :
 
   /patiofy/auth/products/create:
     post:
       summary: Create a new post
       description: Adds a new product post with images.
-      tags: 
+      tags:
         - products
       security:
         - CookieAuth: []
@@ -936,14 +970,14 @@ paths:
                   type: string
                   description: Fabric type of the product
                   example: "Cotton"
-                files:
+                images:
                   type: array
                   items:
                     type: string
                     format: binary
                   description: Product images (required)
       responses:
-        '200':
+        "200":
           description: Product added successfully
           content:
             application/json:
@@ -956,7 +990,7 @@ paths:
                   message:
                     type: string
                     example: "Product added successfully"
-        '401':
+        "401":
           description: Product images are required
           content:
             application/json:
@@ -966,7 +1000,7 @@ paths:
                   message:
                     type: string
                     example: "Product pics are required"
-        '500':
+        "500":
           description: Internal Server Error
           content:
             application/json:
@@ -976,12 +1010,12 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error"
-    
+
   /patiofy/auth/products/{id}:
     get:
       summary: Retrieve a post by ID
       description: Fetches the details of a specific product post using its ID.
-      tags: 
+      tags:
         - products
       security:
         - CookieAuth: []
@@ -994,7 +1028,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Post retrieved successfully
           content:
             application/json:
@@ -1041,7 +1075,7 @@ paths:
                           email:
                             type: string
                             example: "johndoe@example.com"
-        '401':
+        "401":
           description: ID is required
           content:
             application/json:
@@ -1051,7 +1085,7 @@ paths:
                   message:
                     type: string
                     example: "ID is required"
-        '500':
+        "500":
           description: Internal Server Error
           content:
             application/json:
@@ -1064,7 +1098,7 @@ paths:
     delete:
       summary: Delete a post
       description: Removes a post by its ID.
-      tags: 
+      tags:
         - products
       security:
         - CookieAuth: []
@@ -1077,7 +1111,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Post deleted successfully.
           content:
             application/json:
@@ -1090,7 +1124,7 @@ paths:
                   message:
                     type: string
                     example: "post deleted successfully"
-        '401':
+        "401":
           description: ID not received.
           content:
             application/json:
@@ -1100,7 +1134,7 @@ paths:
                   message:
                     type: string
                     example: "Id not received"
-        '404':
+        "404":
           description: Post not found.
           content:
             application/json:
@@ -1110,7 +1144,7 @@ paths:
                   message:
                     type: string
                     example: "Post not found"
-        '500':
+        "500":
           description: Internal Server Error.
           content:
             application/json:
@@ -1123,7 +1157,7 @@ paths:
     put:
       summary: Update an existing post
       description: Updates the details of a product post.
-      tags: 
+      tags:
         - products
       security:
         - CookieAuth: []
@@ -1156,7 +1190,7 @@ paths:
                   description: Price of the product
                   example: 24.99
       responses:
-        '200':
+        "200":
           description: Post updated successfully
           content:
             application/json:
@@ -1169,7 +1203,7 @@ paths:
                   message:
                     type: string
                     example: "Post updated successfully"
-        '500':
+        "500":
           description: Internal Server Error
           content:
             application/json:
@@ -1180,26 +1214,30 @@ paths:
                     type: string
                     example: "Internal Server Error"
 
- # cart routes yaml :         
+  # cart routes yaml :
 
   /patiofy/auth/products/cart:
     post:
-      summary: Add a product to the cart
-      description: Adds a product to the user's cart based on the given product ID.
+      summary: Add product to cart
       tags:
         - Cart
       security:
         - CookieAuth: []
-      parameters:
-        - in: path
-          name: productId
-          required: true
-          schema:
-            type: string
-          description: The ID of the product to be added to the cart.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+              properties:
+                productId:
+                  type: string
+                  example: "6613a01ef3a482c4f2e32d77"
       responses:
-        200:
-          description: Product added to cart successfully.
+        '200':
+          description: Product successfully added to cart
           content:
             application/json:
               schema:
@@ -1210,36 +1248,51 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "product added to cart successfully"
-        500:
+                    example: product added to cart successfully
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: product not found
+        '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
                   error:
                     type: string
-                    example: "Internal Server Error"
 
   /patiofy/auth/products/cart/{id}:
     get:
-      summary: Get Cart by ID
-      description: Retrieve a shopping cart using its unique ID.
+      summary: Get cart by ID
       tags:
         - Cart
       security:
         - CookieAuth: []
       parameters:
-        - name: cartId
-          in: path
+        - in: path
+          name: id
           required: true
-          description: The unique identifier of the cart.
+          description: ID of the cart to retrieve
           schema:
             type: string
+            example: "6613a01ef3a482c4f2e32d77"
       responses:
-        200:
-          description: Successfully retrieved the cart.
+        '200':
+          description: Successfully retrieved cart
           content:
             application/json:
               schema:
@@ -1250,19 +1303,63 @@ paths:
                     example: true
                   cart:
                     type: object
-                    example:
-                      _id: "60d9c6e4b5f1b23a4c8d4f6b"
-                      items:
-                        - productId: "60d9c7e8b5f1b23a4c8d4f6c"
-                          quantity: 2
-                          price: 19.99
-                      total: 39.98
-        400:
-          description: Bad request, invalid cart ID format.
-        404:
-          description: Cart not found.
-        500:
-          description: Server error.
+                    properties:
+                      _id:
+                        type: string
+                      userId:
+                        $ref: '#/components/schemas/User'
+                      productId:
+                        $ref: '#/components/schemas/Post'
+                      quantity:
+                        type: integer
+                        example: 2
+                      price:
+                        type: number
+                        example: 199.99
+                      status:
+                        type: string
+                        example: active
+        '400':
+          description: Bad request (missing cart ID)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Cart ID is required
+        '404':
+          description: Cart not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Cart not found
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
     put:
       summary: Update Cart Quantity
       description: Update the quantity of items in the cart by cart ID.
@@ -1348,7 +1445,7 @@ paths:
         500:
           description: Internal Server Error.
 
-#Address routes YAML : 
+  #Address routes YAML :
 
   /patiofy/auth/user/address:
     post:
@@ -1417,21 +1514,19 @@ paths:
   /patiofy/auth/user/address/{id}:
     get:
       summary: Get Address by ID
-      description: Retrieve a user's shipping address using its unique ID.
       tags:
         - Address
-      security:
-        - CookieAuth: []
       parameters:
-        - name: addressId
+        - name: id
           in: path
           required: true
-          description: The unique identifier of the address.
+          description: MongoDB ObjectId of the address
           schema:
             type: string
+            pattern: '^[a-fA-F0-9]{24}$'
       responses:
-        200:
-          description: Successfully retrieved the address.
+        '200':
+          description: Successfully retrieved address
           content:
             application/json:
               schema:
@@ -1441,25 +1536,49 @@ paths:
                     type: boolean
                     example: true
                   address:
-                    type: object
-                    example:
-                      _id: "60d9c6e4b5f1b23a4c8d4f6b"
-                      userId: "60d9c7e8b5f1b23a4c8d4f6c"
-                      email: "user@example.com"
-                      phone: "+1234567890"
-                      Shipping_Address:
-                        country: "USA"
-                        firstname: "John"
-                        lastname: "Doe"
-                        address: "1234 Elm Street"
-                        city: "New York"
-                        state: "NY"
-        400:
-          description: Bad request, invalid address ID format.
-        404:
-          description: Address not found.
-        500:
-          description: Internal Server Error.
+                    $ref: '#/components/schemas/Address'
+        '400':
+          description: Invalid address ID format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Invalid address ID format
+        '404':
+          description: Address not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Address not found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Some error message
     delete:
       summary: Delete Address by ID
       description: Delete a user's shipping address using its unique ID.
@@ -1622,7 +1741,7 @@ paths:
         500:
           description: Internal Server Error.
 
-#contact us form : 
+  #contact us form :
 
   /patiofy/auth/user/query:
     post:
@@ -1662,52 +1781,3 @@ paths:
           description: Unauthorized, user not logged in.
         500:
           description: Internal Server Error.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
