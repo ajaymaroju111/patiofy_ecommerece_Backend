@@ -78,14 +78,12 @@ app.use("/patiofy/auth/products", postroutes);
 //usage of swagger eith yaml code :
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(SwaggerDocument));
 
-app.use((err, req, res, next) => {
-  console.error('Internal Error:', err.stack);
-  res.status(500).send('Something broke!');
-});
-
-
+// app.use((err, req, res, next) => {
+//   console.error('Internal Error:', err.stack);
+//   res.status(500).send('Something broke!');
+// });
 const port = process.env.PORT || 3001;
-app.listen(port,'0.0.0.0', () => {
+app.listen(port, () => {
   console.log(`Server is Running on the port : ${port}`);
   if(process.env.NODE_ENV === 'production'){
     console.log(

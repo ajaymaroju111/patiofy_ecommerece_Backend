@@ -89,14 +89,14 @@ exports.getById = CatchAsync( async(req , res, next) =>{
 })
 
 //delete a post : 
-exports.deletePost = async(req, res, next) =>{
+exports.deletePost = CatchAsync(async(req, res, next) =>{
     const { id } = req.params.id;
     await posts.findByIdAndDelete( id );
     return res.status(200).json({
       success : true,
       message : 'post deleted successfully'
     });
-}
+});
 
 //*****************         PRODUCT CART ROUTES               ***********************/
 

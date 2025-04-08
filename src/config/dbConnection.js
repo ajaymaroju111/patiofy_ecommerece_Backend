@@ -9,8 +9,8 @@ const dbConnnection = async () => {
         : process.env.MONGODB_LOCAL;
 
     await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      maxPoolSize: 500,
+      
     });
     console.log('✅ MongoDB Connected Successfully');
   } catch (error) {

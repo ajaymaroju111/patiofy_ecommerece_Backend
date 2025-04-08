@@ -38,7 +38,6 @@ info:
     name: MIT Licence
     url: http://opensource.org/licenses/MIT
 paths:
-
   /patiofy/auth/user/google:
     get:
       summary: Redirect to Google OAuth
