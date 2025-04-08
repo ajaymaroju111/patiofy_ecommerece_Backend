@@ -10,6 +10,8 @@ const YAML = require("yamljs");
 const SwaggerDocument = YAML.load("./api.yaml");
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+// const cron = require('node-cron');
+// const users = require('./src/models/userschema.js');
 require('./src/config/passport.js');
 //functions :
 const authroutes = require("./src/routes/userPath.js");
@@ -39,10 +41,11 @@ app.use(limiter);
 app.use(bodyParser.json());
 
 // //initializing scheduler :
-// corn.schedule("*/5 * * * * *", async () => {
+// cron.schedule('*/5 * * * * *', async () => {
 //   try {
-//     // console.log('this is running for every 5 second');
-//     const expiredUsers = await users.find({ jwtExpiry: { $lt: Date.now() } });
+//     const now = new Date();
+//     const expiredUsers = await users.find({ jwtExpiry: { $lt: now } });
+
 //     if (expiredUsers.length > 0) {
 //       for (const user of expiredUsers) {
 //         user.cookie = null;
@@ -50,7 +53,7 @@ app.use(bodyParser.json());
 //       }
 //     }
 //   } catch (error) {
-//     console.log(error);
+//     console.error('Error during cron job:', error);
 //   }
 // });
 
@@ -78,10 +81,6 @@ app.use("/patiofy/auth/products", postroutes);
 //usage of swagger eith yaml code :
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(SwaggerDocument));
 
-// app.use((err, req, res, next) => {
-//   console.error('Internal Error:', err.stack);
-//   res.status(500).send('Something broke!');
-// });
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
   console.log(`Server is Running on the port : ${port}`);

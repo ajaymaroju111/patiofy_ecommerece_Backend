@@ -1,10 +1,10 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const users = require("../models/userschema.js");
-const corn = require("node-cron");
+const CatchAsync = require("./CatchAsync.js");
 
 //genenrate a cookie when a user is aurhtenticated :
-exports.generateCookie = async (user, res, next) => {
+exports.generateCookie = CatchAsync( async(user, res, next) => {
   try {
     const data = {
       id: user._id,
@@ -38,10 +38,10 @@ exports.generateCookie = async (user, res, next) => {
     });
   }
   
-};
+});
 
 //authenticate user before every route :
-exports.authenticate = async (req, res, next) => {
+exports.authenticate = CatchAsync( async(req, res, next) => {
   try {
     const { token } = req.cookies;
 
@@ -59,10 +59,9 @@ exports.authenticate = async (req, res, next) => {
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
       });
-      return res.status(401).json({ error: "Invalid or expired token" });
+      return res.status(401).json({ error: " Invalid or expired token, please login "});
     }
-
-    // Check account status
+    // Check account status : 
     if (decoded.status !== "active") {
       return res.status(403).json({ error: "Account is inactive. Please verify." });
     }
@@ -72,7 +71,6 @@ exports.authenticate = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-
     req.user = user;
     next();
   } catch (error) {
@@ -84,7 +82,7 @@ exports.authenticate = async (req, res, next) => {
     console.error("Auth Middleware Error:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
-};
+});
 
 exports.generateToken = (user) => {
   return jwt.sign(
