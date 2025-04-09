@@ -21,7 +21,7 @@ exports.generateCookie = CatchAsync( async(user, res, next) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // true only on HTTPS
-      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "Lax",
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
     
@@ -77,7 +77,7 @@ exports.authenticate = CatchAsync( async(req, res, next) => {
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "Strict",
     });
     console.error("Auth Middleware Error:", error);
     return res.status(500).json({ error: "Internal Server Error" });

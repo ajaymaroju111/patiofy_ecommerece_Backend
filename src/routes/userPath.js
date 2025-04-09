@@ -50,7 +50,7 @@ router.get(
     res.cookie("token", token, {
       httpOnly: true, // Prevents XSS attacks
       secure: process.env.NODE_ENV === "production", // Secure only in production
-      sameSite: process.env.NODE_ENV === "production"? "null":"Strict",
+      sameSite: process.env.NODE_ENV === "production"? "none":"Strict",
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
     // If password is not set (new user via Google), redirect to set password
