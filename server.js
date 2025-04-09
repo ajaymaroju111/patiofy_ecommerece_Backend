@@ -60,9 +60,8 @@ app.use(bodyParser.json());
 // enable CORS :
 app.use(
   cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["content-type", "Authorization"],
+    origin: ['http://147.93.97.20:3000/' , 'https://yourfrontend.com'],
+    credentials : true,
   })
 );
 

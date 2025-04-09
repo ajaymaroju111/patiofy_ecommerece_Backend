@@ -14,10 +14,6 @@ const contactSchema = new mongoose.Schema({
     type : String,
     ref : 'users',
   },
-  phone : {
-    type : String,
-    ref : 'users',
-  },
   message : {
     type : String,
     required : [true , 'message is required']

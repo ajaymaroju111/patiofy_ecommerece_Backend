@@ -20,13 +20,16 @@ exports.setNewPassword = CatchAsync(async(req, res, next) => {
     if(!password){
       return next(new ErrorHandler('password is required' , 401));
     }
-    await users.findByIdAndUpdate(req.user._id, {password: password}, (err, user) =>{
-      if(err){
-        return next(new ErrorHandler('error in password updation', 402))
-      }
-      res.status(200).json({message : 'password updated successfully'});
-    });
+    console.log(req.user._id);
+    const update = await users.findById(req.user._id);
+    update.password = password;
+    await update.save();
+    return res.status(200).json({
+      success : true,
+      message : "password updated successfully",
+    })
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       success : false,
       message : 'Internal Server Error',
@@ -38,35 +41,18 @@ exports.setNewPassword = CatchAsync(async(req, res, next) => {
 //account signup for user :
 exports.signUp = CatchAsync(async(req, res, next) => {
   try {
-    const { firstname, lastname, username, email, phone, password } = req.body;
+    const { firstname, lastname, email, password } = req.body;
     const existed = await users.findOne({
-      $or: [{ username: username }, { email: email }],
+      $or: [{ email: email }],
     });
 
     if (existed) {
-      if (existed.username === username) {
-        return next(
-          new ErrorHandler("username already taken, try another", 401)
-        );
+        return next(new ErrorHandler("email already taken, try another", 401))
       }
-      return next(new ErrorHandler("email is already exist", 401));
-    }
-    if (!req.file) {
-      return next(new ErrorHandler("profile photo is required", 401));
-    }
     const User = await users.create({
-      avatar: {  
-        name: req.file.originalname,
-        img: {
-          data: req.file.buffer,
-          contentType: req.file.mimetype,
-        },
-      },
       firstname,
       lastname,
-      username,
       email,
-      phone,
       password,
     });
     await User.save();
@@ -86,16 +72,17 @@ exports.signUp = CatchAsync(async(req, res, next) => {
 //ressnd verification link to the user : 
 exports.resend = CatchAsync( async(req, res, next) =>{
   try {
-    const userId = req.body;
-    const User = await users.findByIdAndUpdate(userId, {expirytime : Date.now()+30*60*1000});
-    const encodedId = Buffer.from(User._id, "utf-8").toString("base64");
+    const { userId } = req.body;
+    const user = await users.findByIdAndUpdate(userId, {expirytime : Date.now()+30*60*1000});
+    const encodedId = Buffer.from(user._id, "utf-8").toString("base64");
+    const fullname = user.firstname +" " + user.lastname;
     await sendEmail({
-      to: User.email,
+      to: user.email,
       subject: "Account verification",
-      text: conformSignup(User.username, encodedId),
+      text: conformSignup(fullname, encodedId),
     });
-    User.expirytime = Date.now() + 30*60*1000;
-    await User.save();
+    user.jwtExpiry = Date.now() + 30*60*1000;
+    await user.save();
     console.log(encodedId);
     return res.status(200).json({
       success : true,
@@ -120,11 +107,11 @@ exports.verify = CatchAsync(async (req, res, next) => {
     );
     const User = await users.findById(decodedId);
     //timer for the account activation
-    if (Date.now() > User.expirytime) {
-      return next(new ErrorHandler("Time expired, please register", 401));
+    if (Date.now() > User.jwtExpiry) {
+      return next(new ErrorHandler("Time expired, please resend", 401));
     }
     User.status = "active";
-    User.expirytime = undefined;
+    User.jwtExpiry = undefined;
     await User.save();
     return res.status(200).json({ 
       success : true,
@@ -142,20 +129,20 @@ exports.verify = CatchAsync(async (req, res, next) => {
 //user sign in
 exports.signIn = CatchAsync(async (req, res, next) => {
   try {
-    const { userOrEmail, password } = req.body;
-    if (!userOrEmail || !password) {
+    const { email, password } = req.body;
+    if (!email || !password) {
       return next(new ErrorHandler('All fileds are requiured', 401))
     }
     const user = await users
       .findOne({
-        $or: [{ username: userOrEmail }, { email: userOrEmail }],
+       email : email
       })
       .select("+password");
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
       return next(new ErrorHandler('password doesnot match', 401))
     }
-    await generateCookie(user, res, () => {
+    generateCookie(user, res, () => {
       return res.status(200).json({
         success: true,
         message: "Login successful",
@@ -179,56 +166,22 @@ exports.getById = CatchAsync(async (req, res, next) => {
     });
 });
 
-//forget username :
-exports.forgetUsername = CatchAsync(async (req, res, next) => {
-  try {
-    const  {email}  = req.body;
-    if (!email) {
-      return next( new ErrorHandler('email is required', 401));
-    }
-    const user = await users.findOne({ email });
-    if (!user) {
-      return next(new ErrorHandler('user does not exist', 404))
-    }
-    const fullname = `${user.firstname}  ${user.lastname}`;
-    await sendEmail({
-      to: email,
-      subject: "forget Username request",
-      text: forgetUsername(fullname, user.username),
-    });
-    return res.status(200).json({
-      success: true,
-      message: "reset password link sent to the email",
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
-    });
-  }
-});
-
 //forget password :
 exports.forgetPassword = CatchAsync(async (req, res, next) => {
   try {
-    const { username, email } = req.body;
-    if (!username || !email) {
+    const { email } = req.body;
+    if ( !email ) {
       return next(new ErrorHandler('All fields are required'))
     }
-    const user = await users.findOne({
-      $and: [{ username }, { email }],
-    });
+    const user = await users.findOne({ email });
     if (!user) {
-      if (user !== username) {
-        return next(new ErrorHandler('incorrect username', 401))
-      }
-      return next(new ErrorHandler('incorrect password',401));
+      return next(new ErrorHandler('incorrect email',401));
     }
+    const fullname = user.firstname +" "+ user.lastname
     await sendEmail({
       to: email,
       subject: "forget password link",
-      text: forgetPassword(username),
+      text: forgetPassword(fullname),
     });
     return res.status(200).json({
       success: true,
@@ -277,36 +230,12 @@ exports.resetPassword = CatchAsync(async (req, res, next) => {
 //update user profile using ID :
 exports.update = CatchAsync(async (req, res, next) => {
   try {
-    const { firstname, lastname, username, phone } = req.body;
+    const { firstname, lastname, } = req.body;
 
     const updatedData = {
       firstname,
       lastname,
-      username,
-      phone,
     };
-    // Check if username or email is taken by another user
-    const existingUser = await users.findOne({
-      $or: [{ username }],
-      _id: { $ne: req.user._id }, // Exclude current user
-    });
-    if (existingUser) {
-      if (existingUser.username === username) {
-        return res.status(400).json({ error: "Username is already taken" });
-      }
-      if (existingUser.email === email) {
-        return res.status(400).json({ error: "Email is already taken" });
-      }
-    }
-    if (req.file) {
-      updatedData.avatar = {
-        name: req.file.originalname,
-        img: {
-          data: req.file.buffer,
-          contentType: req.file.mimetype,
-        },
-      };
-    }
     const updatedUser = await users.findByIdAndUpdate(req.user._id, updatedData, {
       new: true,
       runValidators: true,
@@ -455,7 +384,7 @@ exports.filterProducts = async (req, res) => {
 exports.addAddress = CatchAsync(async (req, res, next) => {
   try {
     const productId = req.params.id;
-    const { country, firstname, lastname, phone, address, city, state } =
+    const { country, firstname, lastname, phone, address, city, state, } =
       req.body;
     const addressList = await toAddress.create({
       userId: req.user._id,
@@ -587,7 +516,6 @@ exports.contactUs = CatchAsync(async(req, res, next) => {
       userId: req.user._id,
       firstname: req.user.firstname,
       lastname: req.user.lastname,
-      phone: req.user.phone,
       message,
     });
     await userContactForm.save();

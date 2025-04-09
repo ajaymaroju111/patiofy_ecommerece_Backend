@@ -113,90 +113,81 @@ paths:
 
   /patiofy/auth/user/signup:
     post:
-      summary: Registration a new user
-      description: |
-        This endpoint allows a user to register by providing their first name, last name, username, email, password, and a profile photo. 
-        It checks if the username or email already exists and sends a verification email upon successful registration.
+      summary: User Signup
+      description: Creates a new user account. Sends a verification email after successful signup.
       tags:
         - users
+      security:
+        - CookieAuth: []
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
+              required:
+                - firstname
+                - lastname
+                - email
+                - password
               properties:
                 firstname:
                   type: string
-                  description: The user's first name.
-                  example: ajay
+                  example: Ajay
                 lastname:
                   type: string
-                  description: The user's last name.
                   example: Maroju
-                username:
-                  type: string
-                  description: The desired username.
-                  example: iam_AajY
                 email:
                   type: string
                   format: email
-                  description: The user's email address.
                   example: marojuajay111@gmail.com
-                phone:
-                  type: string
-                  description: the user's phone number
-                  example: 9000000000
                 password:
                   type: string
                   format: password
-                  description: The user's password.
                   example: Ajay@110125
-                profilePhoto:
-                  type: string
-                  format: binary
-                  description: The user's profile photo.
       responses:
-        "200":
-          description: Verification email sent successfully.
+        '200':
+          description: User created and verification email sent
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: true
                   message:
                     type: string
-                    example: "verification has been sent to the email, please verify"
-        "401":
-          description: Username or email already exists.
+                    example: verification has been send to the email, please verify
+        '401':
+          description: Email already taken
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  error:
-                    type: string
-                    example: "username already taken, try another"
-        "404":
-          description: Profile photo is required.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
+                  success:
+                    type: boolean
+                    example: false
                   message:
                     type: string
-                    example: "profile photo is required"
-        "500":
-          description: Internal server error.
+                    example: email already taken, try another
+        '500':
+          description: Internal server error
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
                   error:
                     type: string
-                    example: "Internal Server Error"
+                    example: Some error occurred
 
   /patiofy/auth/user/veriy:
     get:
@@ -284,33 +275,31 @@ paths:
 
   /patiofy/auth/user/signin:
     post:
-      summary: User sign-in
-      description: |
-        This endpoint allows a user to sign in by providing their username or email and password. 
-        It verifies the credentials, generates a cookie for authentication, and returns a success message upon successful login.
+      summary: User Login
+      description: Authenticates user with email and password.
       tags:
         - users
-      security:
-        - CookieAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - email
+                - password
               properties:
-                userOrEmail:
+                email:
                   type: string
-                  description: The user's username or email address.
+                  format: email
                   example: marojuajay111@gmail.com
                 password:
                   type: string
                   format: password
-                  description: The user's password.
                   example: Ajay@110125
       responses:
-        "200":
-          description: Login successful.
+        '200':
+          description: Login successful
           content:
             application/json:
               schema:
@@ -321,37 +310,36 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "login successfully"
-        "400":
-          description: Missing required fields.
+                    example: Login successful
+        '401':
+          description: Unauthorized or Validation Error
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  error:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
                     type: string
-                    example: "All fields are required"
-        "401":
-          description: Invalid credentials.
+                    example: All fields are required or password does not match
+        '500':
+          description: Internal Server Error
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
                   error:
                     type: string
-                    example: "password doesnot match"
-        "500":
-          description: Internal server error.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Internal Server Error"
+                    example: Detailed error message
 
   /patiofy/auth/user/me/{id}:
     get:
@@ -417,8 +405,8 @@ paths:
 
   /patiofy/auth/user/update:
     put:
-      summary: Update user profile
-      description: Updates the current user's profile details including username, name, phone, and optionally an avatar.
+      summary: Update User Profile
+      description: Updates the logged-in user's first name and last name.
       tags:
         - users
       security:
@@ -426,7 +414,7 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               properties:
@@ -436,17 +424,8 @@ paths:
                 lastname:
                   type: string
                   example: Doe
-                username:
-                  type: string
-                  example: johndoe123
-                phone:
-                  type: string
-                  example: "+1234567890"
-                avatar:
-                  type: string
-                  format: binary
       responses:
-        "200":
+        '200':
           description: Profile updated successfully
           content:
             application/json:
@@ -460,18 +439,86 @@ paths:
                     type: string
                     example: Profile updated successfully
                   updatedUser:
-                    $ref: "#/components/schemas/User"
-        "400":
-          description: Username or email is already taken
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                        example: 609c0f58f3a9a2001510bdf1
+                      firstname:
+                        type: string
+                        example: John
+                      lastname:
+                        type: string
+                        example: Doe
+                      email:
+                        type: string
+                        example: john.doe@example.com
+        '500':
+          description: Internal Server Error
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
                   error:
                     type: string
-                    example: Username is already taken
-        "500":
+                    example: Some error occurred
+
+  /patiofy/auth/user/password/forget:
+     post:
+      summary: Request password reset
+      description: Sends a reset password link to the provided email address.
+      tags:
+        - users
+      security:
+        - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: marojuajay111@gmail.com
+      responses:
+        '200':
+          description: Password reset link sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: reset password link sent to the email
+        '401':
+          description: Incorrect email or validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: incorrect email
+        '500':
           description: Internal server error
           content:
             application/json:
@@ -485,166 +532,8 @@ paths:
                     type: string
                     example: Internal Server Error
                   error:
-                    type: object
-            components:
-              schemas:
-                User:
-                  type: object
-                  properties:
-                    _id:
-                      type: string
-                      example: "660feab4e3ac384ac4743b8f"
-                    firstname:
-                      type: string
-                    lastname:
-                      type: string
-                    username:
-                      type: string
-                    phone:
-                      type: string
-                    email:
-                      type: string
-                    avatar:
-                      type: object
-                      properties:
-                        name:
-                          type: string
-                        img:
-                          type: object
-                          properties:
-                            data:
-                              type: string
-                              format: byte
-                            contentType:
-                              type: string
-
-  /patiofy/auth/user/username/forget:
-    post:
-      summary: Request forgotten username
-      description: |
-        This endpoint allows a user to request their forgotten username by providing their email address. 
-        If the email is valid, the username is sent to the user's email.
-      tags:
-        - users
-      security:
-        - CookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                  format: email
-                  description: The user's email address.
-                  example: marojuajay111@gmail.com
-      responses:
-        "200":
-          description: Username sent successfully.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
                     type: string
-                    example: "reset password link sent to the email"
-        "401":
-          description: Invalid email or missing email.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Incorrect Email"
-        "500":
-          description: Internal server error.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Internal Server Error"
-
-  /patiofy/auth/user/password/forget:
-    post:
-      summary: Request password reset
-      description: |
-        This endpoint allows a user to request a password reset by providing their username and email address. 
-        If the credentials are valid, a password reset link is sent to the user's email.
-      tags:
-        - users
-      security:
-        - CookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                  description: The user's username.
-                  example: iam_arjun
-                email:
-                  type: string
-                  format: email
-                  description: The user's email address.
-                  example: marojuajay111@gmail.com
-      responses:
-        "200":
-          description: Password reset link sent successfully.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "reset password link sent to the email"
-        "400":
-          description: Missing required fields.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "all fields are required"
-        "401":
-          description: Invalid credentials.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Incorrect Username or Email"
-        "500":
-          description: Internal server error.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Internal Server Error"
+                    example: Detailed error message
 
   /patiofy/auth/user/password/reset:
     post:

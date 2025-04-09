@@ -14,37 +14,18 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        let user = await users.findOne({ googleId: profile.id }); // Find user by Google ID
+        const user = await users.findOne({ googleId: profile.id }); // Find user by Google ID
 
         if (!user) {
-          //genenrate a random password :
-          const randomPassword = "User@110125";
           // Split full name into first name and last name
           const nameParts = profile.displayName.split(" ");
           const firstName = nameParts[0]; // First name
           const lastName = nameParts.slice(1).join(" ");
-          //convert image in to buffer :
-          const imgUrl = profile.photos[0].value;
-          const response = await fetch(imgUrl);
-          const arrayBuffer = await response.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-          const contentType = response.headers.get("content-type");
-          const name = profile.displayName;
-          user = await users.create({
-            googleId: profile.id, // Save Google ID
-            username: profile.displayName,
+          const user = await users.create({
+            googleId: profile.id,
             email: profile.emails[0].value,
-            avatar: {
-              name: name,
-              img: {
-                data: buffer,
-                contentType: contentType,
-              },
-            },
-            password: randomPassword,
             firstname: firstName,
             lastname: lastName,
-            phone: null,
           });
           //set status to be active :
           user.status = "active";
@@ -55,9 +36,8 @@ passport.use(
         const token = jwt.sign(
           { id: user._id, email: user.email }, // Corrected variable name
           process.env.JWT_SECRET,
-          { expiresIn: "1d" }
+          { expiresIn: "1d" },
         );
-
         return done(null, { user, token }); // Correct return format
       } catch (error) {
         console.log("OAuth Error", error);

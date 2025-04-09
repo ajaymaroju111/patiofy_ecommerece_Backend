@@ -57,7 +57,7 @@ exports.authenticate = CatchAsync( async(req, res, next) => {
       res.clearCookie("token", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "Lax",
       });
       return res.status(401).json({ error: " Invalid or expired token, please login "});
     }
@@ -92,4 +92,28 @@ exports.generateToken = (user) => {
   );
 };
 
+exports.verifyGoogleUser = CatchAsync(async(req, res, next) =>{
+  const { token } = req.cookies;
+  if (!token) {
+    return res.status(401).json({ error: "Login is required" });
+  }
+  //veri
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (err) {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "Lax",
+    });
+    return res.status(401).json({ error: " Invalid or expired token, please login "});
+  }
+  const user = await users.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    req.user = user;
+    next();
+})
 

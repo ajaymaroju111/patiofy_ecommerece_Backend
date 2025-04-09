@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
+const users = require('../models/userschema.js');
 const upload = require("../middlewares/multer.js");
 const {
   setNewPassword,
@@ -8,7 +9,6 @@ const {
   verify,
   signIn,
   getById,
-  forgetUsername,
   forgetPassword,
   resetPassword,
   update,
@@ -25,7 +25,7 @@ const {
   resend,
   
 } = require("../controllers/authroutes.js");
-const { authenticate } = require("../middlewares/authUser.js");
+const { authenticate, verifyGoogleUser } = require("../middlewares/authUser.js");
 const passport = require("passport");
 
 
@@ -39,9 +39,9 @@ router.get(
 router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/patiofy/auth/user/failed" }),
-  (req, res) => {
+  async(req, res) => {
     if (!req.user) {
-      return res.redirect("/patiofy/auth/user/failed");
+      return res.redirect("/patiofy/auth/user/google");
     }
     //extract token and user from the req.user
     const { user, token } = req.user;
@@ -50,10 +50,17 @@ router.get(
     res.cookie("token", token, {
       httpOnly: true, // Prevents XSS attacks
       secure: process.env.NODE_ENV === "production", // Secure only in production
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production"? "null":"Strict",
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
-    res.redirect("/patiofy/auth/user/google/password");
+    // If password is not set (new user via Google), redirect to set password
+    const newUser = await users.findById(user._id);
+    console.log(newUser.password);
+    if (!newUser.password) {     //this only works when select : true in schema
+      return res.redirect("/patiofy/auth/user/google/password");
+    }
+    return res.redirect("/patiofy/auth/user/home");
+    // If user already exists and has password, redirect to home
   }
 );
 
@@ -63,13 +70,12 @@ router.get("/failed", (req, res) => {
   return res.status(401).json({ error: "Authentication Failed" });
 });
 
-router.post('/google/password', setNewPassword)
+router.put('/google/password', verifyGoogleUser, setNewPassword);
 router.post("/signup", upload.single("profilePhoto"), signUp);
 router.get("/veriy", verify);
 router.post("/resend", resend);
 router.post("/signin", signIn);
 router.put("/update", authenticate, upload.single("avatar"), update);
-router.post("/username/forget", forgetUsername);
 router.get("/me/:id", authenticate, getById);
 router.post("/password/forget", forgetPassword);
 router.post("/password/reset", authenticate, resetPassword);

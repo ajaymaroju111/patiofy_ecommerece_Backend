@@ -2,20 +2,11 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const { sendEmail } = require("../utils/sendEmail.js");
 const { conformSignup } = require('../utils/emailTemplates.js');
-const crypto = require('crypto');
 
 const userschema = new mongoose.Schema(
   {
     googleId: {
       type: String,
-    },
-    avatar: {
-      name: String,
-      img: {
-        data: Buffer,
-        contentType: String,
-        hash : String,
-      },
     },
     firstname: {
       type: String,
@@ -27,13 +18,6 @@ const userschema = new mongoose.Schema(
       required: [true, "lastname is required"],
       trim: true,
     },
-    username: {
-      type: String,
-      minlength: [4, "user name should be greater than 4 characters"],
-      required: [true, "username is required"],
-      trim: true,
-      unique: [true, "username is already taken"],
-    },
     email: {
       type: String,
       required: [true, "email is required"],
@@ -41,16 +25,9 @@ const userschema = new mongoose.Schema(
       unique: [true, "email is already taken"],
       match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
     },
-    phone: {
-      type: String,
-      // required: [true, "phone number is required"],
-      // maxlength: 10,
-      // minlength: 10,
-    },
     password: {
       type: String,
-      select: false,
-      required: [true, "Password is required"],
+      // select: false,
       minlength: [8, "Password should be at least 8 characters long"],
       trim: true,
       validate: {
@@ -71,9 +48,6 @@ const userschema = new mongoose.Schema(
       default: "inactive",
       trim: true,
     },
-    expirytime: {
-      type: Date,
-    },
     jwtExpiry: {
       type: Date,
     },
@@ -86,22 +60,6 @@ userschema.methods.comparePassword = function (plainPassword) {
   return bcrypt.compare(plainPassword, this.password);
 };
 
-//Hash all the incomming images :
-
-
-userschema.pre("save", async function (next) {
-  if (this.isModified("avatar") && this.avatar?.img?.data) {
-    const hash = crypto
-      .createHash("sha256")
-      .update(this.avatar.img.data)
-      .digest("hex");
-
-    // Store the hash alongside the image data (or however you want)
-    this.avatar.img.hash = hash;
-  }
-  next();
-});
-
 
 //send the verification mail every time when email get updated :
 userschema.pre("save", async function (next) {
@@ -110,10 +68,11 @@ userschema.pre("save", async function (next) {
       const encodedId = Buffer.from(this._id.toString(), "utf-8").toString("base64");
       this.expirytime = Date.now() + 30 * 60 * 1000;
       this.status = 'inactive';
+      const fullname = this.firstname + this.lastname
       await sendEmail({
         to: this.email,
         subject: "Account verification",
-        text: conformSignup(this.username, encodedId),
+        text: conformSignup(fullname, encodedId),
       });
       console.log('Email updated in the DB, EncodedID : ', encodedId);
     }
