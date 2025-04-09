@@ -5,11 +5,10 @@ const queries = require("../models/contactschema.js");
 const CatchAsync = require("../middlewares/CatchAsync.js");
 const ErrorHandler = require("../utils/ErrorHandler.js");
 const { sendEmail } = require("../utils/sendEmail.js");
-const { generateCookie } = require("../middlewares/authUser.js");
+const { generateUserToken } = require("../middlewares/authUser.js");
 const {
   conformSignup,
   forgetPassword,
-  forgetUsername,
 } = require("../utils/emailTemplates.js");
 const { default: mongoose } = require("mongoose");
 
@@ -18,7 +17,9 @@ exports.setNewPassword = CatchAsync(async (req, res, next) => {
   try {
     const { password } = req.body;
     if (!password) {
-      return next(new ErrorHandler("password is required", 401));
+      return res.status(400).json({
+        error: 'password is required'
+      })
     }
     console.log(req.user._id);
     const update = await users.findById(req.user._id);
@@ -47,7 +48,9 @@ exports.signUp = CatchAsync(async (req, res, next) => {
     });
 
     if (existed) {
-      return next(new ErrorHandler("email already taken, try another", 401));
+      return res.status(401).json({
+        error : "email already exist, try another"
+      })
     }
     const User = await users.create({
       firstname,
@@ -108,7 +111,9 @@ exports.verify = CatchAsync(async (req, res, next) => {
     const User = await users.findById(decodedId);
     //timer for the account activation
     if (Date.now() > User.jwtExpiry) {
-      return next(new ErrorHandler("Time expired, please resend", 401));
+      return res.status(401).json({
+        error: "session expired, please login"
+      })
     }
     User.status = "active";
     User.jwtExpiry = undefined;
@@ -131,7 +136,9 @@ exports.signIn = CatchAsync(async (req, res, next) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      return next(new ErrorHandler("All fileds are requiured", 401));
+      return res.status(400).json({
+        error: "all fileds are required"
+      })
     }
     const user = await users
       .findOne({
@@ -139,19 +146,27 @@ exports.signIn = CatchAsync(async (req, res, next) => {
       })
       .select("+password");
     if (!user) {
-      next(new ErrorHandler("incorrect Email", 401));
+      return res.status(401).json({
+        error: "Incorrect Email"
+      })
     }
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
-      return next(new ErrorHandler("password doesnot match", 401));
+      return res.status(401).json({
+        error : "password doesn't match"
+      })
     }
-    generateCookie(user, res, () => {
-      return res.status(200).json({
-        success: true,
-        message: "Login successful",
-      });
+    const token  = generateUserToken(user);
+    user.jwtExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
+    await user.save();
+    console.log(token);
+    return res.status(200).json({
+      success : true,
+      message : 'login successfully',
+      JWTtoken : token,
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -174,11 +189,15 @@ exports.forgetPassword = CatchAsync(async (req, res, next) => {
   try {
     const { email } = req.body;
     if (!email) {
-      return next(new ErrorHandler("All fields are required"));
+      return res.status(400).json({
+        error: "email is reqiured"
+      })
     }
     const user = await users.findOne({ email });
     if (!user) {
-      return next(new ErrorHandler("incorrect email", 401));
+      return res.status(401).json({
+        error: "user doesn't exist",
+      })
     }
     const fullname = user.firstname + " " + user.lastname;
     await sendEmail({
@@ -204,12 +223,16 @@ exports.resetPassword = CatchAsync(async (req, res, next) => {
   try {
     const { oldpassword, newpassword } = req.body;
     if (!oldpassword || !newpassword) {
-      return next(new ErrorHandler("All fields are required"));
+      return res.status(400).json({
+        error: "all fields are required"
+      });
     }
     const user = await users.findById(req.user._id).select("+password");
     const isPassword = user.comparePassword(oldpassword);
     if (!isPassword) {
-      return next(new ErrorHandler("incorrect password", 401));
+      return res.status(401).json({
+        error: "incorrect password"
+      });
     }
     user.password = newpassword;
     await user.save();
@@ -307,30 +330,30 @@ exports.deleteUser = CatchAsync(async (req, res, next) => {
   try {
     const { password } = req.body;
     if (!password) {
-      return next(new ErrorHandler("Password is required", 401));
+      return res.status(400).json({
+        error: "password is required"
+      })
     }
     const user = await users.findById(req.user._id).select("+password");
     const isPasswordMatch = await user.comparePassword(password);
     if (!isPasswordMatch) {
-      return next(new ErrorHandler("incorrect password", 401));
+      return res.status(401).json({
+        error: "incorrect password",
+      })
     }
 
     const deleted = await users
       .deleteOne({ _id: req.user._id })
       .session("session");
     if (deleted.deletedCount === 0) {
-      next(new ErrorHandler("User not Found", 404));
+      return res.status(404).json({
+        error: "user not found",
+      })
     }
     await queries.deleteMany({ _id: req.user._id }).session("session");
     await posts.deleteMany({ _id: req.user._id }).session("session");
     await toAddress.deleteMany({ _id: req.user._id }).session("session");
-
     await session.commitTransaction();
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: true,
-      sameSite: true,
-    });
   } catch (error) {
     session.abortTransaction();
     return res.status(500).json({

@@ -1,6 +1,7 @@
 openapi: "3.1.0"
 security:
-  - CookieAuth: []
+  - BearerAuth: []
+  - tokenAuth: []
 tags:
   - name: Authentication_OAuth2.0
     description: operations related to OAuth20
@@ -21,9 +22,14 @@ servers:
     description: Production Server
 components:
   securitySchemes:
-    CookieAuth:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      
+    tokenAuth:
       type: apiKey
-      in: cookie
+      in: header
       name: token
       description: Authentication cookie containing the JWT token
 info:
@@ -275,10 +281,10 @@ paths:
 
   /patiofy/auth/user/signin:
     post:
-      summary: User Login
-      description: Authenticates user with email and password.
       tags:
         - users
+      summary: Sign in a user
+      description: Authenticates a user with email and password, and returns a JWT token.
       requestBody:
         required: true
         content:
@@ -295,11 +301,10 @@ paths:
                   example: marojuajay111@gmail.com
                 password:
                   type: string
-                  format: password
                   example: Ajay@110125
       responses:
         '200':
-          description: Login successful
+          description: Successful login
           content:
             application/json:
               schema:
@@ -310,9 +315,12 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: Login successful
+                    example: login successfully
+                  JWTtoken:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         '401':
-          description: Unauthorized or Validation Error
+          description: Authentication failed due to missing/invalid credentials
           content:
             application/json:
               schema:
@@ -323,7 +331,7 @@ paths:
                     example: false
                   message:
                     type: string
-                    example: All fields are required or password does not match
+                    example: incorrect Email or password does not match
         '500':
           description: Internal Server Error
           content:
@@ -339,7 +347,6 @@ paths:
                     example: Internal Server Error
                   error:
                     type: string
-                    example: Detailed error message
 
   /patiofy/auth/user/me/{id}:
     get:
@@ -349,7 +356,7 @@ paths:
       tags:
         - users
       security:
-        - CookieAuth: [] 
+        - BearerAuth: [] 
       responses:
         "200":
           description: User details retrieved successfully.
@@ -401,7 +408,6 @@ paths:
                     type: string
                     example: "Internal Server Error"
 
-
   /patiofy/auth/user/update:
     put:
       summary: Update User Profile
@@ -409,7 +415,7 @@ paths:
       tags:
         - users
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -476,7 +482,7 @@ paths:
       tags:
         - users
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -543,7 +549,7 @@ paths:
       tags:
         - users
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -604,11 +610,11 @@ paths:
       summary: Get user's products
       description: |
         This endpoint retrieves all products associated with the authenticated user. 
-        The products are populated with the user's details (username, first name, last name, and email).
+        The products are populated with the user's details (first name, last name, and email).
       tags:
         - users
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       responses:
         "200":
           description: Products retrieved successfully.
@@ -628,9 +634,6 @@ paths:
                         userId:
                           type: object
                           properties:
-                            username:
-                              type: string
-                              description: The user's username.
                             firstname:
                               type: string
                               description: The user's first name.
@@ -663,7 +666,7 @@ paths:
       tags:
         - users
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -719,7 +722,7 @@ paths:
       tags:
         - users
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       parameters:
         - name: name
           in: query
@@ -793,7 +796,7 @@ paths:
       tags:
         - users
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       responses:
         "200":
           description: User logged out successfully.
@@ -828,7 +831,7 @@ paths:
       tags:
         - products
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       operationId: createPost
       requestBody:
         required: true
@@ -906,7 +909,7 @@ paths:
       tags:
         - products
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       operationId: getById
       parameters:
         - name: id
@@ -957,9 +960,6 @@ paths:
                           lastname:
                             type: string
                             example: "Doe"
-                          username:
-                            type: string
-                            example: "johndoe"
                           email:
                             type: string
                             example: "johndoe@example.com"
@@ -1110,7 +1110,7 @@ paths:
       tags:
         - Cart
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -1169,7 +1169,7 @@ paths:
       tags:
         - Cart
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       parameters:
         - in: path
           name: id
@@ -1342,7 +1342,7 @@ paths:
       tags:
         - Address
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       parameters:
         - name: id
           in: path
@@ -1574,7 +1574,7 @@ paths:
       tags:
         - Address
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       responses:
         200:
           description: Successfully retrieved all addresses.
@@ -1638,7 +1638,7 @@ paths:
       tags:
         - Contact
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       requestBody:
         required: true
         content:

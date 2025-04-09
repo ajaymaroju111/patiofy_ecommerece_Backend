@@ -27,8 +27,6 @@ app.use(
   })
 );
 
-
-
 app.use(cookieParser());
 //usage od limiter :
 const limiter = Limiter({
@@ -39,23 +37,6 @@ const limiter = Limiter({
 });
 app.use(limiter);
 app.use(bodyParser.json());
-
-// //initializing scheduler :
-// cron.schedule('*/5 * * * * *', async () => {
-//   try {
-//     const now = new Date();
-//     const expiredUsers = await users.find({ jwtExpiry: { $lt: now } });
-
-//     if (expiredUsers.length > 0) {
-//       for (const user of expiredUsers) {
-//         user.cookie = null;
-//         await user.save();
-//       }
-//     }
-//   } catch (error) {
-//     console.error('Error during cron job:', error);
-//   }
-// });
 
 // enable CORS :
 app.use(

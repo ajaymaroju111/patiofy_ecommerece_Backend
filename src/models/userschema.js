@@ -51,6 +51,10 @@ const userschema = new mongoose.Schema(
     jwtExpiry: {
       type: Date,
     },
+    isTermsAndConditions : {
+      type : Boolean,
+      default: false
+    }
   },
   { timestamps: true }
 );

@@ -45,22 +45,25 @@ router.get(
     }
     //extract token and user from the req.user
     const { user, token } = req.user;
-
-    // Set JWT token in cookies for authentication
-    res.cookie("token", token, {
-      httpOnly: true, // Prevents XSS attacks
-      secure: process.env.NODE_ENV === "production", // Secure only in production
-      sameSite: process.env.NODE_ENV === "production"? "none":"Strict",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-    });
     // If password is not set (new user via Google), redirect to set password
     const newUser = await users.findById(user._id);
     console.log(newUser.password);
     if (!newUser.password) {     //this only works when select : true in schema
       return res.redirect("/patiofy/auth/user/google/password");
     }
-    return res.redirect("/patiofy/auth/user/home");
-    // If user already exists and has password, redirect to home
+    // return res.redirect("/patiofy/auth/user/home");
+    return res.status(200).json({
+      success: true,
+      message: "User authenticated successfully",
+      token: token, // Include the token in the response
+      user: {
+        id: user._id,
+        email: user.email,
+        firstname: user.firstname,
+        lastname: user.lastname,
+      },
+    });
+
   }
 );
 
