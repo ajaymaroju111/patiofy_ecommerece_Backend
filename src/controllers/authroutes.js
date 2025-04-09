@@ -13,7 +13,7 @@ const {
 const { default: mongoose } = require("mongoose");
 
 //set password after google oauth signup :
-exports.setNewPassword = CatchAsync(async (req, res, next) => {
+exports.setNewPassword = async(req, res) => {
   try {
     const { password } = req.body;
     if (!password) {
@@ -37,10 +37,10 @@ exports.setNewPassword = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
 
 //account signup for user :
-exports.signUp = CatchAsync(async (req, res, next) => {
+exports.signUp = async(req, res) => {
   try {
     const { firstname, lastname, email, password } = req.body;
     const existed = await users.findOne({
@@ -70,10 +70,10 @@ exports.signUp = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
 
 //ressnd verification link to the user :
-exports.resend = CatchAsync(async (req, res, next) => {
+exports.resend = async(req, res) => {
   try {
     const { userId } = req.body;
     const user = await users.findByIdAndUpdate(userId, {
@@ -100,10 +100,10 @@ exports.resend = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
 
 //user account verification :
-exports.verify = CatchAsync(async (req, res, next) => {
+exports.verify = async(req, res) => {
   try {
     const { verificationKey } = req.query;
     //decode the encoded email
@@ -129,10 +129,10 @@ exports.verify = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
 
 //user sign in
-exports.signIn = CatchAsync(async (req, res, next) => {
+exports.signIn = async(req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -173,19 +173,19 @@ exports.signIn = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
 
 //get user by ID :
-exports.getById = CatchAsync(async (req, res, next) => {
+exports.getById = async(req, res) => {
   const user = await users.findById(req.user._id);
   return res.status(200).json({
     success: true,
     user,
   });
-});
+};
 
 //forget password :
-exports.forgetPassword = CatchAsync(async (req, res, next) => {
+exports.forgetPassword = async(req, res) => {
   try {
     const { email } = req.body;
     if (!email) {
@@ -216,10 +216,10 @@ exports.forgetPassword = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
 
 // reset the password using old password :
-exports.resetPassword = CatchAsync(async (req, res, next) => {
+exports.resetPassword = async(req, res) => {
   try {
     const { oldpassword, newpassword } = req.body;
     if (!oldpassword || !newpassword) {
@@ -251,10 +251,10 @@ exports.resetPassword = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
 
 //update user profile using ID :
-exports.update = CatchAsync(async (req, res, next) => {
+exports.update = async(req, res) => {
   try {
     const { firstname, lastname } = req.body;
 
@@ -282,10 +282,10 @@ exports.update = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
 
 //list all posts of a user :
-exports.myProducts = CatchAsync(async (req, res, next) => {
+exports.myProducts = async(req, res) => {
   try {
     const id = req.user._id;
     const products = await posts
@@ -300,10 +300,10 @@ exports.myProducts = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
 
 // user sign out :
-exports.signOut = CatchAsync(async (req, res, next) => {
+exports.signOut = async(req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
@@ -321,10 +321,10 @@ exports.signOut = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
 
 //deleting user account :
-exports.deleteUser = CatchAsync(async (req, res, next) => {
+exports.deleteUser = async(req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction(); // Start transaction
   try {
@@ -364,10 +364,10 @@ exports.deleteUser = CatchAsync(async (req, res, next) => {
   } finally {
     session.endSession();
   }
-});
+};
 
 //search for products : ( NAN )
-exports.filterProducts = async (req, res) => {
+exports.filterProducts = async(req, res) => {
   try {
     const { name, price, size, fabric } = req.query;
     let filter = {};
@@ -413,7 +413,7 @@ exports.filterProducts = async (req, res) => {
 
 //*********************     DELIVERY ADDRESS:       ****************** */
 
-exports.addAddress = CatchAsync(async (req, res, next) => {
+exports.addAddress = async(req, res) => {
   try {
     const productId = req.params.id;
     const { country, firstname, lastname, phone, address, city, state } =
@@ -444,9 +444,9 @@ exports.addAddress = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
 
-exports.updateAddress = CatchAsync(async (req, res, next) => {
+exports.updateAddress = async(req, res) => {
   try {
     const productId = req.params.id;
     const { country, firstname, lastname, phone, address, city, state } =
@@ -477,9 +477,9 @@ exports.updateAddress = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
 
-exports.getAddress = CatchAsync(async (req, res, next) => {
+exports.getAddress = async(req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -501,9 +501,9 @@ exports.getAddress = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
 
-exports.deleteAddress = CatchAsync(async (req, res, next) => {
+exports.deleteAddress = async(req, res) => {
   try {
     const { addressId } = req.params;
     await toAddress.findByIdAndDelete(addressId);
@@ -518,9 +518,9 @@ exports.deleteAddress = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
 
-exports.viewAllAddresses = CatchAsync(async (req, res, next) => {
+exports.viewAllAddresses = async(req, res) => {
   try {
     const alladdresses = await toAddress.find({ userId: req.user._id });
     return res.status(200).json({
@@ -534,15 +534,17 @@ exports.viewAllAddresses = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
 
 //*********************   Submitting Contact Form :  ********************** */
 
-exports.contactUs = CatchAsync(async (req, res, next) => {
+exports.contactUs = async(req, res) => {
   try {
     const { message } = req.body;
-    if (!message) {
-      return next(new ErrorHandler("message cannot be empty"));
+    if (!message || message === null) {
+      return res.status(400).json({
+        error: "message is required"
+      });
     }
     const userContactForm = await queries.create({
       userId: req.user._id,
@@ -562,4 +564,4 @@ exports.contactUs = CatchAsync(async (req, res, next) => {
       error: error,
     });
   }
-});
+};
