@@ -13,33 +13,33 @@ const {
 } = require("../utils/emailTemplates.js");
 const { default: mongoose } = require("mongoose");
 
-//set password after google oauth signup : 
-exports.setNewPassword = CatchAsync(async(req, res, next) => {
+//set password after google oauth signup :
+exports.setNewPassword = CatchAsync(async (req, res, next) => {
   try {
     const { password } = req.body;
-    if(!password){
-      return next(new ErrorHandler('password is required' , 401));
+    if (!password) {
+      return next(new ErrorHandler("password is required", 401));
     }
     console.log(req.user._id);
     const update = await users.findById(req.user._id);
     update.password = password;
     await update.save();
     return res.status(200).json({
-      success : true,
-      message : "password updated successfully",
-    })
+      success: true,
+      message: "password updated successfully",
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
-})
+});
 
 //account signup for user :
-exports.signUp = CatchAsync(async(req, res, next) => {
+exports.signUp = CatchAsync(async (req, res, next) => {
   try {
     const { firstname, lastname, email, password } = req.body;
     const existed = await users.findOne({
@@ -47,8 +47,8 @@ exports.signUp = CatchAsync(async(req, res, next) => {
     });
 
     if (existed) {
-        return next(new ErrorHandler("email already taken, try another", 401))
-      }
+      return next(new ErrorHandler("email already taken, try another", 401));
+    }
     const User = await users.create({
       firstname,
       lastname,
@@ -57,54 +57,54 @@ exports.signUp = CatchAsync(async(req, res, next) => {
     });
     await User.save();
     return res.status(200).json({
-      success : true,
+      success: true,
       message: "verification has been send to the email, please verify",
     });
   } catch (error) {
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
 });
 
-//ressnd verification link to the user : 
-exports.resend = CatchAsync( async(req, res, next) =>{
+//ressnd verification link to the user :
+exports.resend = CatchAsync(async (req, res, next) => {
   try {
     const { userId } = req.body;
-    const user = await users.findByIdAndUpdate(userId, {expirytime : Date.now()+30*60*1000});
+    const user = await users.findByIdAndUpdate(userId, {
+      expirytime: Date.now() + 30 * 60 * 1000,
+    });
     const encodedId = Buffer.from(user._id, "utf-8").toString("base64");
-    const fullname = user.firstname +" " + user.lastname;
+    const fullname = user.firstname + " " + user.lastname;
     await sendEmail({
       to: user.email,
       subject: "Account verification",
       text: conformSignup(fullname, encodedId),
     });
-    user.jwtExpiry = Date.now() + 30*60*1000;
+    user.jwtExpiry = Date.now() + 30 * 60 * 1000;
     await user.save();
     console.log(encodedId);
     return res.status(200).json({
-      success : true,
-      message : "link send to the email successfully",
-    })
+      success: true,
+      message: "link send to the email successfully",
+    });
   } catch (error) {
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
-})
+});
 
 //user account verification :
 exports.verify = CatchAsync(async (req, res, next) => {
   try {
     const { verificationKey } = req.query;
     //decode the encoded email
-    const decodedId = Buffer.from(verificationKey, "base64").toString(
-      "utf-8"
-    );
+    const decodedId = Buffer.from(verificationKey, "base64").toString("utf-8");
     const User = await users.findById(decodedId);
     //timer for the account activation
     if (Date.now() > User.jwtExpiry) {
@@ -113,15 +113,15 @@ exports.verify = CatchAsync(async (req, res, next) => {
     User.status = "active";
     User.jwtExpiry = undefined;
     await User.save();
-    return res.status(200).json({ 
-      success : true,
-      message: "Account verified successfully", 
+    return res.status(200).json({
+      success: true,
+      message: "Account verified successfully",
     });
   } catch (error) {
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
 });
@@ -131,16 +131,19 @@ exports.signIn = CatchAsync(async (req, res, next) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      return next(new ErrorHandler('All fileds are requiured', 401))
+      return next(new ErrorHandler("All fileds are requiured", 401));
     }
     const user = await users
       .findOne({
-       email : email
+        email: email,
       })
       .select("+password");
+    if (!user) {
+      next(new ErrorHandler("incorrect Email", 401));
+    }
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
-      return next(new ErrorHandler('password doesnot match', 401))
+      return next(new ErrorHandler("password doesnot match", 401));
     }
     generateCookie(user, res, () => {
       return res.status(200).json({
@@ -150,34 +153,34 @@ exports.signIn = CatchAsync(async (req, res, next) => {
     });
   } catch (error) {
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
 });
 
 //get user by ID :
 exports.getById = CatchAsync(async (req, res, next) => {
-    const user = await users.findById(req.user._id);
-    return res.status(200).json({
-      success: true,
-      user,
-    });
+  const user = await users.findById(req.user._id);
+  return res.status(200).json({
+    success: true,
+    user,
+  });
 });
 
 //forget password :
 exports.forgetPassword = CatchAsync(async (req, res, next) => {
   try {
     const { email } = req.body;
-    if ( !email ) {
-      return next(new ErrorHandler('All fields are required'))
+    if (!email) {
+      return next(new ErrorHandler("All fields are required"));
     }
     const user = await users.findOne({ email });
     if (!user) {
-      return next(new ErrorHandler('incorrect email',401));
+      return next(new ErrorHandler("incorrect email", 401));
     }
-    const fullname = user.firstname +" "+ user.lastname
+    const fullname = user.firstname + " " + user.lastname;
     await sendEmail({
       to: email,
       subject: "forget password link",
@@ -189,9 +192,9 @@ exports.forgetPassword = CatchAsync(async (req, res, next) => {
     });
   } catch (error) {
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
 });
@@ -200,13 +203,13 @@ exports.forgetPassword = CatchAsync(async (req, res, next) => {
 exports.resetPassword = CatchAsync(async (req, res, next) => {
   try {
     const { oldpassword, newpassword } = req.body;
-    if (!oldpassword || !newpassword){
-      return next(new ErrorHandler('All fields are required'));
+    if (!oldpassword || !newpassword) {
+      return next(new ErrorHandler("All fields are required"));
     }
     const user = await users.findById(req.user._id).select("+password");
     const isPassword = user.comparePassword(oldpassword);
     if (!isPassword) {
-      return next(new ErrorHandler('incorrect password', 401))
+      return next(new ErrorHandler("incorrect password", 401));
     }
     user.password = newpassword;
     await user.save();
@@ -220,9 +223,9 @@ exports.resetPassword = CatchAsync(async (req, res, next) => {
       .json({ message: "password updated successfully, Please Login" });
   } catch (error) {
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
 });
@@ -230,16 +233,20 @@ exports.resetPassword = CatchAsync(async (req, res, next) => {
 //update user profile using ID :
 exports.update = CatchAsync(async (req, res, next) => {
   try {
-    const { firstname, lastname, } = req.body;
+    const { firstname, lastname } = req.body;
 
     const updatedData = {
       firstname,
       lastname,
     };
-    const updatedUser = await users.findByIdAndUpdate(req.user._id, updatedData, {
-      new: true,
-      runValidators: true,
-    });
+    const updatedUser = await users.findByIdAndUpdate(
+      req.user._id,
+      updatedData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
     return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
@@ -247,9 +254,9 @@ exports.update = CatchAsync(async (req, res, next) => {
     });
   } catch (error) {
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
 });
@@ -265,15 +272,15 @@ exports.myProducts = CatchAsync(async (req, res, next) => {
     return res.status(200).json({ products });
   } catch (error) {
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
 });
 
 // user sign out :
-exports.signOut = CatchAsync(async(req, res, next) => {
+exports.signOut = CatchAsync(async (req, res, next) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
@@ -286,9 +293,9 @@ exports.signOut = CatchAsync(async(req, res, next) => {
     });
   } catch (error) {
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
 });
@@ -300,21 +307,23 @@ exports.deleteUser = CatchAsync(async (req, res, next) => {
   try {
     const { password } = req.body;
     if (!password) {
-      return next(new ErrorHandler('Password is required', 401));
+      return next(new ErrorHandler("Password is required", 401));
     }
-    const user = await users.findById(req.user._id).select('+password');
+    const user = await users.findById(req.user._id).select("+password");
     const isPasswordMatch = await user.comparePassword(password);
     if (!isPasswordMatch) {
-      return next(new ErrorHandler('incorrect password', 401));
+      return next(new ErrorHandler("incorrect password", 401));
     }
 
-    const deleted = await users.deleteOne({_id: req.user._id}).session('session');
-    if(deleted.deletedCount === 0){
-      next(new ErrorHandler('User not Found', 404));
+    const deleted = await users
+      .deleteOne({ _id: req.user._id })
+      .session("session");
+    if (deleted.deletedCount === 0) {
+      next(new ErrorHandler("User not Found", 404));
     }
-    await queries.deleteMany({_id: req.user._id}).session('session');
-    await posts.deleteMany({_id: req.user._id}).session('session');
-    await toAddress.deleteMany({_id: req.user._id}).session('session');
+    await queries.deleteMany({ _id: req.user._id }).session("session");
+    await posts.deleteMany({ _id: req.user._id }).session("session");
+    await toAddress.deleteMany({ _id: req.user._id }).session("session");
 
     await session.commitTransaction();
     res.clearCookie("token", {
@@ -325,11 +334,11 @@ exports.deleteUser = CatchAsync(async (req, res, next) => {
   } catch (error) {
     session.abortTransaction();
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
-  }finally{
+  } finally {
     session.endSession();
   }
 });
@@ -372,9 +381,9 @@ exports.filterProducts = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
 };
@@ -384,7 +393,7 @@ exports.filterProducts = async (req, res) => {
 exports.addAddress = CatchAsync(async (req, res, next) => {
   try {
     const productId = req.params.id;
-    const { country, firstname, lastname, phone, address, city, state, } =
+    const { country, firstname, lastname, phone, address, city, state } =
       req.body;
     const addressList = await toAddress.create({
       userId: req.user._id,
@@ -407,9 +416,9 @@ exports.addAddress = CatchAsync(async (req, res, next) => {
     });
   } catch (error) {
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
 });
@@ -435,21 +444,21 @@ exports.updateAddress = CatchAsync(async (req, res, next) => {
     });
     await updateAdd.save();
     return res.status(200).json({
-      success : true,
-      message : "updated successfully"
+      success: true,
+      message: "updated successfully",
     });
   } catch (error) {
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
 });
 
-exports.getAddress = CatchAsync(async (req, res, next) =>{
+exports.getAddress = CatchAsync(async (req, res, next) => {
   try {
-    const   {id}  = req.params;
+    const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -458,59 +467,59 @@ exports.getAddress = CatchAsync(async (req, res, next) =>{
     }
     const address = await toAddress.findById(id);
     return res.status(200).json({
-      success : true,
+      success: true,
       address,
-    })
+    });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
 });
 
-exports.deleteAddress = CatchAsync(async(req, res, next) =>{
+exports.deleteAddress = CatchAsync(async (req, res, next) => {
   try {
-    const {addressId} = req.params;
+    const { addressId } = req.params;
     await toAddress.findByIdAndDelete(addressId);
     return res.status(200).json({
-      success : true,
-      message: 'address Deleted'
-    })
+      success: true,
+      message: "address Deleted",
+    });
   } catch (error) {
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
 });
 
-exports.viewAllAddresses = CatchAsync(async(req , res , next) =>{
+exports.viewAllAddresses = CatchAsync(async (req, res, next) => {
   try {
-    const alladdresses = await toAddress.find({ userId: req.user._id});
+    const alladdresses = await toAddress.find({ userId: req.user._id });
     return res.status(200).json({
       success: true,
       alladdresses,
-    })
+    });
   } catch (error) {
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
 });
 
 //*********************   Submitting Contact Form :  ********************** */
 
-exports.contactUs = CatchAsync(async(req, res, next) => {
+exports.contactUs = CatchAsync(async (req, res, next) => {
   try {
     const { message } = req.body;
     if (!message) {
-      return next(new ErrorHandler('message cannot be empty'));
+      return next(new ErrorHandler("message cannot be empty"));
     }
     const userContactForm = await queries.create({
       userId: req.user._id,
@@ -525,9 +534,9 @@ exports.contactUs = CatchAsync(async(req, res, next) => {
     });
   } catch (error) {
     return res.status(500).json({
-      success : false,
-      message : 'Internal Server Error',
-      error : error
+      success: false,
+      message: "Internal Server Error",
+      error: error,
     });
   }
 });

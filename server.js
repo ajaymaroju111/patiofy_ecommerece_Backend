@@ -60,10 +60,13 @@ app.use(bodyParser.json());
 // enable CORS :
 app.use(
   cors({
-    origin: ['http://147.93.97.20:3000/' , 'https://yourfrontend.com'],
+    // origin: ['http://147.93.97.20:3000' , 'https://yourfrontend.com'],
+    origin: '*',
     credentials : true,
   })
 );
+
+app.set('trust proxy', 1);
 
 app.use(passport.initialize());
 app.use(passport.session());

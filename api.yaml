@@ -349,9 +349,7 @@ paths:
       tags:
         - users
       security:
-        - CookieAuth: []
-          schema:
-            type: string
+        - CookieAuth: [] 
       responses:
         "200":
           description: User details retrieved successfully.
@@ -402,6 +400,7 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error"
+
 
   /patiofy/auth/user/update:
     put:
