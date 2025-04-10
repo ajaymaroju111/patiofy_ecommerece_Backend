@@ -78,7 +78,6 @@ userschema.pre("save", async function (next) {
         subject: "Account verification",
         text: conformSignup(fullname, encodedId),
       });
-      console.log('Email updated in the DB, EncodedID : ', encodedId);
     }
   }
   next();

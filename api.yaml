@@ -195,7 +195,7 @@ paths:
                     type: string
                     example: Some error occurred
 
-  /patiofy/auth/user/veriy:
+  /patiofy/auth/user/verify:
     get:
       summary: Verify user account
       description: |
@@ -712,6 +712,45 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error"
+
+  /patiofy/auth/user/products:
+    get:
+      summary: Get all products
+      description: Retrieves a list of all available products.
+      tags:
+        - products
+      security:
+        - bearerAuth: []  # Optional auth; can be omitted if visitor access is allowed
+      responses:
+        '200':
+          description: A list of products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  products:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
 
   /patiofy/auth/user/filter:
     get:

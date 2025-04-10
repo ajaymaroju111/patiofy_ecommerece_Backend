@@ -122,7 +122,6 @@ exports.addToCart = async(req , res) =>{
       message : 'product added to cart successfully'
     });
   } catch (error) {
-    console.log(error)
     return res.status(500).json({
       success : false,
       message : 'Internal Server Error',
@@ -135,7 +134,6 @@ exports.addToCart = async(req , res) =>{
 exports.getCartById = async(req , res) => {
   try {
     const {id}  = req.params;
-    console.log(id);
         // ✅ Validate ObjectId
         if (!mongoose.Types.ObjectId.isValid(id)) {
           return res.status(400).json({
@@ -162,7 +160,6 @@ exports.getCartById = async(req , res) => {
     });
 
   } catch (error) {
-    console.error("Error in getCartById:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -194,8 +191,15 @@ exports.deleteCart = async(req , res) => {
   try {
     const { cartId } = req.params.id;
     await carts.findByIdAndDelete(cartId);
+    return res.status(200).json({
+      success : true,
+      message: "Cart deleted successfully",
+    })
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({error : ' Internal Server Error '});
+    return res.status(500).json({
+      success: false,
+      message : ' Internal Server Error ',
+      error : error
+    });
   }
 }

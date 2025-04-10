@@ -22,6 +22,7 @@ const {
   viewAllAddresses,
   contactUs,
   resend,
+  getAllProducts
   
 } = require("../controllers/authroutes.js");
 const { authenticate,authenticateifNeeded, verifyGoogleUser } = require("../middlewares/authUser.js");
@@ -46,7 +47,6 @@ router.get(
     const { user, token } = req.user;
     // If password is not set (new user via Google), redirect to set password
     const newUser = await users.findById(user._id);
-    console.log(newUser.password);
     if (!newUser.password) {     //this only works when select : true in schema
       return res.redirect("/patiofy/auth/user/google/password");
     }
@@ -74,7 +74,7 @@ router.get("/failed", (req, res) => {
 
 router.put('/google/password', verifyGoogleUser, setNewPassword);
 router.post("/signup", upload.single("profilePhoto"), signUp);
-router.get("/veriy", verify);
+router.get("/verify", verify);
 router.post("/resend", resend);
 router.post("/signin", signIn);
 router.put("/update", authenticate, upload.single("avatar"), update);
@@ -83,6 +83,7 @@ router.post("/password/forget", forgetPassword);
 router.post("/password/reset", authenticate, resetPassword);
 router.get("/products/:id", authenticate, myProducts);
 router.delete("/delete", authenticate, deleteUser);
+router.get("/products", getAllProducts);
 router.get("/filter", filterProducts);
 router.put("/logout", authenticate, signOut);
 

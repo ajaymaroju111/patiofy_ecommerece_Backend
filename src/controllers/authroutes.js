@@ -19,7 +19,6 @@ exports.setNewPassword = async(req, res) => {
         error: 'password is required'
       })
     }
-    console.log(req.user._id);
     const update = await users.findById(req.user._id);
     update.password = password;
     await update.save();
@@ -28,7 +27,6 @@ exports.setNewPassword = async(req, res) => {
       message: "password updated successfully",
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -86,7 +84,6 @@ exports.resend = async(req, res) => {
     });
     user.jwtExpiry = Date.now() + 30 * 60 * 1000;
     await user.save();
-    console.log(encodedId);
     return res.status(200).json({
       success: true,
       message: "link send to the email successfully",
@@ -157,14 +154,12 @@ exports.signIn = async(req, res) => {
     const token  = generateUserToken(user);
     user.jwtExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
     await user.save();
-    console.log(token);
     return res.status(200).json({
       success : true,
       message : 'login successfully',
       JWTtoken : token,
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -364,6 +359,23 @@ exports.deleteUser = async(req, res) => {
   }
 };
 
+//get all products : 
+exports.getAllProducts = async(req, res) =>{
+  try {
+    const products = await posts.find({});
+    return res.status(200).json({
+      success : true,
+      products
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message : 'Internal Server Error',
+      error : error,
+    })
+  }
+}
+
 //search for products : ( NAN )
 exports.filterProducts = async(req, res) => {
   try {
@@ -492,7 +504,6 @@ exports.getAddress = async(req, res) => {
       address,
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -546,7 +557,6 @@ exports.contactUs = async(req, res) => {
     }
     if(!req.user){
       const userContactForm = await queries.create({
-        userId: req.user._id,
         firstname: firstname, 
         lastname: lastname, 
         email: email, 
