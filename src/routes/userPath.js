@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const jwt = require("jsonwebtoken");
 const users = require('../models/userschema.js');
 const upload = require("../middlewares/multer.js");
 const {

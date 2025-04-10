@@ -1,7 +1,6 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const users = require("../models/userschema.js");
-const CatchAsync = require("./CatchAsync.js");
 
 //genenrate a cookie when a user is aurhtenticated :
 exports.generateUserToken = (user) => {
@@ -17,7 +16,7 @@ exports.generateUserToken = (user) => {
 };
 
 //authenticate user before every route :
-exports.authenticate = CatchAsync( async(req, res, next) => {
+exports.authenticate = async(req, res, next) => {
   try {
     const bearerKey = req.headers['authorization'];
 
@@ -42,7 +41,7 @@ exports.authenticate = CatchAsync( async(req, res, next) => {
       error : error,
     })
   }
-});
+};
 
 //get token middleware for the google authentication : 
 exports.generateToken = (user) => {
@@ -54,7 +53,7 @@ exports.generateToken = (user) => {
 };
 
 //verification for the google authenticated users : 
-exports.verifyGoogleUser = CatchAsync(async(req, res, next) =>{
+exports.verifyGoogleUser = async(req, res, next) =>{
   const bearerKey = req.headers['authorization'];
   if (!bearerKey) {
     return res.status(401).json({ error: "Login is required" });
@@ -67,5 +66,5 @@ exports.verifyGoogleUser = CatchAsync(async(req, res, next) =>{
     }
     req.user = user;
     next();
-})
+};
 

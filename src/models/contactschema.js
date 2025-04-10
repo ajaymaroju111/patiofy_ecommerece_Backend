@@ -14,6 +14,15 @@ const contactSchema = new mongoose.Schema({
     type : String,
     ref : 'users',
   },
+  email :{
+    type : String,
+    match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
+    trim: true,
+    ref : 'users'
+  },
+  phone: {
+    type : Number,
+  },
   message : {
     type : String,
     required : [true , 'message is required']

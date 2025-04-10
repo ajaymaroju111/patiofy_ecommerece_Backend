@@ -1,18 +1,17 @@
 const posts = require('../models/productschema');
-const errorFunction = require('../middlewares/CatchAsync.js');
 const carts = require('../models/cartschema.js');
-const CatchAsync = require('../middlewares/CatchAsync.js');
-const ErrorHandler = require('../utils/ErrorHandler.js');
 const { default: mongoose } = require('mongoose');
 
 
 
 //create a product post : 
-exports.createPost = CatchAsync(async(req , res, next) =>{
+exports.createPost = async(req , res) =>{
   try {
     const { name , description, price, size, fabric} = req.body;
     if(!req.files || req.files.length === 0){
-      return next(new ErrorHandler('post photos are required', 400))
+      return res.status(400).json({
+        error: "post images are required"
+      })
     }
     const postImages = req.files.map((file) => ({
       name: file.originalname,
@@ -42,10 +41,10 @@ exports.createPost = CatchAsync(async(req , res, next) =>{
       error : error
     });
   }
-});
+};
 
 //update product post  : 
-exports.updatePost = CatchAsync( async(req , res, next) => {
+exports.updatePost = async(req , res) => {
   try {
     const { id , name, description, price} = req.body;
     const newData = {
@@ -69,10 +68,10 @@ exports.updatePost = CatchAsync( async(req , res, next) => {
       error : error
     });
   }
-});
+};
 
 //get product by Id : 
-exports.getById = CatchAsync( async(req , res, next) =>{
+exports.getById = async(req , res) =>{
   try {
     const {id} = req.params.id;
     const post = await posts.findById(id).populate('userId' , 'firstname lastname username email').exec();
@@ -87,17 +86,17 @@ exports.getById = CatchAsync( async(req , res, next) =>{
       error : error
     });
   }
-})
+};
 
 //delete a post : 
-exports.deletePost = CatchAsync(async(req, res, next) =>{
+exports.deletePost = async(req, res) =>{
     const { id } = req.params.id;
     await posts.findByIdAndDelete( id );
     return res.status(200).json({
       success : true,
       message : 'post deleted successfully'
     });
-});
+};
 
 //*****************         PRODUCT CART ROUTES               ***********************/
 

@@ -2,8 +2,6 @@ const users = require("../models/userschema.js");
 const posts = require("../models/productschema.js");
 const toAddress = require("../models/addressschema.js");
 const queries = require("../models/contactschema.js");
-const CatchAsync = require("../middlewares/CatchAsync.js");
-const ErrorHandler = require("../utils/ErrorHandler.js");
 const { sendEmail } = require("../utils/sendEmail.js");
 const { generateUserToken } = require("../middlewares/authUser.js");
 const {
@@ -540,7 +538,7 @@ exports.viewAllAddresses = async(req, res) => {
 
 exports.contactUs = async(req, res) => {
   try {
-    const { message } = req.body;
+    const { firstname, lastname, email, phone, message } = req.body;
     if (!message || message === null) {
       return res.status(400).json({
         error: "message is required"
@@ -548,8 +546,10 @@ exports.contactUs = async(req, res) => {
     }
     const userContactForm = await queries.create({
       userId: req.user._id,
-      firstname: req.user.firstname,
-      lastname: req.user.lastname,
+      firstname: firstname || req.user.firstname,
+      lastname: lastname || req.user.lastname,
+      email: email || req.user.email,
+      phone: phone,
       message,
     });
     await userContactForm.save();
