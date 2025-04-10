@@ -1646,6 +1646,18 @@ paths:
             schema:
               type: object
               properties:
+                firstname:
+                  type: string
+                  example: "first_body."
+                lastname:
+                  type: string
+                  example: "last_body."
+                email:
+                  type: string
+                  example: "marojuajay111@gmail.com."
+                phone:
+                  type: string
+                  example: "900000000"
                 message:
                   type: string
                   example: "I have an issue with my order."

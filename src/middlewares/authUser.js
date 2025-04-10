@@ -43,6 +43,25 @@ exports.authenticate = async(req, res, next) => {
   }
 };
 
+exports.authenticateifNeeded = async(req, res, next) => {
+  try {
+    const bearerKey = req.headers['authorization'];
+    // Verify the token
+   const token = bearerKey.split(' ')[1];
+   const decode = jwt.verify(token, process.env.JWT_SECRET)
+    // Fetch user from DB
+    const user = await users.findById(decode.id);
+    req.user = user;
+    next();
+  } catch (error) {
+    return res.status(500).json({
+      success : false,
+      message : "Internal Server Error",
+      error : error,
+    })
+  }
+};
+
 //get token middleware for the google authentication : 
 exports.generateToken = (user) => {
   return jwt.sign(

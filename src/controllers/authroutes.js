@@ -544,15 +544,27 @@ exports.contactUs = async(req, res) => {
         error: "message is required"
       });
     }
-    const userContactForm = await queries.create({
-      userId: req.user._id,
-      firstname: firstname || req.user.firstname,
-      lastname: lastname || req.user.lastname,
-      email: email || req.user.email,
-      phone: phone,
-      message,
-    });
-    await userContactForm.save();
+    if(!req.user){
+      const userContactForm = await queries.create({
+        userId: req.user._id,
+        firstname: firstname, 
+        lastname: lastname, 
+        email: email, 
+        phone: phone,
+        message,
+      });
+      await userContactForm.save();
+    }else if(req.user){
+      const userContactForm = await queries.create({
+        userId: req.user._id,
+        firstname: firstname || req.user.firstname,
+        lastname: lastname || req.user.lastname,
+        email: email || req.user.email,
+        phone: phone,
+        message,
+      });
+      await userContactForm.save();
+    }
     return res.status(200).json({
       success: true,
       message: "query submitted successfully",

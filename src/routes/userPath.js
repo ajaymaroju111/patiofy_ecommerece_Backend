@@ -24,7 +24,7 @@ const {
   resend,
   
 } = require("../controllers/authroutes.js");
-const { authenticate, verifyGoogleUser } = require("../middlewares/authUser.js");
+const { authenticate,authenticateifNeeded, verifyGoogleUser } = require("../middlewares/authUser.js");
 const passport = require("passport");
 
 
@@ -94,6 +94,6 @@ router.delete("/address/:id", authenticate, deleteAddress);
 router.get("/adress/list", authenticate, viewAllAddresses);
 
 //Contact _ Us :
-router.post("/query", authenticate, contactUs);
+router.post("/query", authenticateifNeeded, contactUs);
 
 module.exports = router;
