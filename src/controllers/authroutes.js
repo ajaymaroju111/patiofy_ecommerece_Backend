@@ -105,7 +105,7 @@ exports.verify = async(req, res) => {
     const decodedId = Buffer.from(verificationKey, "base64").toString("utf-8");
     const User = await users.findById(decodedId);
     //timer for the account activation
-    if (Date.now() > User.jwtExpiry || User.jwtExpiry == undefined){
+    if (Date.now() > User.jwtExpiry || User.jwtExpiry === undefined){
       return res.status(401).json({
         error: "session expired"
       })
