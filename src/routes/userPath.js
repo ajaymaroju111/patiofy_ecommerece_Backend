@@ -48,14 +48,14 @@ router.get(
     const { user, token } = req.user;
     // If password is not set (new user via Google), redirect to set password
     const newUser = await users.findById(user._id);
-    if (!newUser.password) {     //this only works when select : true in schema
+    if (!newUser.password) {     //this only works when select : true in schema which is by default value 
       return res.redirect("/patiofy/auth/user/google/password");
     }
     // return res.redirect("/patiofy/auth/user/home");
     return res.status(200).json({
       success: true,
       message: "User authenticated successfully",
-      token: token, // Include the token in the response
+      token: token,
       user: {
         id: user._id,
         email: user.email,

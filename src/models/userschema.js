@@ -64,7 +64,6 @@ userschema.methods.comparePassword = function (plainPassword) {
   return bcrypt.compare(plainPassword, this.password);
 };
 
-
 //send the verification mail every time when email get updated :
 userschema.pre("save", async function (next) {
   if(this.googleId === undefined){
