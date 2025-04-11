@@ -446,8 +446,8 @@ exports.filterProducts = async(req, res) => {
     });
   }
 };
-
-//*********************     DELIVERY ADDRESS:       ****************** */
+   
+//*********************     DELIVERY ADDRESS:       *******************/
 
 exports.addAddress = async(req, res) => {
   try {
@@ -571,7 +571,7 @@ exports.viewAllAddresses = async(req, res) => {
   }
 };
 
-//*********************   Submitting Contact Form :  ********************** */
+//*********************   Submitting Contact Form :  ***********************/
 
 exports.contactUs = async(req, res) => {
   try {
