@@ -185,7 +185,7 @@ exports.forgetPassword = (username) =>{
     <div class="content">
       <p>Hi <strong>${username}</strong>,</p>
       <p>We received a request to reset your password. Click the button below to proceed with resetting your password.</p>
-      <a href="https://localhost:3000/patiofy/resetPassword" class="reset-link">Reset Password</a>
+      <a href="http://147.93.97.20:3000/patiofy/auth/user/password/setNew" class="reset-link">Reset Password</a>
       <p>If you did not request a password reset, please ignore this email or contact our support team.</p>
       <p>Thank you!<br>The Team</p>
     </div>

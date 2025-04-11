@@ -105,9 +105,9 @@ exports.verify = async(req, res) => {
     const decodedId = Buffer.from(verificationKey, "base64").toString("utf-8");
     const User = await users.findById(decodedId);
     //timer for the account activation
-    if (Date.now() > User.jwtExpiry) {
+    if (Date.now() > User.jwtExpiry || User.jwtExpiry === undefined){
       return res.status(401).json({
-        error: "session expired, please login"
+        error: "session expired"
       })
     }
     User.status = "active";
@@ -211,8 +211,34 @@ exports.forgetPassword = async(req, res) => {
   }
 };
 
+//set a new password after forget password link : 
+exports.setPassword = async(req, res) => {
+  try {
+    const {email, newpassword} = req.body;
+    if(!email || !newpassword){
+      return res.status(400).json({
+        error: "All fields are required",
+      });
+    }
+    const user = await users.findOne({ email });
+    user.password = newpassword;
+    await user.save();
+    return res.status(200).json({
+      success: true,
+      message : "new password updated , please login",
+    })
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server Error",
+      error: error, 
+    })
+  }
+}
+
 // reset the password using old password :
-exports.resetPassword = async(req, res) => {
+exports.changePassword = async(req, res) => {
   try {
     const { oldpassword, newpassword } = req.body;
     if (!oldpassword || !newpassword) {

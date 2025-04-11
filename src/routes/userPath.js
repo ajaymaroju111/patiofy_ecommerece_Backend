@@ -9,7 +9,8 @@ const {
   signIn,
   getById,
   forgetPassword,
-  resetPassword,
+  setPassword,
+  changePassword,
   update,
   myProducts,
   signOut,
@@ -80,7 +81,8 @@ router.post("/signin", signIn);
 router.put("/update", authenticate, upload.single("avatar"), update);
 router.get("/me/:id", authenticate, getById);
 router.post("/password/forget", forgetPassword);
-router.post("/password/reset", authenticate, resetPassword);
+router.post("/password/change", authenticate, changePassword);
+router.put("/password/setNew", setPassword);
 router.get("/products/:id", authenticate, myProducts);
 router.delete("/delete", authenticate, deleteUser);
 router.get("/products", getAllProducts);

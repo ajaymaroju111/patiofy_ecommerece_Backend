@@ -540,7 +540,71 @@ paths:
                     type: string
                     example: Detailed error message
 
-  /patiofy/auth/user/password/reset:
+  /patiofy/auth/user/password/setNew:
+    put:
+      summary: Set a new password for a user
+      tags:
+        - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - newpassword
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: marojuajay111@gmail.com
+                newpassword:
+                  type: string
+                  format: password
+                  example: Ajay@110125
+      responses:
+        '200':
+          description: Password updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: new password updated , please login
+        '400':
+          description: Missing email or new password
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: All fields are required
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal server Error
+                  error:
+                    type: string
+                    example: Error message details
+
+  /patiofy/auth/user/password/change:
     post:
       summary: Reset user password
       description: |
@@ -861,7 +925,7 @@ paths:
                     type: string
                     example: "Internal Server Error"
 
-  #product routes YAML  :
+#product routes YAML  :
 
   /patiofy/auth/products/create:
     post:
