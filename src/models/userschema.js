@@ -70,7 +70,7 @@ userschema.pre("save", async function (next) {
   if(this.googleId === undefined){
     if (this.isModified("email")) {
       const encodedId = Buffer.from(this._id.toString(), "utf-8").toString("base64");
-      this.expirytime = Date.now() + 30 * 60 * 1000;
+      this.jwtExpiry = Date.now() + 30 * 60 * 1000;
       this.status = 'inactive';
       const fullname = this.firstname + this.lastname
       await sendEmail({
