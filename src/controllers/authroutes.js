@@ -447,7 +447,7 @@ exports.filterProducts = async(req, res) => {
   }
 };
    
-//*********************     DELIVERY ADDRESS:       *******************/
+//*********************     DELIVERY ADDRESS:      *******************/
 
 exports.addAddress = async(req, res) => {
   try {
