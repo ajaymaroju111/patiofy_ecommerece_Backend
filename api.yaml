@@ -54,40 +54,47 @@ paths:
         "302":
           description: Redirects to Google's authentication page
 
-  /patiofy/auth/user/google/password:
+  /patiofy/auth/user/google/{id}:
     put:
-      summary: Set a new password for the authenticated user
-      description: Allows an authenticated user to update their password.
       tags:
         - Authentication_OAuth2.0
-      security:
-        - CookieAuth: []
+      summary: Set a new password for a user
+      description: Update the password for a user based on their ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the user whose password is being updated.
+          schema:
+            type: string
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              properties:
-                password:
-                  type: string
-                  format: password
-                  example: "newSecurePassword123"
               required:
                 - password
+              properties:
+                newpassword:
+                  type: string
+                  example: Ajay@110125
       responses:
-        "200":
+        '200':
           description: Password updated successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: true
                   message:
                     type: string
-                    example: "Password updated successfully"
-        "400":
-          description: Bad request, possibly due to missing password field
+                    example: password updated successfully
+        '400':
+          description: Missing or invalid password
           content:
             application/json:
               schema:
@@ -95,27 +102,22 @@ paths:
                 properties:
                   error:
                     type: string
-                    example: "password is required"
-        "401":
-          description: Unauthorized, authentication token is missing or invalid
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Unauthorized"
-        "500":
+                    example: password is required
+        '500':
           description: Internal server error
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  error:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
                     type: string
-                    example: "Internal Server Error"
+                    example: Internal Server Error
+                  error:
+                    type: object
 
   /patiofy/auth/user/signup:
     post:

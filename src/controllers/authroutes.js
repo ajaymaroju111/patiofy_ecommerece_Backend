@@ -14,14 +14,22 @@ const { default: mongoose } = require("mongoose");
 //set password after google oauth signup :
 exports.setNewPassword = async(req, res) => {
   try {
-    const { password } = req.body;
-    if (!password) {
+    const { id } = req.params;
+    const { newpassword } = req.body;
+    if (!newpassword) {
       return res.status(400).json({
         error: 'password is required'
       })
     }
-    const update = await users.findById(req.user._id);
-    update.password = password;
+    const update = await users.findById(id);
+     // ✅ Check if user exists
+     if (!update) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    update.password = newpassword;
     await update.save();
     return res.status(200).json({
       success: true,
@@ -229,7 +237,6 @@ exports.setPassword = async(req, res) => {
       message : "new password updated , please login",
     })
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal server Error",

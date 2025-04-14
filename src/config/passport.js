@@ -2,43 +2,41 @@ const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const jwt = require("jsonwebtoken");
 const users = require("../models/userschema.js");
-
-//genenrate password :
+const { status } = require("init");
 
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_SECRET_KEY,
-      callbackURL: process.env.CALLBACK_URL, // Redirect URL set in Google Console and should be same as callback route with same port
+      callbackURL: process.env.CALLBACK_URL,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const user = await users.findOne({ googleId: profile.id }); // Find user by Google ID
+        let user = await users.findOne({ googleId: profile.id }); // Use let to reassign if needed
 
         if (!user) {
-          // Split full name into first name and last name
           const nameParts = profile.displayName.split(" ");
-          const firstName = nameParts[0]; // First name
+          const firstName = nameParts[0];
           const lastName = nameParts.slice(1).join(" ");
-          const user = await users.create({
+
+          user = await users.create({
             googleId: profile.id,
             email: profile.emails[0].value,
             firstname: firstName,
             lastname: lastName,
+            status: "active",
           });
-          //set status to be active :
-          user.status = "active";
-          await user.save();
         }
 
         // Generate a JWT token
         const token = jwt.sign(
-          { id: user._id, email: user.email }, // Corrected variable name
+          { id: user._id, email: user.email, status: user.status },
           process.env.JWT_SECRET,
-          { expiresIn: "1d" },
+          { expiresIn: "1d" }
         );
-        return done(null, { user, token }); // Correct return format
+
+        return done(null, { user, token });
       } catch (error) {
         console.log("OAuth Error", error);
         return done(error, null);

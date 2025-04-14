@@ -74,7 +74,7 @@ router.get("/failed", (req, res) => {
   return res.status(401).json({ error: "Authentication Failed" });
 });
 
-router.put('/google/password', verifyGoogleUser, setNewPassword);
+router.put('/google/:id', setNewPassword);
 router.post("/signup", upload.single("profilePhoto"), signUp);
 router.get("/verify", verify);
 router.post("/resend", resend);
