@@ -2,7 +2,6 @@ const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const jwt = require("jsonwebtoken");
 const users = require("../models/userschema.js");
-const { status } = require("init");
 
 passport.use(
   new GoogleStrategy(

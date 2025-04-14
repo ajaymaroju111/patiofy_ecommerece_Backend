@@ -64,7 +64,6 @@ router.get(
         lastname: user.lastname,
       },
     });
-
   }
 );
 
