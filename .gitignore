@@ -2,5 +2,5 @@
 .env
 .env.local
 .env.development
-.env.production
+.env.NODE_ENV
 .env.test

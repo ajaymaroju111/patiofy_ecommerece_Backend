@@ -23,7 +23,8 @@ const {
   viewAllAddresses,
   contactUs,
   resend,
-  getAllProducts
+  getAllProducts,
+  ratingProduct,
   
 } = require("../controllers/authroutes.js");
 const { authenticate,authenticateifNeeded, verifyGoogleUser } = require("../middlewares/authUser.js");
@@ -86,6 +87,7 @@ router.put("/password/setNew", setPassword);
 router.get("/products/:id", authenticate, myProducts);
 router.delete("/delete", authenticate, deleteUser);
 router.get("/products", getAllProducts);
+router.post("/products/:id", authenticate, ratingProduct);
 router.get("/filter", filterProducts);
 router.put("/logout", authenticate, signOut);
 

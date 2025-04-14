@@ -4,6 +4,7 @@ const toAddress = require("../models/addressschema.js");
 const queries = require("../models/contactschema.js");
 const { sendEmail } = require("../utils/sendEmail.js");
 const { generateUserToken } = require("../middlewares/authUser.js");
+const reviews = require('../models/reviews.js');
 const {
   conformSignup,
   forgetPassword,
@@ -446,6 +447,91 @@ exports.filterProducts = async(req, res) => {
     });
   }
 };
+
+exports.ratingProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rating, reviewMessage } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({
+        success: false,
+        error: "Please provide a valid rating (1-5)",
+      });
+    }
+
+    let rate = await reviews.findById(id);
+
+    if (!rate) {
+      rate = await reviews.create({
+        productId: id,
+        userId: [req.user._id],
+        [`r${rating}`]: {
+          data: {
+            messages: reviewMessage ? [reviewMessage] : [],
+            count: 1,
+          }
+        },
+        finalRating: rating,
+      });
+    } else {
+      // Prevent duplicate rating from the same user
+      if (rate.userId.includes(req.user._id)) {
+        return res.status(400).json({
+          success: false,
+          error: "You have already rated this product"
+        });
+      }
+
+      // Add user to the list
+      rate.userId.push(req.user._id);
+
+      const ratingKey = `r${rating}`;
+
+      // If rating block doesn't exist yet, initialize it
+      if (!rate[ratingKey]) {
+        rate[ratingKey] = {
+          data: {
+            message: [],
+            count: 0,
+          }
+        };
+      }
+
+      // Push message and increment count
+      rate[ratingKey].data.messages.push(reviewMessage || "");
+      rate[ratingKey].data.count += 1;
+
+      // Recalculate final rating
+      const totalScore = [1, 2, 3, 4, 5].reduce((sum, r) => {
+        const count = rate[`r${r}`]?.data?.count || 0;
+        return sum + (r * count);
+      }, 0);
+
+      const totalCount = [1, 2, 3, 4, 5].reduce((sum, r) => {
+        return sum + (rate[`r${r}`]?.data?.count || 0);
+      }, 0);
+
+      rate.finalRating = totalCount > 0 ? Math.round((totalScore / totalCount) * 10) / 10 : 0;
+    }
+
+    await rate.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Review added successfully",
+      rate,
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error,
+    });
+  }
+};
+
    
 //*********************     DELIVERY ADDRESS:      *******************/
 
