@@ -448,9 +448,10 @@ exports.filterProducts = async(req, res) => {
   }
 };
 
+//rating a product : 
 exports.ratingProduct = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params; // product ID, not review document _id
     const { rating, reviewMessage } = req.body;
 
     if (!rating || rating < 1 || rating > 5) {
@@ -460,9 +461,11 @@ exports.ratingProduct = async (req, res) => {
       });
     }
 
-    let rate = await reviews.findById(id);
+    // Search by productId, not _id of review doc
+    let rate = await reviews.findOne({ productId: id });
 
     if (!rate) {
+      // Create new review doc for product
       rate = await reviews.create({
         productId: id,
         userId: [req.user._id],
@@ -475,34 +478,34 @@ exports.ratingProduct = async (req, res) => {
         finalRating: rating,
       });
     } else {
-      // Prevent duplicate rating from the same user
+      // Check if user has already rated
       if (rate.userId.includes(req.user._id)) {
         return res.status(400).json({
           success: false,
-          error: "You have already rated this product"
+          error: "You have already rated this product",
         });
       }
 
-      // Add user to the list
+      // Add user to userId list
       rate.userId.push(req.user._id);
 
       const ratingKey = `r${rating}`;
 
-      // If rating block doesn't exist yet, initialize it
+      // Initialize rating block if it doesn't exist
       if (!rate[ratingKey]) {
         rate[ratingKey] = {
           data: {
-            message: [],
+            messages: [],
             count: 0,
-          }
+          },
         };
       }
 
-      // Push message and increment count
+      // Add message and increment count
       rate[ratingKey].data.messages.push(reviewMessage || "");
       rate[ratingKey].data.count += 1;
 
-      // Recalculate final rating
+      // Recalculate average rating
       const totalScore = [1, 2, 3, 4, 5].reduce((sum, r) => {
         const count = rate[`r${r}`]?.data?.count || 0;
         return sum + (r * count);
@@ -512,7 +515,9 @@ exports.ratingProduct = async (req, res) => {
         return sum + (rate[`r${r}`]?.data?.count || 0);
       }, 0);
 
-      rate.finalRating = totalCount > 0 ? Math.round((totalScore / totalCount) * 10) / 10 : 0;
+      rate.finalRating = totalCount > 0
+        ? Math.round((totalScore / totalCount) * 10) / 10
+        : 0;
     }
 
     await rate.save();
