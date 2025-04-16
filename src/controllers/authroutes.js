@@ -316,7 +316,7 @@ exports.myProducts = async(req, res) => {
   try {
     const id = req.user._id;
     const products = await posts
-      .find({ id })
+      .find({ userId : id })
       .populate("userId", "username firstname lastname email")
       .exec();
     return res.status(200).json({ products });
