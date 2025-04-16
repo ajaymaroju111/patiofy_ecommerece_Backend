@@ -243,7 +243,7 @@ exports.setPassword = async(req, res) => {
       error: error, 
     })
   }
-}
+};
 
 // reset the password using old password :
 exports.changePassword = async(req, res) => {
@@ -408,7 +408,7 @@ exports.getAllProducts = async(req, res) =>{
       error : error,
     })
   }
-}
+};
 
 //search for products : ( NAN )
 exports.filterProducts = async(req, res) => {
