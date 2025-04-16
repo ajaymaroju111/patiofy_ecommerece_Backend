@@ -12,7 +12,7 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        let user = await users.findOne({ googleId: profile.id }); // Use let to reassign if needed
+        let user = await users.findOne({$or: [{googleId: profile.id}, {email: profile.emails[0].value}] }); // Use let to reassign if needed
 
         if (!user) {
           const nameParts = profile.displayName.split(" ");
