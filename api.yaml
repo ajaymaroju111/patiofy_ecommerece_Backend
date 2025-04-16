@@ -1437,7 +1437,7 @@ paths:
       security:
         - CookieAuth: []
       parameters:
-        - name: cartId
+        - name: id
           in: path
           required: true
           description: The unique identifier of the cart.
@@ -1487,7 +1487,7 @@ paths:
       security:
         - CookieAuth: []
       parameters:
-        - name: cartId
+        - name: id
           in: path
           required: true
           description: The unique identifier of the cart to delete.

@@ -73,7 +73,7 @@ exports.updatePost = async(req , res) => {
 //get product by Id : 
 exports.getById = async(req , res) =>{
   try {
-    const {id} = req.params.id;
+    const {id} = req.params;
     const post = await posts.findById(id).populate('userId' , 'firstname lastname username email').exec();
     return res.status(200).json({
       success : true,
@@ -171,9 +171,9 @@ exports.getCartById = async(req , res) => {
 //update cart by id : 
 exports.updateCart = async(req, res) =>{
   try {
-    const {cartId} = req.params.id;
+    const {id} = req.params;
     const {quantity} = req.body;
-    await carts.findByIdAndUpdate(cartId , {quantity : quantity} , {
+    await carts.findByIdAndUpdate(id , {quantity : quantity} , {
       new : true,
       runValidators : true,
     });
@@ -189,8 +189,8 @@ exports.updateCart = async(req, res) =>{
 //delete cart : 
 exports.deleteCart = async(req , res) => {
   try {
-    const { cartId } = req.params.id;
-    await carts.findByIdAndDelete(cartId);
+    const { id } = req.params;
+    await carts.findByIdAndDelete(id);
     return res.status(200).json({
       success : true,
       message: "Cart deleted successfully",

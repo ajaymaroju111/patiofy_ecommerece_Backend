@@ -17,16 +17,28 @@ require('./src/config/passport.js');
 const authroutes = require("./src/routes/userPath.js");
 const postroutes = require("./src/routes/productPaths.js");
 const { dbConnnection } = require("./src/config/dbConnection.js");
+const MongoStore = require("connect-mongo");
 dbConnnection();
 
+// app.use(
+//   session({
+//     secret: process.env.JWT_SECRET, 
+//     resave: false, 
+//     saveUninitialized: false,
+//   })
+// );
+const dbString = process.env.NODE_ENV === 'production'? process.env.MONGODB_PRODUCTION : process.env.MONGODB_LOCAL; 
 app.use(
   session({
-    secret: process.env.JWT_SECRET, 
-    resave: false, 
+    secret: process.env.JWT_SECRET,
+    resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: dbString,
+      collectionName: 'sessions',
+    }),
   })
 );
-
 app.use(cookieParser());
 //usage od limiter :
 const limiter = Limiter({
