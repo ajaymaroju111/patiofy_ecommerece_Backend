@@ -544,6 +544,31 @@ exports.ratingProduct = async (req, res) => {
   }
 };
 
+exports.getRatingById = async(req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await posts.findById( id )
+    if(!product){
+      return res.status(401).json({
+        success: false,
+        message: "product is no longer available",
+      })
+    }
+    const rate = await reviews.findOne({ productId: id });
+    return res.status(200).json({
+      success: true,
+      message: "review retrieved successfully",
+      rate,
+    })
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Intenal Server Error",
+      error: error,
+    })
+  }
+}
    
 //*********************     DELIVERY ADDRESS:      *******************/
 

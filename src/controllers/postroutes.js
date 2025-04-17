@@ -1,7 +1,7 @@
 const posts = require('../models/productschema');
 const carts = require('../models/cartschema.js');
 const { default: mongoose } = require('mongoose');
-
+const reviews = require('../models/reviews.js');
 
 
 //create a product post : 
@@ -92,6 +92,7 @@ exports.getById = async(req , res) =>{
 exports.deletePost = async(req, res) =>{
     const { id } = req.params.id;
     await posts.findByIdAndDelete( id );
+    await reviews.deleteOne({ productId: id });
     return res.status(200).json({
       success : true,
       message : 'post deleted successfully'
