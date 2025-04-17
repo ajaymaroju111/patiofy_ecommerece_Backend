@@ -25,7 +25,6 @@ const {
   resend,
   getAllProducts,
   ratingProduct,
-  getRatingById,
 } = require("../controllers/authroutes.js");
 const { authenticate,authenticateifNeeded, verifyGoogleUser } = require("../middlewares/authUser.js");
 const passport = require("passport");
@@ -83,11 +82,11 @@ router.get("/me/:id", authenticate, getById);
 router.post("/password/forget", forgetPassword);
 router.post("/password/change", authenticate, changePassword);
 router.put("/password/setNew", setPassword);
+
 router.get("/products/:id", authenticate, myProducts);
 router.delete("/delete", authenticate, deleteUser);
 router.get("/products", getAllProducts);
 router.post("/products/:id", authenticate, ratingProduct);
-router.get("/products/review/:id", authenticate, getRatingById);
 router.get("/filter", filterProducts);
 router.put("/logout", authenticate, signOut);
 

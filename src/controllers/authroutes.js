@@ -459,7 +459,7 @@ exports.filterProducts = async(req, res) => {
 exports.ratingProduct = async (req, res) => {
   try {
     const { id } = req.params; // product ID, not review document _id
-    const { rating, reviewMessage } = req.body;
+    const { rating } = req.body;
 
     if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({
@@ -478,7 +478,6 @@ exports.ratingProduct = async (req, res) => {
         userId: [req.user._id],
         [`r${rating}`]: {
           data: {
-            messages: reviewMessage ? [reviewMessage] : [],
             count: 1,
           }
         },
@@ -509,7 +508,6 @@ exports.ratingProduct = async (req, res) => {
       }
 
       // Add message and increment count
-      rate[ratingKey].data.messages.push(reviewMessage || "");
       rate[ratingKey].data.count += 1;
 
       // Recalculate average rating
@@ -543,32 +541,6 @@ exports.ratingProduct = async (req, res) => {
     });
   }
 };
-
-exports.getRatingById = async(req, res) => {
-  try {
-    const { id } = req.params;
-    const product = await posts.findById( id )
-    if(!product){
-      return res.status(401).json({
-        success: false,
-        message: "product is no longer available",
-      })
-    }
-    const rate = await reviews.findOne({ productId: id });
-    return res.status(200).json({
-      success: true,
-      message: "review retrieved successfully",
-      rate,
-    })
-
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Intenal Server Error",
-      error: error,
-    })
-  }
-}
    
 //*********************     DELIVERY ADDRESS:      *******************/
 

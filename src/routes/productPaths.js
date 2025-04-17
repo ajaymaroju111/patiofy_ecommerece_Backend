@@ -15,6 +15,7 @@ const {
   getCartById,
   updateCart,
   deleteCart,
+  getRatingById
   
 } = require('../controllers/postroutes.js');
 
@@ -26,5 +27,6 @@ router.post('/cart', authenticate, addToCart);
 router.get('/cart/:id', authenticate, getCartById)
 router.put('/cart/:id', authenticate, updateCart)
 router.delete('/cart/:id', authenticate, deleteCart);
+router.get("/review/:id", authenticate, getRatingById);
 
 module.exports = router;

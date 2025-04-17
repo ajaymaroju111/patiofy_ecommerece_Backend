@@ -14,10 +14,6 @@ const reviewSchema = new mongoose.Schema({
   },
   r5: {
     data: {
-      messages: {
-        type: [String],
-        default: [],
-      },
       count: {
         type: Number,
         default: 0,
@@ -26,10 +22,6 @@ const reviewSchema = new mongoose.Schema({
   },
   r4: {
     data: {
-      messages: {
-        type: [String],
-        default: [],
-      },
       count: {
         type: Number,
         default: 0,
@@ -38,10 +30,6 @@ const reviewSchema = new mongoose.Schema({
   },
   r3: {
     data: {
-      messages: {
-        type: [String],
-        default: [],
-      },
       count: {
         type: Number,
         default: 0,
@@ -50,10 +38,6 @@ const reviewSchema = new mongoose.Schema({
   },
   r2: {
     data: {
-      messages: {
-        type: [String],
-        default: [],
-      },
       count: {
         type: Number,
         default: 0,
@@ -62,10 +46,6 @@ const reviewSchema = new mongoose.Schema({
   },
   r1: {
     data: {
-      messages: {
-        type: [String],
-        default: [],
-      },
       count: {
         type: Number,
         default: 0,

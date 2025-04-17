@@ -672,6 +672,68 @@ paths:
                     type: string
                     example: "Internal Server Error"
 
+  /patiofy/auth/products/review/{id}:
+    get:
+      summary: Get product review by ID
+      description: Retrieve the review for a product if it exists.
+      tags:
+        - products
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The ID of the product to retrieve the review for
+      responses:
+        '200':
+          description: Review retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: review retrieved successfully
+                  rate:
+                    type: object
+                    description: Review object
+        '401':
+          description: Product not found or unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: product is no longer available
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: object
+                    description: Error object with details
+
   /patiofy/auth/user/products/{id}:
     get:
       summary: Get user's products
@@ -750,9 +812,6 @@ paths:
                   minimum: 1
                   maximum: 5
                   example: 5
-                reviewMessage:
-                  type: string
-                  example: "Amazing product! Highly recommend."
       responses:
         '200':
           description: Rating submitted successfully
@@ -797,68 +856,6 @@ paths:
                     example: "Internal Server Error"
                   error:
                     type: string
-
-  patiofy/auth/users/product/review/{id}:
-    get:
-      summary: Get product review by ID
-      description: Retrieve the review for a product if it exists.
-      tags:
-        - users
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-          description: The ID of the product to retrieve the review for
-      responses:
-        '200':
-          description: Review retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: review retrieved successfully
-                  rate:
-                    type: object
-                    description: Review object
-        '401':
-          description: Product not found or unavailable
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
-                    type: string
-                    example: product is no longer available
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
-                    type: string
-                    example: Internal Server Error
-                  error:
-                    type: object
-                    description: Error object with details
 
   /patiofy/auth/user/delete:
     delete:
