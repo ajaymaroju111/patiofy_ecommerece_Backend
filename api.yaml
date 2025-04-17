@@ -1104,6 +1104,14 @@ paths:
                   type: string
                   description: Fabric type of the product
                   example: "Cotton"
+                category:
+                  type: string
+                  description: category of the product
+                  example: "Baby Swing"
+                tags:
+                  type: string
+                  description: tags of the product
+                  example: "Baby cradle, baby jhula"
                 images:
                   type: array
                   items:

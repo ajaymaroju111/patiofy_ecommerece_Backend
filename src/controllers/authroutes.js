@@ -413,11 +413,11 @@ exports.getAllProducts = async(req, res) =>{
 //search for products : ( NAN )
 exports.filterProducts = async(req, res) => {
   try {
-    const { name, price, size, fabric } = req.query;
+    const { category, price, size, fabric } = req.query;
     let filter = {};
     //initializing the filter condition :
-    if (name) {
-      filter.name = { $regex: name, $options: "i" };
+    if (category) {
+      filter.name = { $regex: category, $options: "i" };
     }
 
     if (price) {
@@ -440,7 +440,7 @@ exports.filterProducts = async(req, res) => {
     const products = await posts.aggregate([
       { $match: filter },
       { $sort: { price: 1 } },
-      { $project: { name: 1, price: 1, size: 1, fabric: 1 } },
+      { $project: { category: 1, price: 1, size: 1, fabric: 1 } },
     ]);
     return res.status(200).json({
       success: true,

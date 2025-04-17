@@ -37,6 +37,14 @@ const postSchema = new mongoose.Schema(
       type: String,
       required: [true, "Fabric type is Required"],
     },
+    category: { 
+      type: String,
+      required: true,
+    },
+    tags: {
+      type : String,
+      required: true,
+    }
   },
   { timestamps: true }
 );

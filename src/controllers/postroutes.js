@@ -7,7 +7,7 @@ const reviews = require('../models/reviews.js');
 //create a product post : 
 exports.createPost = async(req , res) =>{
   try {
-    const { name , description, price, size, fabric} = req.body;
+    const { name , description, price, size, fabric, category, tags} = req.body;
     if(!req.files || req.files.length === 0){
       return res.status(400).json({
         error: "post images are required"
@@ -28,6 +28,8 @@ exports.createPost = async(req , res) =>{
       price,
       size,
       fabric,
+      category,
+      tags,
     })
     await Post.save();
     return res.status(200).json({
