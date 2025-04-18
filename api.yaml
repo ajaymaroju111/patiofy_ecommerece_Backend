@@ -941,89 +941,14 @@ paths:
                     type: string
                     example: "Internal Server Error"
 
-  /patiofy/auth/products/:
-    get:
-      summary: Get all products with pagination
-      tags:
-        - products
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: page
-          in: query
-          description: Page number for pagination
-          required: false
-          schema:
-            type: integer
-            default: 1
-        - name: limit
-          in: query
-          description: Number of items per page
-          required: false
-          schema:
-            type: integer
-            default: 10
-      responses:
-        '200':
-          description: List of products
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  page:
-                    type: integer
-                    example: 1
-                  limit:
-                    type: integer
-                    example: 10
-                  totalPages:
-                    type: integer
-                    example: 5
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Product'
-        '404':
-          description: Products not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  messsage:
-                    type: string
-                    example: products not found
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
-                    type: string
-                    example: Internal Server Error
-                  error:
-                    type: string
-
-  /patiofy/auth/user/filter:
+  /patiofy/auth/products/filter:
     get:
       summary: Filter products
       description: |
         This endpoint allows filtering products based on query parameters such as name, price range, size, and fabric. 
         The results are sorted by price in ascending order and include only the specified fields (name, price, size, fabric).
       tags:
-        - users
+        - products
       security:
         - BearerAuth: []
       parameters:
@@ -1127,7 +1052,7 @@ paths:
 
 #product routes YAML  :
 
-  /patiofy/auth/products/create:
+  /patiofy/auth/products/:
     post:
       summary: Create a new post
       description: Adds a new product post with images.
@@ -1212,7 +1137,80 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error"
-
+    get:
+      summary: Get all products with pagination
+      tags:
+        - products
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  page:
+                    type: integer
+                    example: 1
+                  limit:
+                    type: integer
+                    example: 10
+                  totalPages:
+                    type: integer
+                    example: 5
+                  data:
+                    type: array
+                    # items:
+                    #   $ref: '#/components/schemas/Product'
+        '404':
+          description: Products not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  messsage:
+                    type: string
+                    example: products not found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    
   /patiofy/auth/products/{id}:
     get:
       summary: Retrieve a post by ID

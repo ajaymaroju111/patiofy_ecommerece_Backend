@@ -188,6 +188,12 @@ exports.signIn = async (req, res) => {
 exports.getById = async (req, res) => {
   try {
     const id = req.user._id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid cart ID format",
+          });
+        }
     if (!id) {
       return res.status(400).json({
         success: false,
@@ -536,6 +542,12 @@ exports.updateAddress = async (req, res) => {
 exports.getAddress = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid cart ID format",
+          });
+        }
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,

@@ -76,13 +76,30 @@ exports.updateProduct = async (req, res) => {
 exports.getById = async (req, res) => {
   try {
     const { id } = req.params;
-    const post = await products
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cart ID format",
+      });
+    }
+    const myproducts = await products
       .findById(id)
       .populate("userId", "firstname lastname username email")
       .exec();
+    if(!myproducts){
+      return res.status(404).json({
+        success: false,
+        message: "product not found"
+      })
+    }
+    const simplified = myproducts.map(p => ({
+      name: p.name,
+      price: p.price
+    }));
+    
     return res.status(200).json({
       success: true,
-      post,
+      data: simplified
     });
   } catch (error) {
     return res.status(500).json({
@@ -108,12 +125,16 @@ exports.getAllProducts = async (req, res) => {
       });
     }
     const total = await products.countDocuments();
+    const simplified = allproducts.map(p => ({
+      name: p.name,
+      price: p.price
+    }));
     return res.status(200).json({
       success: true,
       page,
       limit,
       totalPages: Math.ceil(total / limit),
-      data: allproducts,
+      data: simplified,
     });
   } catch (error) {
     return res.status(500).json({
@@ -296,6 +317,12 @@ exports.deleteCart = async (req, res) => {
 exports.getRatingById = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cart ID format",
+      });
+    }
     const product = await products.findById(id);
     if (!product) {
       return res.status(401).json({
