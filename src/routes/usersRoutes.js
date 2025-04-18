@@ -15,7 +15,6 @@ const {
   myProducts,
   signOut,
   deleteUser,
-  filterProducts,
   addAddress,
   updateAddress,
   getAddress,
@@ -23,10 +22,9 @@ const {
   viewAllAddresses,
   contactUs,
   resend,
-  getAllProducts,
-  ratingProduct,
 } = require("../controllers/usersAuth.js");
-const { authenticate,authenticateifNeeded, verifyGoogleUser } = require("../middlewares/authUser.js");
+// const { ratingProduct } = require("../controllers/productsAuth.js");
+const { authenticate,authenticateifNeeded } = require("../middlewares/authUser.js");
 const passport = require("passport");
 
 
@@ -84,10 +82,7 @@ router.post("/password/change", authenticate, changePassword);
 router.put("/password/setNew", setPassword);
 
 router.get("/products/:id", authenticate, myProducts);
-router.delete("/delete", authenticate, deleteUser);
-router.get("/products", getAllProducts);
-router.post("/products/:id", authenticate, ratingProduct);
-router.get("/filter", filterProducts);
+router.delete("/delete", authenticate, deleteUser);;
 router.put("/logout", authenticate, signOut);
 
 //address form :

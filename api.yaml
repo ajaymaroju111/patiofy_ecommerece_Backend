@@ -733,6 +733,78 @@ paths:
                   error:
                     type: object
                     description: Error object with details
+    post:
+      tags:
+        - products
+      security:
+        - BearerAuth: []
+      summary: Submit a rating and review for a product
+      description: Allows a logged-in user to rate a product (1-5 stars) with an optional review message. Prevents duplicate ratings.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the product to be rated
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rating
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  example: 5
+      responses:
+        '200':
+          description: Rating submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "review added successfully"
+                  rate:
+                    type: object
+                    description: Updated review object
+        '400':
+          description: Bad request (e.g., missing rating or duplicate rating)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Internal Server Error"
+                  error:
+                    type: string
 
   /patiofy/auth/user/products/{id}:
     get:
@@ -812,79 +884,6 @@ paths:
                   error:
                     type: string
 
-    post:
-      tags:
-        - users
-      security:
-        - BearerAuth: []
-      summary: Submit a rating and review for a product
-      description: Allows a logged-in user to rate a product (1-5 stars) with an optional review message. Prevents duplicate ratings.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID of the product to be rated
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - rating
-              properties:
-                rating:
-                  type: integer
-                  minimum: 1
-                  maximum: 5
-                  example: 5
-      responses:
-        '200':
-          description: Rating submitted successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "review added successfully"
-                  rate:
-                    type: object
-                    description: Updated review object
-        '400':
-          description: Bad request (e.g., missing rating or duplicate rating)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  error:
-                    type: string
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
-                    type: string
-                    example: "Internal Server Error"
-                  error:
-                    type: string
-
   /patiofy/auth/user/delete:
     delete:
       summary: Delete user account
@@ -942,7 +941,7 @@ paths:
                     type: string
                     example: "Internal Server Error"
 
-  /patiofy/auth/user/products:
+  /patiofy/auth/products/:
     get:
       summary: Get all products with pagination
       tags:
