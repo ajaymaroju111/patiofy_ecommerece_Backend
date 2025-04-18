@@ -49,4 +49,4 @@ const addressSchaema = new mongoose.Schema({
   
 });
 
-module.exports = mongoose.model('toAddress', addressSchaema);
+module.exports = mongoose.model('userAddresses', addressSchaema);

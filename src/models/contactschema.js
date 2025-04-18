@@ -29,4 +29,4 @@ const contactSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('queries', contactSchema);
+module.exports = mongoose.model('queryForm', contactSchema);

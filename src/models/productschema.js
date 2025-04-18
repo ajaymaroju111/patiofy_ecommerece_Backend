@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const crypto = require('crypto');
 
-const postSchema = new mongoose.Schema(
+const productschema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -49,7 +49,7 @@ const postSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-postSchema.pre("save", function (next) {
+productschema.pre("save", function (next) {
   if (this.isModified("postImages")) {
     this.postImages = this.postImages.map((image) => {
       const hash = crypto.createHash("sha256").update(image.img.data).digest("hex");
@@ -65,4 +65,4 @@ postSchema.pre("save", function (next) {
   next();
 });
 
-module.exports = mongoose.model("posts", postSchema);
+module.exports = mongoose.model("products", productschema);

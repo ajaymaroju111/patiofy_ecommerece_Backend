@@ -7,22 +7,22 @@ const {
  } = require('../middlewares/authUser.js');
 
 const {
-  createPost,
-  updatePost,
+  createProduct,
+  updateProduct,
   getById,
-  deletePost,
+  deleteProduct,
   addToCart,
   getCartById,
   updateCart,
   deleteCart,
   getRatingById
   
-} = require('../controllers/postroutes.js');
+} = require('../controllers/productsAuth.js');
 
-router.post('/create', authenticate, multipleUploads, createPost);
+router.post('/create', authenticate, multipleUploads, createProduct);
 router.get('/:id', getById)
-router.delete('/:id', authenticate, deletePost)
-router.put('/:id', authenticate, updatePost);
+router.delete('/:id', authenticate, deleteProduct)
+router.put('/:id', authenticate, updateProduct);
 router.post('/cart', authenticate, addToCart);
 router.get('/cart/:id', authenticate, getCartById)
 router.put('/cart/:id', authenticate, updateCart)

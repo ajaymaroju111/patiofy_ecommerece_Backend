@@ -4,7 +4,7 @@ const reviewSchema = new mongoose.Schema({
   productId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    ref: 'posts', // optional: if you have a posts collection
+    ref: 'products', // optional: if you have a products collection
   },
   userId: {
     type: [mongoose.Schema.Types.ObjectId],

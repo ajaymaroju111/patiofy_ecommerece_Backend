@@ -14,8 +14,8 @@ const cookieParser = require('cookie-parser');
 // const users = require('./src/models/userschema.js');
 require('./src/config/passport.js');
 //functions :
-const authroutes = require("./src/routes/userPath.js");
-const postroutes = require("./src/routes/productPaths.js");
+const authroutes = require("./src/routes/usersRoutes.js");
+const postroutes = require("./src/routes/productsRoutes.js");
 const { dbConnnection } = require("./src/config/dbConnection.js");
 const MongoStore = require("connect-mongo");
 dbConnnection();

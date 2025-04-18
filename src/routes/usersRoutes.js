@@ -25,7 +25,7 @@ const {
   resend,
   getAllProducts,
   ratingProduct,
-} = require("../controllers/authroutes.js");
+} = require("../controllers/usersAuth.js");
 const { authenticate,authenticateifNeeded, verifyGoogleUser } = require("../middlewares/authUser.js");
 const passport = require("passport");
 

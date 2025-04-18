@@ -1,29 +1,25 @@
 const users = require("../models/userschema.js");
-const posts = require("../models/productschema.js");
-const toAddress = require("../models/addressschema.js");
-const queries = require("../models/contactschema.js");
+const products = require("../models/productschema.js");
+const userAddresses = require("../models/addressschema.js");
+const queryForm = require("../models/contactschema.js");
 const { sendEmail } = require("../utils/sendEmail.js");
 const { generateUserToken } = require("../middlewares/authUser.js");
-const reviews = require('../models/reviews.js');
-const {
-  conformSignup,
-  forgetPassword,
-} = require("../utils/emailTemplates.js");
+const reviews = require("../models/reviews.js");
+const { conformSignup, forgetPassword } = require("../utils/emailTemplates.js");
 const { default: mongoose } = require("mongoose");
 
 //set password after google oauth signup :
-exports.setNewPassword = async(req, res) => {
+exports.setNewPassword = async (req, res) => {
   try {
     const { id } = req.params;
     const { newpassword } = req.body;
     if (!newpassword) {
       return res.status(400).json({
-        error: 'password is required'
-      })
+        error: "password is required",
+      });
     }
     const update = await users.findById(id);
-     // ✅ Check if user exists
-     if (!update) {
+    if (!update) {
       return res.status(404).json({
         success: false,
         message: "User not found",
@@ -45,7 +41,7 @@ exports.setNewPassword = async(req, res) => {
 };
 
 //account signup for user :
-exports.signUp = async(req, res) => {
+exports.signUp = async (req, res) => {
   try {
     const { firstname, lastname, email, password } = req.body;
     const existed = await users.findOne({
@@ -54,8 +50,8 @@ exports.signUp = async(req, res) => {
 
     if (existed) {
       return res.status(401).json({
-        error : "email already exist, try another"
-      })
+        error: "email already exist, try another",
+      });
     }
     const User = await users.create({
       firstname,
@@ -78,12 +74,18 @@ exports.signUp = async(req, res) => {
 };
 
 //ressnd verification link to the user :
-exports.resend = async(req, res) => {
+exports.resend = async (req, res) => {
   try {
     const { userId } = req.body;
     const user = await users.findByIdAndUpdate(userId, {
       expirytime: Date.now() + 30 * 60 * 1000,
     });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "user not found",
+      });
+    }
     const encodedId = Buffer.from(user._id, "utf-8").toString("base64");
     const fullname = user.firstname + " " + user.lastname;
     await sendEmail({
@@ -107,17 +109,23 @@ exports.resend = async(req, res) => {
 };
 
 //user account verification :
-exports.verify = async(req, res) => {
+exports.verify = async (req, res) => {
   try {
     const { verificationKey } = req.query;
     //decode the encoded email
     const decodedId = Buffer.from(verificationKey, "base64").toString("utf-8");
     const User = await users.findById(decodedId);
+    if (!User) {
+      return res.status(404).json({
+        success: false,
+        message: "user does not exist",
+      });
+    }
     //timer for the account activation
-    if (Date.now() > User.jwtExpiry || User.jwtExpiry === undefined){
+    if (Date.now() > User.jwtExpiry || User.jwtExpiry === undefined) {
       return res.status(401).json({
-        error: "session expired"
-      })
+        error: "session expired",
+      });
     }
     User.status = "active";
     User.jwtExpiry = undefined;
@@ -136,13 +144,13 @@ exports.verify = async(req, res) => {
 };
 
 //user sign in
-exports.signIn = async(req, res) => {
+exports.signIn = async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({
-        error: "all fileds are required"
-      })
+        error: "all fileds are required",
+      });
     }
     const user = await users
       .findOne({
@@ -151,22 +159,22 @@ exports.signIn = async(req, res) => {
       .select("+password");
     if (!user) {
       return res.status(401).json({
-        error: "Incorrect Email"
-      })
+        error: "Incorrect Email",
+      });
     }
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
       return res.status(401).json({
-        error : "password doesn't match"
-      })
+        error: "password doesn't match",
+      });
     }
-    const token  = generateUserToken(user);
+    const token = generateUserToken(user);
     user.jwtExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
     await user.save();
     return res.status(200).json({
-      success : true,
-      message : 'login successfully',
-      JWTtoken : token,
+      success: true,
+      message: "login successfully",
+      JWTtoken: token,
     });
   } catch (error) {
     return res.status(500).json({
@@ -178,28 +186,49 @@ exports.signIn = async(req, res) => {
 };
 
 //get user by ID :
-exports.getById = async(req, res) => {
-  const user = await users.findById(req.user._id);
-  return res.status(200).json({
-    success: true,
-    user,
-  });
+exports.getById = async (req, res) => {
+  try {
+    const id = req.user._id;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Authentication Error",
+      });
+    }
+    const user = await users.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "user does not exist",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    });
+  }
 };
 
 //forget password :
-exports.forgetPassword = async(req, res) => {
+exports.forgetPassword = async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) {
       return res.status(400).json({
-        error: "email is reqiured"
-      })
+        error: "email is reqiured",
+      });
     }
     const user = await users.findOne({ email });
     if (!user) {
       return res.status(401).json({
         error: "user doesn't exist",
-      })
+      });
     }
     const fullname = user.firstname + " " + user.lastname;
     await sendEmail({
@@ -220,54 +249,61 @@ exports.forgetPassword = async(req, res) => {
   }
 };
 
-//set a new password after forget password link : 
-exports.setPassword = async(req, res) => {
+//set a new password after forget password link :
+exports.setPassword = async (req, res) => {
   try {
-    const {email, newpassword} = req.body;
-    if(!email || !newpassword){
+    const { email, newpassword } = req.body;
+    if (!email || !newpassword) {
       return res.status(400).json({
         error: "All fields are required",
       });
     }
     const user = await users.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: " incorrect email",
+      });
+    }
     user.password = newpassword;
     await user.save();
     return res.status(200).json({
       success: true,
-      message : "new password updated , please login",
-    })
+      message: "new password updated , please login",
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal server Error",
-      error: error, 
-    })
+      error: error,
+    });
   }
 };
 
 // reset the password using old password :
-exports.changePassword = async(req, res) => {
+exports.changePassword = async (req, res) => {
   try {
     const { oldpassword, newpassword } = req.body;
     if (!oldpassword || !newpassword) {
       return res.status(400).json({
-        error: "all fields are required"
+        error: "all fields are required",
       });
     }
     const user = await users.findById(req.user._id).select("+password");
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "user does not exist",
+      });
+    }
     const isPassword = user.comparePassword(oldpassword);
     if (!isPassword) {
       return res.status(401).json({
-        error: "incorrect password"
+        error: "incorrect password",
       });
     }
     user.password = newpassword;
     await user.save();
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: true, // Use only in HTTPS
-      sameSite: "Strict",
-    });
     return res
       .status(200)
       .json({ message: "password updated successfully, Please Login" });
@@ -281,7 +317,7 @@ exports.changePassword = async(req, res) => {
 };
 
 //update user profile using ID :
-exports.update = async(req, res) => {
+exports.update = async (req, res) => {
   try {
     const { firstname, lastname } = req.body;
 
@@ -311,16 +347,36 @@ exports.update = async(req, res) => {
   }
 };
 
-//list all posts of a user :
-exports.myProducts = async(req, res) => {
+//list all products of a user :
+exports.myProducts = async (req, res) => {
   try {
     const id = req.user._id;
-    const products = await posts
-      .find({ userId : id })
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const myproducts = await products
+      .find({ userId: id })
+      .skip(skip)
+      .limit(limit)
       .populate("userId", "username firstname lastname email")
       .exec();
-    return res.status(200).json({ products });
+    if (!products) {
+      return res.status(404).json({
+        success: false,
+        message: "products not found",
+      });
+    }
+    const total = await products.countDocuments();
+    return res.status(200).json({
+      success: true,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      data: myproducts,
+    });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -330,13 +386,8 @@ exports.myProducts = async(req, res) => {
 };
 
 // user sign out :
-exports.signOut = async(req, res) => {
+exports.signOut = async (req, res) => {
   try {
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: true,
-      sameSite: true,
-    });
     return res.status(200).json({
       success: true,
       message: "user logged out successfully",
@@ -351,22 +402,30 @@ exports.signOut = async(req, res) => {
 };
 
 //deleting user account :
-exports.deleteUser = async(req, res) => {
+exports.deleteUser = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction(); // Start transaction
   try {
+    const id = req.user._id;
     const { password } = req.body;
     if (!password) {
       return res.status(400).json({
-        error: "password is required"
-      })
+        error: "password is required",
+      });
     }
-    const user = await users.findById(req.user._id).select("+password");
+    const user = await users.findById(id).select("+password");
+    if (!user) {
+      return res.status(404).json({
+        success: true,
+        message: "user not found",
+      });
+    }
+
     const isPasswordMatch = await user.comparePassword(password);
     if (!isPasswordMatch) {
       return res.status(401).json({
         error: "incorrect password",
-      })
+      });
     }
 
     const deleted = await users
@@ -375,11 +434,11 @@ exports.deleteUser = async(req, res) => {
     if (deleted.deletedCount === 0) {
       return res.status(404).json({
         error: "user not found",
-      })
+      });
     }
-    await queries.deleteMany({ _id: req.user._id }).session("session");
-    await posts.deleteMany({ _id: req.user._id }).session("session");
-    await toAddress.deleteMany({ _id: req.user._id }).session("session");
+    await queryForm.deleteMany({ _id: req.user._id }).session("session");
+    await products.deleteMany({ _id: req.user._id }).session("session");
+    await userAddresses.deleteMany({ _id: req.user._id }).session("session");
     await session.commitTransaction();
   } catch (error) {
     session.abortTransaction();
@@ -393,25 +452,39 @@ exports.deleteUser = async(req, res) => {
   }
 };
 
-//get all products : 
-exports.getAllProducts = async(req, res) =>{
+//get all products :
+exports.getAllProducts = async (req, res) => {
   try {
-    const products = await posts.find({});
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const allproducts = await products.find().skip(skip).limit(limit).exec();
+    if (allproducts.length === 0 || !allproducts) {
+      return res.status(404).json({
+        success: false,
+        messsage: "products not found",
+      });
+    }
+    const total = await products.countDocuments();
     return res.status(200).json({
-      success : true,
-      products
-    })
+      success: true,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      data: allproducts,
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message : 'Internal Server Error',
-      error : error,
-    })
+      message: "Internal Server Error",
+      error: error,
+    });
   }
 };
 
 //search for products : ( NAN )
-exports.filterProducts = async(req, res) => {
+exports.filterProducts = async (req, res) => {
   try {
     const { category, price, size, fabric } = req.query;
     let filter = {};
@@ -437,7 +510,7 @@ exports.filterProducts = async(req, res) => {
     }
 
     //usage of aggregations pipelines :
-    const products = await posts.aggregate([
+    const products = await products.aggregate([
       { $match: filter },
       { $sort: { price: 1 } },
       { $project: { category: 1, price: 1, size: 1, fabric: 1 } },
@@ -455,36 +528,32 @@ exports.filterProducts = async(req, res) => {
   }
 };
 
-//rating a product : 
+//rating a product :
 exports.ratingProduct = async (req, res) => {
   try {
     const { id } = req.params; // product ID, not review document _id
     const { rating } = req.body;
-
     if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({
         success: false,
-        error: "Please provide a valid rating (1-5)",
+        error: "Please provide a valid rating (1 - 5)",
       });
     }
 
     // Search by productId, not _id of review doc
-    let rate = await reviews.findOne({ productId: id });
-
+    const rate = await reviews.findOne({ productId: id });
     if (!rate) {
-      // Create new review doc for product
       rate = await reviews.create({
         productId: id,
         userId: [req.user._id],
         [`r${rating}`]: {
           data: {
             count: 1,
-          }
+          },
         },
         finalRating: rating,
       });
     } else {
-      // Check if user has already rated
       if (rate.userId.includes(req.user._id)) {
         return res.status(400).json({
           success: false,
@@ -513,16 +582,15 @@ exports.ratingProduct = async (req, res) => {
       // Recalculate average rating
       const totalScore = [1, 2, 3, 4, 5].reduce((sum, r) => {
         const count = rate[`r${r}`]?.data?.count || 0;
-        return sum + (r * count);
+        return sum + r * count;
       }, 0);
 
       const totalCount = [1, 2, 3, 4, 5].reduce((sum, r) => {
         return sum + (rate[`r${r}`]?.data?.count || 0);
       }, 0);
 
-      rate.finalRating = totalCount > 0
-        ? Math.round((totalScore / totalCount) * 10) / 10
-        : 0;
+      rate.finalRating =
+        totalCount > 0 ? Math.round((totalScore / totalCount) * 10) / 10 : 0;
     }
 
     await rate.save();
@@ -532,7 +600,6 @@ exports.ratingProduct = async (req, res) => {
       message: "Review added successfully",
       rate,
     });
-
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -541,15 +608,15 @@ exports.ratingProduct = async (req, res) => {
     });
   }
 };
-   
+
 //*********************     DELIVERY ADDRESS:      *******************/
 
-exports.addAddress = async(req, res) => {
+exports.addAddress = async (req, res) => {
   try {
     const productId = req.params.id;
     const { country, firstname, lastname, phone, address, city, state } =
       req.body;
-    const addressList = await toAddress.create({
+    const addressList = await userAddresses.create({
       userId: req.user._id,
       productId: productId,
       email: req.user.email,
@@ -567,6 +634,7 @@ exports.addAddress = async(req, res) => {
     return res.status(200).json({
       success: true,
       message: "address added successfully",
+      addressList,
     });
   } catch (error) {
     return res.status(500).json({
@@ -577,7 +645,7 @@ exports.addAddress = async(req, res) => {
   }
 };
 
-exports.updateAddress = async(req, res) => {
+exports.updateAddress = async (req, res) => {
   try {
     const productId = req.params.id;
     const { country, firstname, lastname, phone, address, city, state } =
@@ -591,15 +659,26 @@ exports.updateAddress = async(req, res) => {
       city,
       state,
     };
-    const updateAdd = await toAddress.findOneAndUpdate({ productId }, newData, {
-      new: true,
-      runValidators: true,
-      useFindAndModify: true,
-    });
+    const updateAdd = await userAddresses.findOneAndUpdate(
+      { productId },
+      newData,
+      {
+        new: true,
+        runValidators: true,
+        useFindAndModify: true,
+      }
+    );
+    if (!updateAdd) {
+      return res.status(404).json({
+        success: false,
+        message: "Address not found",
+      });
+    }
     await updateAdd.save();
     return res.status(200).json({
       success: true,
       message: "updated successfully",
+      updateAdd,
     });
   } catch (error) {
     return res.status(500).json({
@@ -610,7 +689,7 @@ exports.updateAddress = async(req, res) => {
   }
 };
 
-exports.getAddress = async(req, res) => {
+exports.getAddress = async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -619,7 +698,13 @@ exports.getAddress = async(req, res) => {
         message: "Invalid address ID format",
       });
     }
-    const address = await toAddress.findById(id);
+    const address = await userAddresses.findById(id);
+    if (!address) {
+      return res.status(404).json({
+        success: false,
+        message: "Address not found",
+      });
+    }
     return res.status(200).json({
       success: true,
       address,
@@ -633,13 +718,19 @@ exports.getAddress = async(req, res) => {
   }
 };
 
-exports.deleteAddress = async(req, res) => {
+exports.deleteAddress = async (req, res) => {
   try {
     const { addressId } = req.params;
-    await toAddress.findByIdAndDelete(addressId);
+    const deleted = await userAddresses.findByIdAndDelete(addressId);
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "Address not found",
+      });
+    }
     return res.status(200).json({
       success: true,
-      message: "address Deleted",
+      message: "Address Deleted successfully",
     });
   } catch (error) {
     return res.status(500).json({
@@ -650,9 +741,15 @@ exports.deleteAddress = async(req, res) => {
   }
 };
 
-exports.viewAllAddresses = async(req, res) => {
+exports.viewAllAddresses = async (req, res) => {
   try {
-    const alladdresses = await toAddress.find({ userId: req.user._id });
+    const alladdresses = await userAddresses.find({ userId: req.user._id });
+    if (!alladdresses) {
+      return res.status(404).json({
+        success: false,
+        message: "address not found",
+      });
+    }
     return res.status(200).json({
       success: true,
       alladdresses,
@@ -668,25 +765,25 @@ exports.viewAllAddresses = async(req, res) => {
 
 //*********************   Submitting Contact Form :  ***********************/
 
-exports.contactUs = async(req, res) => {
+exports.contactUs = async (req, res) => {
   try {
     const { firstname, lastname, email, phone, message } = req.body;
     if (!message || message === null) {
       return res.status(400).json({
-        error: "message is required"
+        error: "message is required",
       });
     }
-    if(!req.user){
-      const userContactForm = await queries.create({
-        firstname: firstname, 
-        lastname: lastname, 
-        email: email, 
+    if (!req.user) {
+      const userContactForm = await queryForm.create({
+        firstname: firstname,
+        lastname: lastname,
+        email: email,
         phone: phone,
         message,
       });
       await userContactForm.save();
-    }else if(req.user){
-      const userContactForm = await queries.create({
+    } else if (req.user) {
+      const userContactForm = await queryForm.create({
         userId: req.user._id,
         firstname: firstname || req.user.firstname,
         lastname: lastname || req.user.lastname,
