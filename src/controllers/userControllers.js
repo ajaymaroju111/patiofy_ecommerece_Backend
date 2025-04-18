@@ -130,6 +130,7 @@ exports.verify = async (req, res) => {
     User.jwtExpiry = undefined;
     await User.save();
     return res.status(200).json({
+      redirect: 'http://147.97.93.20:3000/patiofy/auth/user/signin',
       success: true,
       message: "Account verified successfully",
     });
@@ -363,7 +364,6 @@ exports.myProducts = async (req, res) => {
       .find({ userId: id })
       .skip(skip)
       .limit(limit)
-      .populate("userId", "username firstname lastname email")
       .exec();
     if (!products) {
       return res.status(404).json({

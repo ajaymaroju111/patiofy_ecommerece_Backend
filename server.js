@@ -10,6 +10,7 @@ const YAML = require("yamljs");
 const SwaggerDocument = YAML.load("./api.yaml");
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+const path = require('path')
 // const cron = require('node-cron');
 // const users = require('./src/models/userschema.js');
 require('./src/config/passport.js');
@@ -27,7 +28,10 @@ dbConnnection();
 //     saveUninitialized: false,
 //   })
 // );
-const dbString = process.env.NODE_ENV === 'production'? process.env.MONGODB_PRODUCTION : process.env.MONGODB_LOCAL; 
+const dbString = process.env.NODE_ENV === 'production'? process.env.MONGODB_PRODUCTION : process.env.MONGODB_LOCAL;
+ 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.use(
   session({
     secret: process.env.JWT_SECRET,

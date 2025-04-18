@@ -3,26 +3,24 @@ const carts = require("../models/cartschema.js");
 const { default: mongoose } = require("mongoose");
 const reviews = require("../models/reviews.js");
 
-
 //create a product post :
 exports.createProduct = async (req, res) => {
   try {
     const { name, description, price, size, fabric, category, tags } = req.body;
+    // Check for uploaded files
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
-        error: "post images are required",
+        success: false,
+        error: "Post images are required",
       });
     }
-    const postImages = req.files.map((file) => ({
-      name: file.originalname,
-      img: {
-        data: file.buffer, // Store buffer data
-        contentType: file.mimetype,
-      },
-    }));
+    const postImages = req.files.map((file) => {
+      return `/uploads/productPics/${file.filename}`; // or full URL if hosted
+    });
+
     const Post = await products.create({
       userId: req.user._id,
-      postImages: postImages,
+      postImages,
       name,
       description,
       price,
@@ -37,6 +35,7 @@ exports.createProduct = async (req, res) => {
       message: "product added successfully",
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -82,24 +81,17 @@ exports.getById = async (req, res) => {
         message: "Invalid cart ID format",
       });
     }
-    const myproducts = await products
-      .findById(id)
-      .populate("userId", "firstname lastname username email")
-      .exec();
-    if(!myproducts){
+    const product = await products.findById(id);
+    if (!product) {
       return res.status(404).json({
         success: false,
-        message: "product not found"
-      })
+        message: "product not found",
+      });
     }
-    const simplified = myproducts.map(p => ({
-      name: p.name,
-      price: p.price
-    }));
-    
+
     return res.status(200).json({
       success: true,
-      data: simplified
+      data: product,
     });
   } catch (error) {
     return res.status(500).json({
@@ -125,16 +117,12 @@ exports.getAllProducts = async (req, res) => {
       });
     }
     const total = await products.countDocuments();
-    const simplified = allproducts.map(p => ({
-      name: p.name,
-      price: p.price
-    }));
     return res.status(200).json({
       success: true,
       page,
       limit,
       totalPages: Math.ceil(total / limit),
-      data: simplified,
+      data: allproducts,
     });
   } catch (error) {
     return res.status(500).json({
@@ -159,13 +147,21 @@ exports.deleteProduct = async (req, res) => {
 //search for products : ( NAN )
 exports.filterProducts = async (req, res) => {
   try {
-    const { category, price, size, fabric } = req.query;
+    const { categories, price, size, fabric, Discount } = req.query;
     let filter = {};
     //initializing the filter condition :
-    if (category) {
-      filter.name = { $regex: category, $options: "i" };
+    if (categories) {
+      filter.category = { $regex: categories, $options: "i" };
     }
 
+    if (Discount) {
+      const [min, max] = Discount.split("_").map(Number);
+      if (!isNaN(min) && !isNaN(max)) {
+        filter.price = { $gte: min, $lte: max };
+      } else if (isNaN(min)) {
+        filter.Discount = { $gte: min };
+      }
+    }
     if (price) {
       const [min, max] = price.split("_").map(Number);
       if (!isNaN(min) && !isNaN(max)) {
@@ -183,16 +179,42 @@ exports.filterProducts = async (req, res) => {
     }
 
     //usage of aggregations pipelines :
-    const products = await products.aggregate([
-      { $match: filter },
+    const filterproduct = await products.aggregate([
+      { $match: filter }, // your dynamic filters
       { $sort: { price: 1 } },
-      { $project: { category: 1, price: 1, size: 1, fabric: 1 } },
-    ]);
+      {
+        $facet: {
+          products: [
+            {
+              $project: {
+                category: 1,
+                price: 1,
+                size: 1,
+                fabric: 1,
+                inStock: 1,
+                discount: 1,
+                discountPrice: 1,
+                savedPrice: 1,
+              }
+            }
+          ],
+          stockCounts: [
+            {
+              $group: {
+                _id: "$inStock",
+                count: { $sum: 1 }
+              }
+            }
+          ]
+        }
+      }
+    ]);    
     return res.status(200).json({
       success: true,
-      products,
+      filterproduct,
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -278,11 +300,11 @@ exports.updateCart = async (req, res) => {
         runValidators: true,
       }
     );
-    if(!update){
+    if (!update) {
       return res.status(404).json({
         success: false,
-        message: "error occured in updation"
-      })
+        message: "error occured in updation",
+      });
     }
   } catch (error) {
     return res.status(500).json({
@@ -313,7 +335,7 @@ exports.deleteCart = async (req, res) => {
 
 ///////////////////// review //////////////////
 
-//get rating of a product id : 
+//get rating of a product id :
 exports.getRatingById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -423,4 +445,3 @@ exports.ratingProduct = async (req, res) => {
     });
   }
 };
-

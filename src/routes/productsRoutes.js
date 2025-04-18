@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../middlewares/multer.js');
-const multipleUploads = upload.array('images' , 10);
+const productPicsUpload = require('../middlewares/multer.js');
+const multipleUploads = productPicsUpload.array('images' , 10);
 const { 
   authenticate,
  } = require('../middlewares/authUser.js');
@@ -19,7 +19,7 @@ const {
   getRatingById,
   ratingProduct,
   filterProducts
-} = require('../controllers/productsAuth.js');
+} = require('../controllers/productControllers.js');
 
 router.post('/', authenticate, multipleUploads, createProduct);
 router.get("/filter", filterProducts);

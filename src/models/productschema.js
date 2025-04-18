@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const crypto = require('crypto');
+const crypto = require("crypto");
 
 const productschema = new mongoose.Schema(
   {
@@ -9,12 +9,9 @@ const productschema = new mongoose.Schema(
     },
     postImages: [
       {
-        name: String,
-        img: {
-          data: Buffer,
-          contentType: String,
-          hash : String,
-        },
+        type: String,
+        defaultValue:
+          "https://myaltpay.fra1.cdn.digitaloceanspaces.com/profile.png",
       },
     ],
     name: {
@@ -37,30 +34,44 @@ const productschema = new mongoose.Schema(
       type: String,
       required: [true, "Fabric type is Required"],
     },
-    category: { 
+    category: {
       type: String,
       required: true,
     },
     tags: {
-      type : String,
+      type: String,
       required: true,
+    },
+    discount: {
+      type: Number,
+      default: 0,
+    },
+    discountPrice:{
+      type: Number,
+      default: 0
+    },
+    inStock: {
+      type: String,
+      enum: ['instock', 'outstock'],
+      default: 'instock'
+    },
+    savedPrice: {
+      type: Number,
+      default: 0
+    },
+    accountType: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'admin'
     }
   },
   { timestamps: true }
 );
 
-productschema.pre("save", function (next) {
-  if (this.isModified("postImages")) {
-    this.postImages = this.postImages.map((image) => {
-      const hash = crypto.createHash("sha256").update(image.img.data).digest("hex");
-      return {
-        ...image,
-        img: {
-          ...image.img,
-          hash,
-        },
-      };
-    });
+productschema.pre("save", async function (next) {
+  if (this.isModified("discount")) {
+    this.discountPrice = ((100 + this.discount)/100)*this.price
+    this.savedPrice = this.price - this.discountPrice; 
   }
   next();
 });

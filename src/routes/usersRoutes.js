@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const users = require('../models/userschema.js');
-const upload = require("../middlewares/multer.js");
+const productPicsUpload = require("../middlewares/multer.js");
 const {
   setNewPassword,
   signUp,
@@ -22,7 +22,7 @@ const {
   viewAllAddresses,
   contactUs,
   resend,
-} = require("../controllers/usersAuth.js");
+} = require("../controllers/userControllers.js");
 // const { ratingProduct } = require("../controllers/productsAuth.js");
 const { authenticate,authenticateifNeeded } = require("../middlewares/authUser.js");
 const passport = require("passport");
@@ -71,11 +71,11 @@ router.get("/failed", (req, res) => {
 });
 
 router.put('/google/:id', setNewPassword);
-router.post("/signup", upload.single("profilePhoto"), signUp);
+router.post("/signup", signUp);
 router.get("/verify", verify);
 router.post("/resend", resend);
 router.post("/signin", signIn);
-router.put("/update", authenticate, upload.single("avatar"), update);
+router.put("/update", authenticate, productPicsUpload.single("avatar"), update);
 router.get("/me/:id", authenticate, getById);
 router.post("/password/forget", forgetPassword);
 router.post("/password/change", authenticate, changePassword);
