@@ -12,22 +12,14 @@ const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
 const path = require('path')
 // const cron = require('node-cron');
-// const users = require('./src/models/userschema.js');
 require('./src/config/passport.js');
 //functions :
 const authroutes = require("./src/routes/usersRoutes.js");
 const postroutes = require("./src/routes/productsRoutes.js");
+const adminroutes = require("./src/routes/adminRoutes.js");
 const { dbConnnection } = require("./src/config/dbConnection.js");
 const MongoStore = require("connect-mongo");
 dbConnnection();
-
-// app.use(
-//   session({
-//     secret: process.env.JWT_SECRET, 
-//     resave: false, 
-//     saveUninitialized: false,
-//   })
-// );
 const dbString = process.env.NODE_ENV === 'production'? process.env.MONGODB_PRODUCTION : process.env.MONGODB_LOCAL;
  
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -76,6 +68,8 @@ app.use(
 //initializing app :
 app.use("/patiofy/auth/user", authroutes);
 app.use("/patiofy/auth/products", postroutes);
+app.use("patiofy/auth/admin", adminroutes)
+
 
 //usage of swagger eith yaml code :
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(SwaggerDocument));

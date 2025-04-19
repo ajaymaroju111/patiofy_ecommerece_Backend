@@ -59,11 +59,6 @@ const productschema = new mongoose.Schema(
       type: Number,
       default: 0
     },
-    accountType: {
-      type: String,
-      enum: ['user', 'admin'],
-      default: 'admin'
-    }
   },
   { timestamps: true }
 );

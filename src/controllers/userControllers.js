@@ -295,14 +295,14 @@ exports.changePassword = async (req, res) => {
         error: "all fields are required",
       });
     }
-    const user = await users.findById(req.user._id).select("+password");
+    const user = await users.findById(req.user._id);
     if (!user) {
       return res.status(404).json({
         success: false,
         message: "user does not exist",
       });
     }
-    const isPassword = user.comparePassword(oldpassword);
+    const isPassword = await user.comparePassword(oldpassword);
     if (!isPassword) {
       return res.status(401).json({
         error: "incorrect password",

@@ -54,6 +54,11 @@ const userschema = new mongoose.Schema(
     isTermsAndConditions : {
       type : Boolean,
       default: false
+    },
+    accountType: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'admin'
     }
   },
   { timestamps: true }

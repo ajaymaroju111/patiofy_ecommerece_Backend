@@ -135,19 +135,43 @@ exports.getAllProducts = async (req, res) => {
 
 //delete a post :
 exports.deleteProduct = async (req, res) => {
-  const { id } = req.params.id;
-  await products.findByIdAndDelete(id);
-  await reviews.deleteOne({ productId: id });
+  try {
+    const { id } = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(401).json({
+        success: false,
+        message: "invalid ID"
+      })
+    }
+  const deleted = await products.findByIdAndDelete(id);
+  if(!deleted){
+    return res.status(404).json({
+      success: false,
+      message: "product not found",
+    })
+  }
+  const review = await reviews.deleteOne({ productId: id });
   return res.status(200).json({
     success: true,
     message: "post deleted successfully",
   });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    })
+  }
+  
 };
 
 //search for products : ( NAN )
 exports.filterProducts = async (req, res) => {
   try {
     const { categories, price, size, fabric, Discount } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
     let filter = {};
     //initializing the filter condition :
     if (categories) {
@@ -208,7 +232,14 @@ exports.filterProducts = async (req, res) => {
           ]
         }
       }
-    ]);    
+    ]).skip(skip).limit(limit).exec(); 
+    
+    if(!filterproduct || filterproduct.length === 0){
+      return res.status(404).json({
+        success: false,
+        message: "Products not found",
+      })
+    }
     return res.status(200).json({
       success: true,
       filterproduct,
