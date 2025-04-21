@@ -9,9 +9,11 @@ const productschema = new mongoose.Schema(
     },
     postImages: [
       {
-        type: String,
-        defaultValue:
-          "https://myaltpay.fra1.cdn.digitaloceanspaces.com/profile.png",
+      name: String,
+      img: {
+        data: Buffer, // Binary image data
+        contentType: String, // Image type (jpeg/png)
+      },
       },
     ],
     name: {
@@ -59,6 +61,11 @@ const productschema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    ProductStatus: {
+      type : String,
+      enum: ['unpublished', 'published'],
+      default: 'unpublished',
+    }
   },
   { timestamps: true }
 );

@@ -1,17 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const productPicsUpload = require('../middlewares/multer.js');
-const multipleUploads = productPicsUpload.array('images' , 10);
 const { 
   authenticate,
  } = require('../middlewares/authUser.js');
 
 const {
   getAllProducts,
-  createProduct,
-  updateProduct,
-  getById,
-  deleteProduct,
+  getProductById,
   addToCart,
   getCartById,
   updateCart,
@@ -21,18 +16,18 @@ const {
   filterProducts
 } = require('../controllers/productControllers.js');
 
-router.post('/', authenticate, multipleUploads, createProduct);
-router.get("/filter", filterProducts);
-router.get('/', getAllProducts);
-router.get('/:id', getById)
-router.delete('/:id', authenticate, deleteProduct)
-router.put('/:id', authenticate, updateProduct);
-router.post('/cart', authenticate, addToCart);
-router.get('/cart/:id', authenticate, getCartById)
-router.put('/cart/:id', authenticate, updateCart)
+// product Routes : 
+router.get("/filter", filterProducts); 
+router.get('/', getAllProducts);       
+router.get('/:id', getProductById);       
+
+// Cart Routes : 
+router.post('/cart/:id', authenticate, addToCart);
+router.get('/cart/:id', authenticate, getCartById);
+router.put('/cart/:id', authenticate, updateCart);
 router.delete('/cart/:id', authenticate, deleteCart);
 
-////ratings : 
+// Rating Routes : 
 router.get("/review/:id", authenticate, getRatingById);
 router.post("/review/:id", authenticate, ratingProduct);
 

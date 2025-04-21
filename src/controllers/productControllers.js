@@ -3,7 +3,7 @@ const carts = require("../models/cartschema.js");
 const { default: mongoose } = require("mongoose");
 const reviews = require("../models/reviews.js");
 
-//create a product post :
+//create a product Product :
 exports.createProduct = async (req, res) => {
   try {
     const { name, description, price, size, fabric, category, tags } = req.body;
@@ -11,12 +11,16 @@ exports.createProduct = async (req, res) => {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
-        error: "Post images are required",
+        error: "Product images are required",
       });
     }
-    const postImages = req.files.map((file) => {
-      return `/uploads/productPics/${file.filename}`; // or full URL if hosted
-    });
+    const postImages = req.files.map((file) => ({
+      name: file.originalname,
+      img: {
+        data: file.buffer.toString('base64'), // Store buffer data
+        contentType: file.mimetype,
+      },
+    }));
 
     const Post = await products.create({
       userId: req.user._id,
@@ -44,7 +48,89 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-//update product post  :
+//set product status to be publish : 
+exports.publishProduct = async(req, res) => {
+  try {
+    const {id} = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(400).json({
+        success: false,
+        message: "Bad Request",
+        error: "invalid object ID",
+      });
+    }
+    const item = await products.findById(id);
+    if(!item){
+      return res.status(404).json({
+        success: false,
+        message: "Not Found",
+        error: "item not found",
+      });
+    }
+    if(item.ProductStatus = 'published'){
+      return res.status(204).json({
+        success: true,
+        message: "No Content",
+        error: "product is already in published mode"
+      })
+    }
+    item.ProductStatus = 'published';
+    await item.save();
+    return res.status(200).json({
+      success: false,
+      message : 'product set to published successfully',
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error
+    })
+  }
+}
+
+//unpublish product : 
+exports.unPublishProduct = async(req, res) => {
+  try {
+    const {id} = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(400).json({
+        success: false,
+        message: "Bad Request",
+        error: "invalid object ID",
+      });
+    }
+    const item = await products.findById(id);
+    if(!item){
+      return res.status(404).json({
+        success: false,
+        message: "Not Found",
+        error: "item not found",
+      });
+    }
+    if(item.ProductStatus = 'unpublished'){
+      return res.status(204).json({
+        success: true,
+        message: "No Content",
+        error: "product is already in unpublished mode"
+      })
+    }
+    item.ProductStatus = 'unpublished';
+    await item.save();
+    return res.status(200).json({
+      success: false,
+      message : 'product set to unpublished successfully',
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error
+    })
+  }
+}
+
+//update product Product  :
 exports.updateProduct = async (req, res) => {
   try {
     const { id, name, description, price } = req.body;
@@ -60,7 +146,7 @@ exports.updateProduct = async (req, res) => {
     });
     return res.status(200).json({
       success: true,
-      message: "post updated successfully",
+      message: "Product updated successfully",
     });
   } catch (error) {
     return res.status(500).json({
@@ -72,7 +158,7 @@ exports.updateProduct = async (req, res) => {
 };
 
 //get product by Id :
-exports.getById = async (req, res) => {
+exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -108,8 +194,7 @@ exports.getAllProducts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-
-    const allproducts = await products.find().skip(skip).limit(limit).exec();
+    const allproducts = await products.find({ProductStatus : 'published'}).skip(skip).limit(limit).exec();
     if (allproducts.length === 0 || !allproducts) {
       return res.status(404).json({
         success: false,
@@ -133,7 +218,7 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
-//delete a post :
+//delete a Product :
 exports.deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -153,7 +238,7 @@ exports.deleteProduct = async (req, res) => {
   const review = await reviews.deleteOne({ productId: id });
   return res.status(200).json({
     success: true,
-    message: "post deleted successfully",
+    message: "Product deleted successfully",
   });
   } catch (error) {
     return res.status(500).json({
@@ -259,11 +344,13 @@ exports.filterProducts = async (req, res) => {
 //adding to the cart :
 exports.addToCart = async (req, res) => {
   try {
-    const { productId } = req.body;
+    const { productId } = req.params;
     const post = await products.findById(productId);
     if (!post) {
       return res.status(404).json({
-        message: "product not found",
+        success: false,
+        message: "Not Found",
+        error: "product not found",
       });
     }
     const cart = await carts.create({

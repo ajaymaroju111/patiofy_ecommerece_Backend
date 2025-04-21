@@ -546,7 +546,7 @@ paths:
     put:
       summary: Set a new password for a user
       tags:
-        - users
+        - Authentication_OAuth2.0
       requestBody:
         required: true
         content:
@@ -1108,90 +1108,7 @@ paths:
 #product routes YAML  :
 
   /patiofy/auth/products/:
-    post:
-      summary: Create a new post
-      description: Adds a new product post with images.
-      tags:
-        - products
-      security:
-        - BearerAuth: []
-      operationId: createPost
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: Name of the product
-                  example: "Cool T-Shirt"
-                description:
-                  type: string
-                  description: Description of the product
-                  example: "A cool t-shirt made from organic cotton."
-                price:
-                  type: number
-                  format: float
-                  description: Price of the product
-                  example: 19.99
-                size:
-                  type: string
-                  description: Size of the product
-                  example: "M"
-                fabric:
-                  type: string
-                  description: Fabric type of the product
-                  example: "Cotton"
-                category:
-                  type: string
-                  description: category of the product
-                  example: "Baby Swing"
-                tags:
-                  type: string
-                  description: tags of the product
-                  example: "Baby cradle, baby jhula"
-                images:
-                  type: array
-                  items:
-                    type: string
-                    format: binary
-                  description: Product images (required)
-      responses:
-        "200":
-          description: Product added successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Product added successfully"
-        "401":
-          description: Product images are required
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Product pics are required"
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Internal Server Error"
+  # get all list of products : 
     get:
       summary: Get all products with pagination
       tags:
@@ -1268,8 +1185,8 @@ paths:
                     
   /patiofy/auth/products/{id}:
     get:
-      summary: Retrieve a post by ID
-      description: Fetches the details of a specific product post using its ID.
+      summary: Retrieve a product by ID
+      description: Fetches the details of a specific product  using its ID.
       tags:
         - products
       security:
@@ -1279,12 +1196,12 @@ paths:
         - name: id
           in: path
           required: true
-          description: ID of the post to retrieve
+          description: ID of the product to retrieve
           schema:
             type: string
       responses:
         "200":
-          description: Post retrieved successfully
+          description: product retrieved successfully
           content:
             application/json:
               schema:
@@ -1337,124 +1254,6 @@ paths:
                   message:
                     type: string
                     example: "ID is required"
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Internal Server Error"
-    delete:
-      summary: Delete a post
-      description: Removes a post by its ID.
-      tags:
-        - products
-      security:
-        - CookieAuth: []
-      operationId: deletePost
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: The ID of the post to delete.
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Post deleted successfully.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "post deleted successfully"
-        "401":
-          description: ID not received.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Id not received"
-        "404":
-          description: Post not found.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Post not found"
-        "500":
-          description: Internal Server Error.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Internal Server Error"
-    put:
-      summary: Update an existing post
-      description: Updates the details of a product post.
-      tags:
-        - products
-      security:
-        - CookieAuth: []
-      operationId: updatePost
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID of the post to update
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: Name of the product
-                  example: "Updated T-Shirt"
-                description:
-                  type: string
-                  description: Description of the product
-                  example: "An updated description for the t-shirt."
-                price:
-                  type: number
-                  format: float
-                  description: Price of the product
-                  example: 24.99
-      responses:
-        "200":
-          description: Post updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Post updated successfully"
         "500":
           description: Internal Server Error
           content:
@@ -2000,7 +1799,7 @@ paths:
       summary: Submit a Contact Us Message
       description: Allows an authenticated user to submit a message via the contact form.
       tags:
-        - Contact
+        - ContactUs
       security:
         - BearerAuth: []
       requestBody:
@@ -2048,9 +1847,11 @@ paths:
 
 
 # Admin calls :  
+
+# create a product : 
   /patiofy/auth/admin/product:
     post:
-      summary: Create a new post
+      summary: Create a new Product
       description: Adds a new product post with images.
       tags:
         - Admin - products
@@ -2133,6 +1934,7 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error"
+  # get all products which are in published
     get:
       summary: Get all products with pagination
       tags:
@@ -2208,9 +2010,10 @@ paths:
                     type: string
 
   /patiofy/auth/admin/product/{id}:
+  # update product
     put:
-      summary: Update an existing post
-      description: Updates the details of a product post.
+      summary: Update an existing Product
+      description: Updates the details of a product.
       tags:
         - Admin - products
       security:
@@ -2220,7 +2023,7 @@ paths:
         - name: id
           in: path
           required: true
-          description: ID of the post to update
+          description: ID of the Product to update
           schema:
             type: string
       requestBody:
@@ -2245,7 +2048,7 @@ paths:
                   example: 24.99
       responses:
         "200":
-          description: Post updated successfully
+          description: Product updated successfully
           content:
             application/json:
               schema:
@@ -2256,7 +2059,7 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Post updated successfully"
+                    example: "Product updated successfully"
         "500":
           description: Internal Server Error
           content:
@@ -2267,9 +2070,10 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error"
+    # Delete product
     delete:
-      summary: Delete a post
-      description: Removes a post by its ID.
+      summary: Delete a Product
+      description: Removes a Product by its ID.
       tags:
         - Admin - products
       security:
@@ -2279,12 +2083,12 @@ paths:
         - name: id
           in: path
           required: true
-          description: The ID of the post to delete.
+          description: The ID of the Product to delete.
           schema:
             type: string
       responses:
         "200":
-          description: Post deleted successfully.
+          description: Product deleted successfully.
           content:
             application/json:
               schema:
@@ -2326,8 +2130,90 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error"
- 
+    # get Product By ID
+    get:
+      summary: Retrieve a post by ID
+      description: Fetches the details of a specific product post using its ID.
+      tags:
+        - Admin - products
+      security:
+        - BearerAuth: []
+      operationId: getById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the post to retrieve
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Post retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  post:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                        example: "60d21b4667d0d8992e610c85"
+                      name:
+                        type: string
+                        example: "Cool T-Shirt"
+                      description:
+                        type: string
+                        example: "A cool t-shirt made from organic cotton."
+                      price:
+                        type: number
+                        format: float
+                        example: 19.99
+                      size:
+                        type: string
+                        example: "M"
+                      fabric:
+                        type: string
+                        example: "Cotton"
+                      userId:
+                        type: object
+                        properties:
+                          firstname:
+                            type: string
+                            example: "John"
+                          lastname:
+                            type: string
+                            example: "Doe"
+                          email:
+                            type: string
+                            example: "johndoe@example.com"
+        "401":
+          description: ID is required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "ID is required"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal Server Error"
+
   /patiofy/auth/admin/product/discount/{id}:
+  # update Discount on a product
     put:
       tags:
         - Admin - Products - discounts
@@ -2413,8 +2299,69 @@ paths:
                     example: Internal Server Error
                   error:
                     type: string
+  
+  /patiofy/auth/admin/{id}:
+     get:
+      summary: Get user by ID
+      description: |
+        This endpoint retrieves a user's details by their unique ID.
+      tags:
+        - Admin
+      security:
+        - BearerAuth: [] 
+      responses:
+        "200":
+          description: User details retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  user:
+                    type: object
+                    description: The user object containing details.
+                    properties:
+                      _id:
+                        type: string
+                        example: "65a2d5e2f1c3a12b34f6a789"
+                      name:
+                        type: string
+                        example: "John Doe"
+                      email:
+                        type: string
+                        example: "johndoe@example.com"
+        "404":
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "User not found"
+        "500":
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "Internal Server Error"
 
   /patiofy/auth/admin/users:
+  # get all users
     get:
       tags:
         - Admin - Users
@@ -2498,6 +2445,7 @@ paths:
                     type: string
 
   /patiofy/auth/admin/user/{id}:
+  # set user inactive
     put:
       tags:
         - Admin - Users
@@ -2568,6 +2516,7 @@ paths:
                     example: Internal Server Error
                   error:
                     type: string
+    # Get user by ID : 
     get:
       tags:
         - Admin - Users
