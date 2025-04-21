@@ -1,6 +1,7 @@
 const { default: mongoose } = require("mongoose");
 const users = require("../models/userschema");
-const products = require('../models/productschema')
+const products = require('../models/productschema');
+const orders = require("../models/ordersSchema");
 
 
 ///****************** User Management:  ***********************/
@@ -62,7 +63,7 @@ exports.viewAllUsers = async(req, res) => {
       error: error,
     })
   }
-}
+};
 
 // view a single user
 exports.viewUser = async(req, res) => {
@@ -74,7 +75,7 @@ exports.viewUser = async(req, res) => {
         message: "invalid ID"
       })
     }
-    const user = await users.findById(id);
+    const user = await users.findById(id).select('firstname lastname email -_id');
     if(!user){
       return res.status(404).json({
         succecss: false,
@@ -93,7 +94,7 @@ exports.viewUser = async(req, res) => {
       error: error,
     })
   }
-}
+};
 
 //******************** Products Management:  ******************/
 
@@ -108,7 +109,7 @@ exports.setDiscountOnProduct = async(req, res) => {
         message: "Invalid ID"
       })
     }
-    const product = await products.findById(id);
+    const product = await products.findById(id).select('name price size fabric discount discountPrice');
     if(!product){
       return res.status(404).json({
         succcess: false,
@@ -130,6 +131,173 @@ exports.setDiscountOnProduct = async(req, res) => {
     })
   }
 };
+
+//*********************  Orders Management:  ********************//
+
+//view all inprogess orders : 
+exports.viewAllInProgressOrders = async(req, res) => {
+  try {
+    const allorders = await orders.find({
+      status: { $in : ['conformed', 'out_of_delivery', ]}
+    }).populate('userId', 'firstname, lastname').populate('productId', 'name, price, size, discountPrice').exec();
+    if(allorders.length === 0){
+      return res.status(404).json({
+        success: true,
+        message: "No current active orders"
+      })
+    }
+    res.status.json({
+      success: true,
+      message: "in progress orders are retrieved ",
+      data: allorders
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    })
+  }
+}
+
+//view all refunded orders: 
+exports.viewAllRefundedOrders = async(req, res) => {
+  try {
+    const allorders = await orders.find({
+      status: { $in : ['refunded']}
+    }).populate('userId', 'firstname, lastname').populate('productId', 'name, price, size, discountPrice').exec();
+    if(allorders.length === 0){
+      return res.status(404).json({
+        success: true,
+        message: "No refunded orders "
+      })
+    }
+    res.status.json({
+      success: true,
+      message: "refunded orders are retrieved ",
+      data: allorders
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    })
+  }
+}
+
+//view all cancelled orders: 
+exports.viewAllCancelledOrders = async(req, res) => {
+  try {
+    const allorders = await orders.find({
+      status: { $in : ['cancelled']}
+    }).populate('userId', 'firstname, lastname').populate('productId', 'name, price, size, discountPrice').exec();
+    if(allorders.length === 0){
+      return res.status(404).json({
+        success: true,
+        message: "No cancelled active orders"
+      })
+    }
+    res.status.json({
+      success: true,
+      message: "cancelled orders are retrieved ",
+      data: allorders
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    })
+  }
+}
+
+//view all completed orders: 
+exports.viewAllCompletedOrders = async(req, res) => {
+  try {
+    const allorders = await orders.find({
+      status: { $in : ['completed']}
+    }).populate('userId', 'firstname, lastname').populate('productId', 'name, price, size, discountPrice').exec();
+    if(allorders.length === 0){
+      return res.status(404).json({
+        success: true,
+        message: "No completed  orders"
+      })
+    }
+    res.status.json({
+      success: true,
+      message: "completed orders are retrieved ",
+      data: allorders
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    })
+  }
+}
+
+
+//**********  Payment Status:   *******************/
+//view all payment completed orders: 
+exports.viewAllSuccessPaymentOrders = async(req, res) => {
+  try {
+    const allorders = await orders.find({
+      payment_status: { $in : ['paid']}
+    }).populate('userId', 'firstname, lastname').populate('productId', 'name, price, size, discountPrice').exec();
+    if(allorders.length === 0){
+      return res.status(404).json({
+        success: true,
+        message: "No payment completed orders"
+      })
+    }
+    res.status.json({
+      success: true,
+      message: " payment completed orders are retrieved ",
+      data: allorders
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    })
+  }
+};
+
+//view all payment incompleted orders: 
+exports.viewAllUnSuccessPaymentOrders = async(req, res) => {
+  try {
+    const allorders = await orders.find({
+      payment_status: { $in : ['unpaid']}
+    }).populate('userId', 'firstname, lastname').populate('productId', 'name, price, size, discountPrice').exec();
+    if(allorders.length === 0){
+      return res.status(404).json({
+        success: true,
+        message: "No unpaid payment orders"
+      })
+    }
+    res.status.json({
+      success: true,
+      message: "incompleted payment orders are retrieved ",
+      data: allorders
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    })
+  }
+};
+
+
+
+
+
+
+
 
 
 

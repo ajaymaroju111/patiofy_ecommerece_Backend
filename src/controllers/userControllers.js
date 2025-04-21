@@ -6,6 +6,8 @@ const { sendEmail } = require("../utils/sendEmail.js");
 const { generateUserToken } = require("../middlewares/authUser.js");
 const { conformSignup, forgetPassword } = require("../utils/emailTemplates.js");
 const { default: mongoose } = require("mongoose");
+const carts = require("../models/cartschema.js");
+const orders = require("../models/ordersSchema.js");
 
 //set password after google oauth signup :
 exports.setNewPassword = async (req, res) => {
@@ -201,7 +203,7 @@ exports.getById = async (req, res) => {
         message: "Authentication Error",
       });
     }
-    const user = await users.findById(req.user._id);
+    const user = await users.findById(req.user._id).select('firstname lastname email -_id');
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -361,7 +363,7 @@ exports.myProducts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const myproducts = await products
-      .find({ userId: id })
+      .find({ userId: id }).select('-_id -userId -createdAt -updatedAt -__v')
       .skip(skip)
       .limit(limit)
       .exec();
@@ -408,54 +410,42 @@ exports.signOut = async (req, res) => {
 
 //deleting user account :
 exports.deleteUser = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction(); // Start transaction
   try {
     const id = req.user._id;
     const { password } = req.body;
+
     if (!password) {
-      return res.status(400).json({
-        error: "password is required",
-      });
+      return res.status(400).json({ error: "password is required" });
     }
-    const user = await users.findById(id).select("+password");
+
+    const user = await users.findById(id);
     if (!user) {
-      return res.status(404).json({
-        success: true,
-        message: "user not found",
-      });
+      return res.status(404).json({ message: "user not found" });
     }
 
     const isPasswordMatch = await user.comparePassword(password);
     if (!isPasswordMatch) {
-      return res.status(401).json({
-        error: "incorrect password",
-      });
+      return res.status(401).json({ error: "incorrect password" });
     }
 
-    const deleted = await users
-      .deleteOne({ _id: req.user._id })
-      .session("session");
+    const deleted = await users.deleteOne({ _id: id });
     if (deleted.deletedCount === 0) {
-      return res.status(404).json({
-        error: "user not found",
-      });
+      return res.status(404).json({ error: "user not found" });
     }
-    await queryForm.deleteMany({ _id: req.user._id }).session("session");
-    await products.deleteMany({ _id: req.user._id }).session("session");
-    await userAddresses.deleteMany({ _id: req.user._id }).session("session");
-    await session.commitTransaction();
+
+    await queryForm.deleteMany({ userId: id });
+    await products.deleteMany({ userId: id });
+    await userAddresses.deleteMany({ userId: id });
+    await orders.deleteMany({ userId: id });
+    await carts.deleteMany({ userId: id });
+
+    res.status(200).json({ success: true, message: "User deleted successfully" });
   } catch (error) {
-    session.abortTransaction();
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-      error: error,
-    });
-  } finally {
-    session.endSession();
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error", error });
   }
 };
+
 
 
 

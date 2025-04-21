@@ -12,7 +12,6 @@ const addressSchaema = new mongoose.Schema({
   },
   email : {
     type : String,
-    required : [true , "email is required"],
     match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
   },
   phone : {
@@ -24,6 +23,7 @@ const addressSchaema = new mongoose.Schema({
     country : {
       type : String,
       required : [true, "country name is required"],
+      default: "India",
     },
     firstname : {
       type : String,
@@ -33,11 +33,19 @@ const addressSchaema = new mongoose.Schema({
       type : String,
       required : [true , "lastname is required"],
     },
-    address : {
+    Street_Address : {
       type : String,
       required : [true , "address is required"],
     },
-    city : {
+    village:{
+      type: String,
+      required : [true, "village name is required"]
+    },
+    zipcode:{
+      type: String,
+      required: [true, "zipcode is required"],
+    },
+    Mandal : {
       type : String,
       required : [true , "city is required"]
     },
@@ -46,7 +54,6 @@ const addressSchaema = new mongoose.Schema({
       required : [true , "state is required"],
     }
   }
-  
-});
+},{ timestamps: true });
 
 module.exports = mongoose.model('userAddresses', addressSchaema);

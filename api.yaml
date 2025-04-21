@@ -677,7 +677,7 @@ paths:
       summary: Get product review by ID
       description: Retrieve the review for a product if it exists.
       tags:
-        - products
+        - Review
       security:
         - BearerAuth: []
       parameters:
@@ -735,7 +735,7 @@ paths:
                     description: Error object with details
     post:
       tags:
-        - products
+        - Review
       security:
         - BearerAuth: []
       summary: Submit a rating and review for a product
@@ -2655,8 +2655,84 @@ paths:
                   error:
                     type: string
 
-
-
+  /patiofy/auth/admin/myProduct:
+    get:
+      summary: Get products created by the logged-in user
+      tags:
+        - Admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of user's products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  page:
+                    type: integer
+                    example: 1
+                  limit:
+                    type: integer
+                    example: 10
+                  totalPages:
+                    type: integer
+                    example: 5
+                  totalItems:
+                    type: integer
+                    example: 50
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+        '404':
+          description: Products not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: products not found
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+    
 
 
 

@@ -27,6 +27,8 @@ const contactSchema = new mongoose.Schema({
     type : String,
     required : [true , 'message is required']
   }
-});
+},
+{ timestamps: true }
+);
 
 module.exports = mongoose.model('queryForm', contactSchema);

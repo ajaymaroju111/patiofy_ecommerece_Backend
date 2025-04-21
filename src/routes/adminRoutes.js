@@ -12,6 +12,7 @@ const {
   isAdmin,
 } = require('../middlewares/authUser.js');
 const {
+  myProducts,
 
 } = require('../controllers/userControllers.js');
 const {
@@ -24,11 +25,12 @@ const {
 
 
 
+
 //Users Management: 
 router.post('/users',authenticate, isAdmin, viewAllUsers);
 router.put('/user/:id',authenticate, isAdmin, setUserInactive);
 router.get('/user/:id',authenticate, isAdmin, viewUser);
-router.post('/user',authenticate, isAdmin,  )
+router.get('/myProducts',authenticate, isAdmin, myProducts);
 
 //products Management: 
 router.post('/product', authenticate, isAdmin, createProduct);
