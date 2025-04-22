@@ -75,13 +75,10 @@ router.post("/signup", signUp);
 router.get("/verify", verify);
 router.post("/resend", resend);
 router.post("/signin", signIn);
-router.put("/update", authenticate, productPicsUpload.single("avatar"), update);
 router.get("/me/:id", authenticate, getById);
 router.post("/password/forget", forgetPassword);
 router.post("/password/change", authenticate, changePassword);
 router.put("/password/setNew", setPassword);
-
-router.get("/products/:id", authenticate, myProducts);
 router.delete("/delete", authenticate, deleteUser);;
 router.put("/logout", authenticate, signOut);
 

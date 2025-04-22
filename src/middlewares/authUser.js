@@ -96,9 +96,10 @@ exports.verifyGoogleUser = async (req, res, next) => {
 exports.isAdmin = async (req, res, next) => {
   try {
     if (!(req.user.accountType === "admin")) {
-      return res.status.json({
+      return res.status(401).json({
         success: false,
         message: " you are not authorized ",
+        error: "Unauthorized"
       });
     }
     // req.user = req.user

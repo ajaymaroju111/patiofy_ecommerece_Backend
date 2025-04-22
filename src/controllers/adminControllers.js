@@ -96,7 +96,91 @@ exports.viewUser = async(req, res) => {
   }
 };
 
-//******************** Products Management:  ******************/
+//********************* Products Management *******************/
+
+//unpublish product : 
+exports.unPublishProduct = async(req, res) => {
+  try {
+    const {id} = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(400).json({
+        success: false,
+        message: "Bad Request",
+        error: "invalid object ID",
+      });
+    }
+    const item = await products.findById(id);
+    if(!item){
+      return res.status(404).json({
+        success: false,
+        message: "Not Found",
+        error: "item not found",
+      });
+    }
+    if(item.ProductStatus = 'unpublished'){
+      return res.status(204).json({
+        success: true,
+        message: "No Content",
+        error: "product is already in unpublished mode"
+      })
+    }
+    item.ProductStatus = 'unpublished';
+    await item.save();
+    return res.status(200).json({
+      success: false,
+      message : 'product set to unpublished successfully',
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error
+    })
+  }
+}
+
+//set product status to be publish : 
+exports.publishProduct = async(req, res) => {
+  try {
+    const {id} = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(400).json({
+        success: false,
+        message: "Bad Request",
+        error: "invalid object ID",
+      });
+    }
+    const item = await products.findById(id);
+    if(!item){
+      return res.status(404).json({
+        success: false,
+        message: "Not Found",
+        error: "item not found",
+      });
+    }
+    if(item.ProductStatus = 'published'){
+      return res.status(204).json({
+        success: true,
+        message: "No Content",
+        error: "product is already in published mode"
+      })
+    }
+    item.ProductStatus = 'published';
+    await item.save();
+    return res.status(200).json({
+      success: false,
+      message : 'product set to published successfully',
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error
+    })
+  }
+}
+
+//******************** Discount Management:  ******************/
 
 //upatate a password for a product:
 exports.setDiscountOnProduct = async(req, res) => {
@@ -189,9 +273,12 @@ exports.viewAllRefundedOrders = async(req, res) => {
 //view all cancelled orders: 
 exports.viewAllCancelledOrders = async(req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
     const allorders = await orders.find({
       status: { $in : ['cancelled']}
-    }).populate('userId', 'firstname, lastname').populate('productId', 'name, price, size, discountPrice').exec();
+    }).populate('userId', 'firstname, lastname').populate('productId', 'name, price, size, discountPrice').skip(skip).limit(limit).exec();
     if(allorders.length === 0){
       return res.status(404).json({
         success: true,
@@ -215,9 +302,12 @@ exports.viewAllCancelledOrders = async(req, res) => {
 //view all completed orders: 
 exports.viewAllCompletedOrders = async(req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
     const allorders = await orders.find({
       status: { $in : ['completed']}
-    }).populate('userId', 'firstname, lastname').populate('productId', 'name, price, size, discountPrice').exec();
+    }).populate('userId', 'firstname, lastname').populate('productId', 'name, price, size, discountPrice').skip(skip).limit(limit).exec();
     if(allorders.length === 0){
       return res.status(404).json({
         success: true,
@@ -243,9 +333,12 @@ exports.viewAllCompletedOrders = async(req, res) => {
 //view all payment completed orders: 
 exports.viewAllSuccessPaymentOrders = async(req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
     const allorders = await orders.find({
       payment_status: { $in : ['paid']}
-    }).populate('userId', 'firstname, lastname').populate('productId', 'name, price, size, discountPrice').exec();
+    }).populate('userId', 'firstname, lastname').populate('productId', 'name, price, size, discountPrice').skip(skip).limit(limit).exec();
     if(allorders.length === 0){
       return res.status(404).json({
         success: true,
@@ -269,9 +362,12 @@ exports.viewAllSuccessPaymentOrders = async(req, res) => {
 //view all payment incompleted orders: 
 exports.viewAllUnSuccessPaymentOrders = async(req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
     const allorders = await orders.find({
       payment_status: { $in : ['unpaid']}
-    }).populate('userId', 'firstname, lastname').populate('productId', 'name, price, size, discountPrice').exec();
+    }).populate('userId', 'firstname, lastname').populate('productId', 'name, price, size, discountPrice').skip(skip).limit(limit).exec();
     if(allorders.length === 0){
       return res.status(404).json({
         success: true,

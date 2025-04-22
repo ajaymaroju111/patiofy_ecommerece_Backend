@@ -35,6 +35,7 @@ app.use(
     }),
   })
 );
+
 app.use(cookieParser());
 //usage od limiter :
 const limiter = Limiter({
@@ -68,7 +69,7 @@ app.use(
 //initializing app :
 app.use("/patiofy/auth/user", authroutes);
 app.use("/patiofy/auth/products", postroutes);
-app.use("patiofy/auth/admin", adminroutes)
+app.use("/patiofy/auth/admin", adminroutes);
 
 
 //usage of swagger eith yaml code :

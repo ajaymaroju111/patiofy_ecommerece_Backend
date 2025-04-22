@@ -77,10 +77,8 @@ exports.signUp = async (req, res) => {
 //ressnd verification link to the user :
 exports.resend = async (req, res) => {
   try {
-    const { userId } = req.body;
-    const user = await users.findByIdAndUpdate(userId, {
-      expirytime: Date.now() + 30 * 60 * 1000,
-    });
+    const { email } = req.body;
+    const user = await users.findOne( email );
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -157,8 +155,7 @@ exports.signIn = async (req, res) => {
     const user = await users
       .findOne({
         email: email,
-      })
-      .select("+password");
+      });
     if (!user) {
       return res.status(401).json({
         error: "Incorrect Email",

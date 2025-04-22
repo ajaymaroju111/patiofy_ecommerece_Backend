@@ -1,5 +1,6 @@
 const products = require("../models/productschema.js");
 const carts = require("../models/cartschema.js");
+const bcrypt = require("bcrypt");
 const { default: mongoose } = require("mongoose");
 const reviews = require("../models/reviews.js");
 
@@ -7,22 +8,47 @@ const reviews = require("../models/reviews.js");
 exports.createProduct = async (req, res) => {
   try {
     const { name, description, price, size, fabric, category, tags } = req.body;
-    // Check for uploaded files
+
+    if (
+      !name ||
+      !description ||
+      !price ||
+      !size ||
+      !fabric ||
+      !category ||
+      !tags
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "all fields are required",
+        error: "Bad Request",
+      });
+    }
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
-        error: "Product images are required",
+        message: "Product images are required",
+        error: "Bad Request",
       });
     }
-    const postImages = req.files.map((file) => ({
-      name: file.originalname,
-      img: {
-        data: file.buffer.toString('base64'), // Store buffer data
-        contentType: file.mimetype,
-      },
-    }));
 
-    const Post = await products.create({
+    const postFiles = req.files; // Assuming an array of files
+
+    const postImages = await Promise.all(
+      postFiles.map(async (file) => {
+        const base64Data = file.buffer.toString("base64");
+        const hashedData = await bcrypt.hash(base64Data, 10); // 10 salt rounds
+        return {
+          name: file.originalname,
+          img: {
+            data: hashedData,
+            contentType: file.mimetype,
+          },
+        };
+      })
+    );
+
+    await products.create({
       userId: req.user._id,
       postImages,
       name,
@@ -33,10 +59,10 @@ exports.createProduct = async (req, res) => {
       category,
       tags,
     });
-    await Post.save();
+
     return res.status(200).json({
       success: true,
-      message: "product added successfully",
+      message: "Product created successfully",
     });
   } catch (error) {
     console.log(error);
@@ -47,88 +73,6 @@ exports.createProduct = async (req, res) => {
     });
   }
 };
-
-//set product status to be publish : 
-exports.publishProduct = async(req, res) => {
-  try {
-    const {id} = req.params;
-    if(!mongoose.Types.ObjectId.isValid(id)){
-      return res.status(400).json({
-        success: false,
-        message: "Bad Request",
-        error: "invalid object ID",
-      });
-    }
-    const item = await products.findById(id);
-    if(!item){
-      return res.status(404).json({
-        success: false,
-        message: "Not Found",
-        error: "item not found",
-      });
-    }
-    if(item.ProductStatus = 'published'){
-      return res.status(204).json({
-        success: true,
-        message: "No Content",
-        error: "product is already in published mode"
-      })
-    }
-    item.ProductStatus = 'published';
-    await item.save();
-    return res.status(200).json({
-      success: false,
-      message : 'product set to published successfully',
-    })
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-      error: error
-    })
-  }
-}
-
-//unpublish product : 
-exports.unPublishProduct = async(req, res) => {
-  try {
-    const {id} = req.params;
-    if(!mongoose.Types.ObjectId.isValid(id)){
-      return res.status(400).json({
-        success: false,
-        message: "Bad Request",
-        error: "invalid object ID",
-      });
-    }
-    const item = await products.findById(id);
-    if(!item){
-      return res.status(404).json({
-        success: false,
-        message: "Not Found",
-        error: "item not found",
-      });
-    }
-    if(item.ProductStatus = 'unpublished'){
-      return res.status(204).json({
-        success: true,
-        message: "No Content",
-        error: "product is already in unpublished mode"
-      })
-    }
-    item.ProductStatus = 'unpublished';
-    await item.save();
-    return res.status(200).json({
-      success: false,
-      message : 'product set to unpublished successfully',
-    })
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-      error: error
-    })
-  }
-}
 
 //update product Product  :
 exports.updateProduct = async (req, res) => {
@@ -194,7 +138,7 @@ exports.getAllProducts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const allproducts = await products.find({ProductStatus : 'published'}).skip(skip).limit(limit).exec();
+    const allproducts = await products.find().skip(skip).limit(limit).exec();
     if (allproducts.length === 0 || !allproducts) {
       return res.status(404).json({
         success: false,
@@ -222,32 +166,31 @@ exports.getAllProducts = async (req, res) => {
 exports.deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    if(!mongoose.Types.ObjectId.isValid(id)){
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(401).json({
         success: false,
-        message: "invalid ID"
-      })
+        message: "invalid ID",
+      });
     }
-  const deleted = await products.findByIdAndDelete(id);
-  if(!deleted){
-    return res.status(404).json({
-      success: false,
-      message: "product not found",
-    })
-  }
-  const review = await reviews.deleteOne({ productId: id });
-  return res.status(200).json({
-    success: true,
-    message: "Product deleted successfully",
-  });
+    const deleted = await products.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "product not found",
+      });
+    }
+    const review = await reviews.deleteOne({ productId: id });
+    return res.status(200).json({
+      success: true,
+      message: "Product deleted successfully",
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
       error: error,
-    })
+    });
   }
-  
 };
 
 //search for products : ( NAN )
@@ -288,42 +231,46 @@ exports.filterProducts = async (req, res) => {
     }
 
     //usage of aggregations pipelines :
-    const filterproduct = await products.aggregate([
-      { $match: filter }, // your dynamic filters
-      { $sort: { price: 1 } },
-      {
-        $facet: {
-          products: [
-            {
-              $project: {
-                category: 1,
-                price: 1,
-                size: 1,
-                fabric: 1,
-                inStock: 1,
-                discount: 1,
-                discountPrice: 1,
-                savedPrice: 1,
-              }
-            }
-          ],
-          stockCounts: [
-            {
-              $group: {
-                _id: "$inStock",
-                count: { $sum: 1 }
-              }
-            }
-          ]
-        }
-      }
-    ]).skip(skip).limit(limit).exec(); 
-    
-    if(!filterproduct || filterproduct.length === 0){
+    const filterproduct = await products
+      .aggregate([
+        { $match: filter }, // your dynamic filters
+        { $sort: { price: 1 } },
+        {
+          $facet: {
+            products: [
+              {
+                $project: {
+                  category: 1,
+                  price: 1,
+                  size: 1,
+                  fabric: 1,
+                  inStock: 1,
+                  discount: 1,
+                  discountPrice: 1,
+                  savedPrice: 1,
+                },
+              },
+            ],
+            stockCounts: [
+              {
+                $group: {
+                  _id: "$inStock",
+                  count: { $sum: 1 },
+                },
+              },
+            ],
+          },
+        },
+      ])
+      .skip(skip)
+      .limit(limit)
+      .exec();
+
+    if (!filterproduct || filterproduct.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Products not found",
-      })
+      });
     }
     return res.status(200).json({
       success: true,

@@ -1,12 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const upload = require('../middlewares/multer.js');
-const images = upload.array('images' , 10);
+const productmages = upload.array('images' , 10);
 const {
   setDiscountOnProduct,
   setUserInactive,
   viewAllUsers,
   viewUser,
+  publishProduct,
+  unPublishProduct,
+
+  viewAllInProgressOrders,
+  viewAllRefundedOrders,
+  viewAllCancelledOrders,
+  viewAllCompletedOrders,
+  viewAllSuccessPaymentOrders,
+  viewAllUnSuccessPaymentOrders,
 } = require('../controllers/adminControllers.js')
 const {
   authenticate,
@@ -18,8 +27,6 @@ const {
 
 } = require('../controllers/userControllers.js');
 const {
-  publishProduct,
-  unPublishProduct,
   createProduct,
   getProductById,
   getAllProducts,
@@ -40,8 +47,8 @@ router.get('/user/:id',authenticate, isAdmin, viewUser);
 
 
 //products Management :  
-router.post('/product', authenticate, isAdmin, images, createProduct);
-router.get('/products', authenticate, isAdmin, getAllProducts);
+router.post('/product', authenticate, isAdmin, productmages, createProduct);
+router.get('/allproducts', authenticate, isAdmin, getAllProducts);
 router.get('/products/filter', authenticate, isAdmin, filterProducts);
 router.get('/product/:id', authenticate, isAdmin, getProductById);
 router.put('/product/:id', authenticate, isAdmin, updateProduct);
@@ -53,5 +60,15 @@ router.put('/product/unpublish/:id', authenticate, isAdmin,unPublishProduct);
 
 //discount Management:
 router.put('/product/discount/:id', setDiscountOnProduct);
+
+//orders Management: 
+router.get('/orders/inprogress', authenticate, isAdmin, viewAllInProgressOrders );
+router.get('/orders/refund', authenticate, isAdmin, viewAllRefundedOrders);
+router.get('/orders/cancelled', authenticate, isAdmin, viewAllCancelledOrders);
+router.get('/orders/success', authenticate, isAdmin, viewAllCompletedOrders);
+
+//Payment Management : 
+router.get('/payment/success', authenticate, isAdmin, viewAllSuccessPaymentOrders);
+router.get('/payment/pending', authenticate, isAdmin, viewAllUnSuccessPaymentOrders);
 
 module.exports = router;

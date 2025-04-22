@@ -13,8 +13,7 @@ tags:
     description: operations related to carts
   - name: Address
     description: operations related to Addresses
-  - name: Contact
-    description: operations related to Contact
+
 servers:
   - url: http://localhost:3000
     description: Local Server
@@ -803,84 +802,6 @@ paths:
                   message:
                     type: string
                     example: "Internal Server Error"
-                  error:
-                    type: string
-
-  /patiofy/auth/user/products/{id}:
-    get:
-      summary: Get products created by the logged-in user
-      tags:
-        - users
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: page
-          in: query
-          description: Page number for pagination
-          required: false
-          schema:
-            type: integer
-            default: 1
-        - name: limit
-          in: query
-          description: Number of items per page
-          required: false
-          schema:
-            type: integer
-            default: 10
-      responses:
-        '200':
-          description: List of user's products
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  page:
-                    type: integer
-                    example: 1
-                  limit:
-                    type: integer
-                    example: 10
-                  totalPages:
-                    type: integer
-                    example: 5
-                  totalItems:
-                    type: integer
-                    example: 50
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Product'
-        '404':
-          description: Products not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
-                    type: string
-                    example: products not found
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
-                    type: string
-                    example: Internal Server Error
                   error:
                     type: string
 
@@ -1848,7 +1769,6 @@ paths:
 
 # Admin calls :  
 
-# create a product : 
   /patiofy/auth/admin/product:
     post:
       summary: Create a new Product
@@ -1933,9 +1853,11 @@ paths:
                 properties:
                   error:
                     type: string
-                    example: "Internal Server Error"
+                    example: "Internal Server Error" 
+
+  /patiofy/auth/admin/allproducts:                 
   # get all products which are in published
-    get:
+      get:
       summary: Get all products with pagination
       tags:
         - Admin - products
@@ -2681,17 +2603,778 @@ paths:
                     example: Internal Server Error
                   error:
                     type: string
+
+  /patiofy/auth/admin/product/publish/{id}:
+    put:
+      summary: Unpublish a product
+      description: Sets a product's `ProductStatus` to 'unpublished' if it isn't already.
+      tags:
+        - Admin - products
+      security:
+        - CookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: MongoDB ObjectId of the product
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product unpublished successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: product set to unpublished successfully
+        '204':
+          description: Product is already unpublished (No Content)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: No Content
+                  error:
+                    type: string
+                    example: product is already in unpublished mode
+        '400':
+          description: Invalid ObjectId format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Bad Request
+                  error:
+                    type: string
+                    example: invalid object ID
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Not Found
+                  error:
+                    type: string
+                    example: item not found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: An error message   
+
+  /patiofy/auth/admin/product/unpublish/{id}:
+    put:
+      summary: Unpublish a product
+      description: Sets the `ProductStatus` of a product to 'unpublished' if it is not already unpublished.
+      tags:
+        - Admin - products
+      security:
+        - CookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: MongoDB ObjectId of the product
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product set to unpublished successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: product set to unpublished successfully
+        '204':
+          description: Product is already unpublished (No Content)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: No Content
+                  error:
+                    type: string
+                    example: product is already in unpublished mode
+        '400':
+          description: Invalid ObjectId format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Bad Request
+                  error:
+                    type: string
+                    example: invalid object ID
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Not Found
+                  error:
+                    type: string
+                    example: item not found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: An error message
+
+  /patiofy/auth/admin/orders/inprogress:
+    get:
+      summary: Retrieve active orders (conformed, out_of_delivery)
+      description: Retrieves orders that are currently active (conformed or out of delivery) and includes populated user and product details.
+      tags:
+        - Admin - Orders
+      security:
+        - CookieAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved active orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: in progress orders are retrieved
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: 607c035c9b1e8b1c8e6a44b8
+                        status:
+                          type: string
+                          example: conformed
+                        userId:
+                          type: object
+                          properties:
+                            firstname:
+                              type: string
+                              example: John
+                            lastname:
+                              type: string
+                              example: Doe
+                        productId:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: Product A
+                            price:
+                              type: number
+                              example: 100
+                            size:
+                              type: string
+                              example: M
+                            discountPrice:
+                              type: number
+                              example: 80
+        '404':
+          description: No active orders found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: No current active orders
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: An error message
+
+  /patiofy/auth/admin/orders/cancelled:
+    get:
+      summary: Retrieve cancelled orders with pagination
+      description: Retrieves cancelled orders with pagination (using `page` query parameter) and includes populated user and product details.
+      tags:
+        - Admin - Orders
+      security:
+        - CookieAuth: []
+      parameters:
+        - in: query
+          name: page
+          required: false
+          description: The page number for pagination (default is 1).
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          description: The number of items per page (default is 10).
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Successfully retrieved cancelled orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: cancelled orders are retrieved
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: 607c035c9b1e8b1c8e6a44b8
+                        status:
+                          type: string
+                          example: cancelled
+                        userId:
+                          type: object
+                          properties:
+                            firstname:
+                              type: string
+                              example: Jane
+                            lastname:
+                              type: string
+                              example: Smith
+                        productId:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: Product B
+                            price:
+                              type: number
+                              example: 120
+                            size:
+                              type: string
+                              example: L
+                            discountPrice:
+                              type: number
+                              example: 100
+        '404':
+          description: No cancelled orders found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: No cancelled active orders
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: An error message
+
+  /patiofy/auth/admin/orders/refund:
+    get:
+      summary: Retrieve refunded orders
+      description: Fetches all orders with a status of "refunded", including user and product details.
+      tags:
+        - Admin - Orders
+      security:
+        - CookieAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved refunded orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: refunded orders are retrieved
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: 607c035c9b1e8b1c8e6a44b8
+                        status:
+                          type: string
+                          example: refunded
+                        userId:
+                          type: object
+                          properties:
+                            firstname:
+                              type: string
+                              example: Alice
+                            lastname:
+                              type: string
+                              example: Johnson
+                        productId:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: Smart Watch
+                            price:
+                              type: number
+                              example: 199.99
+                            size:
+                              type: string
+                              example: Medium
+                            discountPrice:
+                              type: number
+                              example: 149.99
+        '404':
+          description: No refunded orders found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: No refunded orders
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: An error message
+
+  /patiofy/auth/admin/orders/success:
+    get:
+      summary: Retrieve completed orders with pagination
+      description: Fetches completed orders with pagination. Includes populated user and product details.
+      tags:
+        - Admin - Orders
+      security:
+        - CookieAuth: []
+      parameters:
+        - in: query
+          name: page
+          required: false
+          description: Page number for pagination (default is 1)
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          description: Number of items per page (default is 10)
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Successfully retrieved completed orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: completed orders are retrieved
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: 60f6c0d97c213e35b0e918bc
+                        status:
+                          type: string
+                          example: completed
+                        userId:
+                          type: object
+                          properties:
+                            firstname:
+                              type: string
+                              example: Adam
+                            lastname:
+                              type: string
+                              example: West
+                        productId:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: T-Shirt
+                            price:
+                              type: number
+                              example: 25.99
+                            size:
+                              type: string
+                              example: L
+                            discountPrice:
+                              type: number
+                              example: 19.99
+        '404':
+          description: No completed orders found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: No completed orders
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Error message
+
+  /patiofy/auth/admin/payment/success:
+    get:
+      summary: Retrieve payment completed orders with pagination
+      description: Retrieves paginated list of orders where payment status is 'paid', including populated user and product details.
+      tags:
+        - Admin - Orders
+      security:
+        - CookieAuth: []
+      parameters:
+        - in: query
+          name: page
+          required: false
+          description: Page number for pagination (default is 1)
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          description: Number of items per page (default is 10)
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Successfully retrieved paid orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: payment completed orders are retrieved
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: 607c035c9b1e8b1c8e6a44b8
+                        payment_status:
+                          type: string
+                          example: paid
+                        userId:
+                          type: object
+                          properties:
+                            firstname:
+                              type: string
+                              example: John
+                            lastname:
+                              type: string
+                              example: Doe
+                        productId:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: Wireless Headphones
+                            price:
+                              type: number
+                              example: 99.99
+                            size:
+                              type: string
+                              example: Standard
+                            discountPrice:
+                              type: number
+                              example: 79.99
+        '404':
+          description: No paid orders found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: No payment completed orders
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Error message
+
+  /patiofy/auth/admin/payment/pending:
+    get:
+      summary: Retrieve unpaid payment orders with pagination
+      description: Retrieves a paginated list of orders with a payment status of 'unpaid', including populated user and product details.
+      tags:
+        - Admin - Orders
+      security:
+        - CookieAuth: []
+      parameters:
+        - in: query
+          name: page
+          required: false
+          description: Page number for pagination (default is 1)
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          description: Number of items per page (default is 10)
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Successfully retrieved unpaid payment orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: incompleted payment orders are retrieved
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: 607c035c9b1e8b1c8e6a44b8
+                        payment_status:
+                          type: string
+                          example: unpaid
+                        userId:
+                          type: object
+                          properties:
+                            firstname:
+                              type: string
+                              example: Jane
+                            lastname:
+                              type: string
+                              example: Smith
+                        productId:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: Bluetooth Speaker
+                            price:
+                              type: number
+                              example: 45.99
+                            size:
+                              type: string
+                              example: Compact
+                            discountPrice:
+                              type: number
+                              example: 39.99
+        '404':
+          description: No unpaid orders found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: No unpaid payment orders
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Error message
     
-
-
-
-
-
-
-
-
-
-
+    
 
 
 
