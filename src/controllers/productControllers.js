@@ -294,10 +294,7 @@ exports.filterProducts = async (req, res) => {
 //view all carts : 
  exports.viewAllCarts = async(req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-    const allCarts = await carts.find({ userId: req.user._id }).skip(skip).limit(limit);
+    const allCarts = await carts.find({ userId: req.user._id });
     if(!allCarts || allCarts.length === 0){
       return res.status(404).json({
         success: false,
@@ -305,7 +302,6 @@ exports.filterProducts = async (req, res) => {
         error: "Not Found",
       })
     }
-
     return res.status(200).json({
       succcess: true,
       message : "cart retrieved successfully",
@@ -397,17 +393,18 @@ exports.updateCart = async (req, res) => {
       })
     }
     const { quantity } = req.body;
-    const update = await carts.findByIdAndUpdate(
-      id,
-      { quantity },
-      { new: true, runValidators: true }
-    );    
+    const update = await carts.findByIdAndUpdate(id, quantity, {new : true, runValidators: true });   
     if (!update) {
       return res.status(404).json({
         success: false,
         message: "error occured in updation",
       });
     }
+    return res.status(200).json({
+      success: true,
+      message: "cart updated successfully",
+      data : update
+    })
   } catch (error) {
     console.log(error)
     return res.status(500).json({

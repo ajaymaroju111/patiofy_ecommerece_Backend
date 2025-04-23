@@ -17,7 +17,8 @@ const {
   viewAllSuccessPaymentOrders,
   viewAllUnSuccessPaymentOrders,
   removeDiscountOnProduct,
-  viewAllPendingOrders
+  viewAllPendingOrders,
+  findBestSellerProducts
 } = require('../controllers/adminControllers.js')
 const {
   authenticate,
@@ -47,6 +48,7 @@ router.get('/user/:id',authenticate, isAdmin, viewUser);
 
 //products Management :  
 router.post('/product', authenticate, isAdmin, productmages, createProduct);
+router.get('/product/bestsellers', authenticate, isAdmin, findBestSellerProducts);
 router.get('/allproducts', authenticate, isAdmin, getAllProducts);
 router.get('/products/filter', authenticate, isAdmin, filterProducts);
 router.get('/product/:id', authenticate, isAdmin, getProductById);
@@ -59,7 +61,7 @@ router.put('/product/unpublish/:id', authenticate, isAdmin,unPublishProduct);
 
 //discount Management:
 router.put('/product/discount/:id', authenticate, isAdmin, setDiscountOnProduct);
-router.put('/product/undiscount/:id', authenticate, isAdmin, setDiscountOnProduct);
+router.put('/product/undiscount/:id', authenticate, isAdmin, removeDiscountOnProduct);
 
 //orders Management: 
 router.get('/orders/inprogress', authenticate, isAdmin, viewAllInProgressOrders );

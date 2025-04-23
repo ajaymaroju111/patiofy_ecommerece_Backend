@@ -1144,7 +1144,7 @@ paths:
                     example: Internal Server Error
                   error:
                     type: string
-                    
+
   /patiofy/auth/products/{id}:
     get:
       summary: Retrieve a product by ID
@@ -1231,26 +1231,11 @@ paths:
   /patiofy/auth/products/carts/mycarts:
     get:
       summary: Get all carts (paginated)
-      description: Retrieves a paginated list of cart items.
+      description: Retrieves a  list of cart items.
       tags:
         - Cart
       security:
         - BearerAuth: []
-      parameters:
-        - in: query
-          name: page
-          required: false
-          description: Page number (default is 1)
-          schema:
-            type: integer
-            example: 1
-        - in: query
-          name: limit
-          required: false
-          description: Number of items per page (default is 10)
-          schema:
-            type: integer
-            example: 10
       responses:
         '200':
           description: Cart retrieved successfully
@@ -1462,32 +1447,34 @@ paths:
                   error:
                     type: string
     put:
-      summary: Update Cart Quantity
-      description: Update the quantity of items in the cart by cart ID.
+      summary: Update cart item quantity
       tags:
         - Cart
       security:
         - BearerAuth: []
+      description: Updates the quantity of a specific item in the cart using its ID.
       parameters:
-        - name: id
-          in: path
+        - in: path
+          name: id
           required: true
-          description: The unique identifier of the cart.
           schema:
             type: string
+          description: ID of the cart item to update
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - quantity
               properties:
                 quantity:
                   type: integer
-                  example: 3
+                  example: 2
       responses:
-        200:
-          description: Successfully updated the cart.
+        '200':
+          description: Cart item updated successfully
           content:
             application/json:
               schema:
@@ -1496,21 +1483,56 @@ paths:
                   success:
                     type: boolean
                     example: true
-                  cart:
-                    type: object
-                    example:
-                      _id: "60d9c6e4b5f1b23a4c8d4f6b"
-                      items:
-                        - productId: "60d9c7e8b5f1b23a4c8d4f6c"
-                          quantity: 3
-                          price: 19.99
-                      total: 59.97
-        400:
-          description: Bad request, invalid input.
-        404:
-          description: Cart not found.
-        500:
-          description: Internal Server Error.
+                  message:
+                    type: string
+                    example: Quantity updated successfully
+                  data:
+                    $ref: '#/components/schemas/CartItem'
+        '400':
+          description: Invalid cart ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: invalid cart ID
+                  error:
+                    type: string
+                    example: Bad Request
+        '404':
+          description: Cart item not found or update failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: error occurred in updation
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Error object
     delete:
       summary: Delete Cart by ID
       description: Delete a shopping cart using its unique ID.
@@ -2115,6 +2137,78 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error" 
+
+  /patiofy/auth/admin/product/bestsellers:
+    get:
+      summary: Get best-selling products
+      tags:
+        - Admin - products
+      security:
+        - BearerAuth: []
+      description: Returns a list of products with more than 500 sales, sorted by creation time. Supports pagination.
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number for pagination.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Number of items per page.
+      responses:
+        '200':
+          description: Best-selling products retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: best sellers found successfully
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+        '404':
+          description: No best sellers found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: best sellers are empty
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Error object
 
   /patiofy/auth/admin/allproducts:                 
   # get all products which are in published

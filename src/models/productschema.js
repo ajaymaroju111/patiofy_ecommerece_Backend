@@ -65,6 +65,9 @@ const productschema = new mongoose.Schema(
       type : String,
       enum: ['unpublished', 'published'],
       default: 'unpublished',
+    },
+    number_of_sales :{
+      type : Number,
     }
   },
   { timestamps: true }
