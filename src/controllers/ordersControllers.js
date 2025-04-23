@@ -124,6 +124,7 @@ exports.makeOrderWithoutCart = async(req, res) => {
 
     return res.status(200).json({
       success: true,
+      quantity: quantity,
       message: "order added successfully",
       data: (await (await (await order.populate('productId', 'name size discount discountPrice,')).populate('addressId', 'Shipping_Adderss phone')).populate('userId', 'firstname lastname')),
       final_price : item.discountPrice*quantity,
