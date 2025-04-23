@@ -1,26 +1,41 @@
 const { default: mongoose } = require("mongoose");
 const users = require("../models/userschema");
 const products = require('../models/productschema');
-const orders = require("../models/ordersSchema");
+const orders = require("../models/ordersschema.js");
+const { all } = require("../routes/orderRoutes.js");
 
 
 ///****************** User Management:  ***********************/
 
 //set a user account inactive:
-exports.setUserInactive = async() => {
+exports.setUserInactive = async(req, res) => {
   try {
     const { id } = req.params;
-    if(mongoose.Types.ObjectId.isValid(id)){
+    if(!mongoose.Types.ObjectId.isValid(id)){
       return res.status(401).json({
         success: false,
         message: "Invalid Id",
       })
     }
-    const user = await users.findById( id );
+    if(req.user._id === id){
+      return res.status(401).json({
+        success: false,
+        message: "toy are not permitted",
+        error: "Unauthorized"
+      })
+    }
+    const user = await users.findById(id);
     if(!user){
       return res.status(404).json({
         success: false,
         message: "user not found"
+      })
+    }
+    if(user.status === 'inactive'){
+      res.status(204).json({
+        success: false,
+        message: "account already in inactive state",
+        error: "No Content"
       })
     }
     user.status = 'inactive',
@@ -30,6 +45,7 @@ exports.setUserInactive = async() => {
       message: "user account set inactive successfully"
     });
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -182,7 +198,7 @@ exports.publishProduct = async(req, res) => {
 
 //******************** Discount Management:  ******************/
 
-//upatate a password for a product:
+//set a discount for a product:
 exports.setDiscountOnProduct = async(req, res) => {
   try {
     const { id } = req.params;
@@ -216,6 +232,39 @@ exports.setDiscountOnProduct = async(req, res) => {
   }
 };
 
+//remove discount for a product:
+exports.removeDiscountOnProduct = async(req, res) => {
+  try {
+    const { id } = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(401).json({
+        success: false,
+        message: "Invalid ID"
+      })
+    }
+    const product = await products.findById(id).select('name price size fabric discount discountPrice');
+    if(!product){
+      return res.status(404).json({
+        succcess: false,
+        message: "product not found"
+      });
+    }
+    product.discount = 0;
+    await product.save();
+    return res.status(200).json({
+      succcess: true,
+      message: "Discount updated successfully",
+      current_discount: product.discount,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    })
+  }
+};
+
 //*********************  Orders Management:  ********************//
 
 //view all inprogess orders : 
@@ -232,6 +281,8 @@ exports.viewAllInProgressOrders = async(req, res) => {
     }
     res.status.json({
       success: true,
+      page: page,
+      totla_items : allorders.length,
       message: "in progress orders are retrieved ",
       data: allorders
     })
@@ -242,7 +293,7 @@ exports.viewAllInProgressOrders = async(req, res) => {
       error: error,
     })
   }
-}
+};
 
 //view all refunded orders: 
 exports.viewAllRefundedOrders = async(req, res) => {
@@ -258,6 +309,8 @@ exports.viewAllRefundedOrders = async(req, res) => {
     }
     res.status.json({
       success: true,
+      page: page,
+      totla_items : allorders.length,
       message: "refunded orders are retrieved ",
       data: allorders
     })
@@ -268,7 +321,7 @@ exports.viewAllRefundedOrders = async(req, res) => {
       error: error,
     })
   }
-}
+};
 
 //view all cancelled orders: 
 exports.viewAllCancelledOrders = async(req, res) => {
@@ -285,19 +338,22 @@ exports.viewAllCancelledOrders = async(req, res) => {
         message: "No cancelled active orders"
       })
     }
-    res.status.json({
+    res.status(200).json({
       success: true,
+      page: page,
+      totla_items : allorders.length,
       message: "cancelled orders are retrieved ",
       data: allorders
     })
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
       error: error,
     })
   }
-}
+};
 
 //view all completed orders: 
 exports.viewAllCompletedOrders = async(req, res) => {
@@ -316,6 +372,8 @@ exports.viewAllCompletedOrders = async(req, res) => {
     }
     res.status.json({
       success: true,
+      page: page,
+      totla_items : allorders.length,
       message: "completed orders are retrieved ",
       data: allorders
     })
@@ -326,7 +384,38 @@ exports.viewAllCompletedOrders = async(req, res) => {
       error: error,
     })
   }
-}
+};
+
+//view all completed orders: 
+exports.viewAllPendingOrders = async(req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
+    const allorders = await orders.find({
+      status: { $in : ['pending']}
+    }).populate('userId', 'firstname, lastname').populate('productId', 'name, price, size, discountPrice').skip(skip).limit(limit).exec();
+    if(allorders.length === 0){
+      return res.status(404).json({
+        success: true,
+        message: "No completed  orders"
+      })
+    }
+    res.status.json({
+      success: true,
+      page: page,
+      totla_items : allorders.length,
+      message: "completed orders are retrieved ",
+      data: allorders
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    })
+  }
+};
 
 
 //**********  Payment Status:   *******************/
@@ -347,6 +436,8 @@ exports.viewAllSuccessPaymentOrders = async(req, res) => {
     }
     res.status.json({
       success: true,
+      page: page,
+      totla_items : allorders.length,
       message: " payment completed orders are retrieved ",
       data: allorders
     })
@@ -374,8 +465,10 @@ exports.viewAllUnSuccessPaymentOrders = async(req, res) => {
         message: "No unpaid payment orders"
       })
     }
-    res.status.json({
+    res.status(200).json({
       success: true,
+      page: page,
+      totla_items : allorders.length,
       message: "incompleted payment orders are retrieved ",
       data: allorders
     })

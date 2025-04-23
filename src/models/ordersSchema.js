@@ -11,16 +11,15 @@ const orderSchema = new mongoose.Schema({
   },
   orderId:{
     type: String,
-    required: true,
+    
   },
   status: {
     type: String,
     enum: ['pending', 'conformed', 'out_of_delivery', 'delivered', 'completed', 'cancelled', 'returned', 'failed', 'refunded' ],
     default: 'pending',
   },
-  address:{
+  addressId:{
     type: mongoose.Schema.Types.ObjectId,
-    required: true,
     ref: 'userAddresses'
   },
   payment_status: {
@@ -33,17 +32,17 @@ const orderSchema = new mongoose.Schema({
 );
 
 function generateOrderId() {
-  const prefix = 'ORD'; // Optional prefix
-  const timestamp = Date.now(); // Millisecond timestamp
+  const prefix = 'ORDPATIOFY'; 
+  const timestamp = Date.now(); 
   const random = Math.floor(Math.random() * 10000); // 4-digit random number
   return `${prefix}${timestamp}${random}`;
 }
 
 orderSchema.pre('save', async function(next){
-  if(this.isModified(this.productId)){
-    this.orderId = await generateOrderId();
+  if(this.isModified('productId')){
+    this.orderId =  generateOrderId();
   }
   next();
 })
 
-module.exports = mongoose.model('orders', orderSchema);
+module.exports = mongoose.models.orders || mongoose.model('orders', orderSchema);

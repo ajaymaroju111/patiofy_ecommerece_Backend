@@ -50,7 +50,7 @@ const productschema = new mongoose.Schema(
     },
     discountPrice:{
       type: Number,
-      default: 0
+      default: 0,
     },
     inStock: {
       type: String,
@@ -70,9 +70,16 @@ const productschema = new mongoose.Schema(
   { timestamps: true }
 );
 
+productschema.pre('save', function (next) {
+  if (this.discountPrice === 0 || this.discountPrice == null) {
+    this.discountPrice = this.price;
+  }
+  next();
+});
+
 productschema.pre("save", async function (next) {
   if (this.isModified("discount")) {
-    this.discountPrice = ((100 + this.discount)/100)*this.price
+    this.discountPrice = Math.round(((100 - this.discount)/100)*this.price)*100/100;
     this.savedPrice = this.price - this.discountPrice; 
   }
   next();

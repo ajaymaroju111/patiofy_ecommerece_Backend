@@ -16,6 +16,8 @@ const {
   viewAllCompletedOrders,
   viewAllSuccessPaymentOrders,
   viewAllUnSuccessPaymentOrders,
+  removeDiscountOnProduct,
+  viewAllPendingOrders
 } = require('../controllers/adminControllers.js')
 const {
   authenticate,
@@ -36,9 +38,6 @@ const {
 } = require('../controllers/productControllers.js');
 
 
-//admin account Management : 
-router.get('/:id',  authenticate, isAdmin, getById);
-router.get('/myProducts',authenticate, isAdmin, myProducts);
 
 //Users Management : 
 router.post('/users',authenticate, isAdmin, viewAllUsers);
@@ -55,20 +54,26 @@ router.put('/product/:id', authenticate, isAdmin, updateProduct);
 router.delete('/product/:id', authenticate, isAdmin, deleteProduct);
 
 //set publish and unpublish the users : 
-router.get('/product/publish/:id', authenticate, isAdmin,publishProduct );
+router.put('/product/publish/:id', authenticate, isAdmin,publishProduct );
 router.put('/product/unpublish/:id', authenticate, isAdmin,unPublishProduct);
 
 //discount Management:
-router.put('/product/discount/:id', setDiscountOnProduct);
+router.put('/product/discount/:id', authenticate, isAdmin, setDiscountOnProduct);
+router.put('/product/undiscount/:id', authenticate, isAdmin, setDiscountOnProduct);
 
 //orders Management: 
 router.get('/orders/inprogress', authenticate, isAdmin, viewAllInProgressOrders );
 router.get('/orders/refund', authenticate, isAdmin, viewAllRefundedOrders);
 router.get('/orders/cancelled', authenticate, isAdmin, viewAllCancelledOrders);
 router.get('/orders/success', authenticate, isAdmin, viewAllCompletedOrders);
+router.get('/orders/pending', authenticate, isAdmin, viewAllPendingOrders);
 
 //Payment Management : 
 router.get('/payment/success', authenticate, isAdmin, viewAllSuccessPaymentOrders);
 router.get('/payment/pending', authenticate, isAdmin, viewAllUnSuccessPaymentOrders);
+
+// /admin account Management : 
+router.get('/myProducts',authenticate, isAdmin, myProducts);
+router.get('/:id',  authenticate, isAdmin, getById);
 
 module.exports = router;

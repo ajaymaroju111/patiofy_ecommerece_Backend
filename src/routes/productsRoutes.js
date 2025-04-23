@@ -13,7 +13,8 @@ const {
   deleteCart,
   getRatingById,
   ratingProduct,
-  filterProducts
+  filterProducts,
+  viewAllCarts
 } = require('../controllers/productControllers.js');
 
 // product Routes : 
@@ -22,6 +23,7 @@ router.get('/', getAllProducts);
 router.get('/:id', getProductById);       
 
 // Cart Routes : 
+router.get('/carts/mycarts', authenticate, viewAllCarts);
 router.post('/cart/:id', authenticate, addToCart);
 router.get('/cart/:id', authenticate, getCartById);
 router.put('/cart/:id', authenticate, updateCart);

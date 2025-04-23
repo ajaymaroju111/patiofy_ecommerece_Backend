@@ -6,10 +6,6 @@ const addressSchaema = new mongoose.Schema({
     type : mongoose.Schema.Types.ObjectId,
     ref : 'users',
   },
-  productId : {
-    type : mongoose.Schema.Types.ObjectId,
-    ref : 'users'
-  },
   email : {
     type : String,
     match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],

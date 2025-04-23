@@ -7,7 +7,7 @@ const { generateUserToken } = require("../middlewares/authUser.js");
 const { conformSignup, forgetPassword } = require("../utils/emailTemplates.js");
 const { default: mongoose } = require("mongoose");
 const carts = require("../models/cartschema.js");
-const orders = require("../models/ordersSchema.js");
+const orders = require("../models/orderschema.js");
 
 //set password after google oauth signup :
 exports.setNewPassword = async (req, res) => {
@@ -78,11 +78,19 @@ exports.signUp = async (req, res) => {
 exports.resend = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await users.findOne( email );
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "email is required",
+        error: "Bad Request",
+      });
+    }
+    const user = await users.findOne({ email: email });
     if (!user) {
       return res.status(404).json({
         success: false,
-        error: "user not found",
+        message: "user not found",
+        error: "Not Found",
       });
     }
     const encodedId = Buffer.from(user._id, "utf-8").toString("base64");
@@ -130,7 +138,7 @@ exports.verify = async (req, res) => {
     User.jwtExpiry = undefined;
     await User.save();
     return res.status(200).json({
-      redirect: 'http://147.97.93.20:3000/patiofy/auth/user/signin',
+      redirect: "http://147.97.93.20:3000/patiofy/auth/user/signin",
       success: true,
       message: "Account verified successfully",
     });
@@ -152,10 +160,9 @@ exports.signIn = async (req, res) => {
         error: "all fileds are required",
       });
     }
-    const user = await users
-      .findOne({
-        email: email,
-      });
+    const user = await users.findOne({
+      email: email,
+    });
     if (!user) {
       return res.status(401).json({
         error: "Incorrect Email",
@@ -189,18 +196,20 @@ exports.getById = async (req, res) => {
   try {
     const id = req.user._id;
     if (!mongoose.Types.ObjectId.isValid(id)) {
-          return res.status(400).json({
-            success: false,
-            message: "Invalid cart ID format",
-          });
-        }
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID format",
+      });
+    }
     if (!id) {
       return res.status(400).json({
         success: false,
         message: "Authentication Error",
       });
     }
-    const user = await users.findById(req.user._id).select('firstname lastname email -_id');
+    const user = await users
+      .findById(req.user._id)
+      .select("firstname lastname email -_id");
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -360,7 +369,8 @@ exports.myProducts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const myproducts = await products
-      .find({ userId: id }).select('-_id -userId -createdAt -updatedAt -__v')
+      .find({ userId: id })
+      .select("-_id -userId -createdAt -updatedAt -__v")
       .skip(skip)
       .limit(limit)
       .exec();
@@ -436,44 +446,53 @@ exports.deleteUser = async (req, res) => {
     await orders.deleteMany({ userId: id });
     await carts.deleteMany({ userId: id });
 
-    res.status(200).json({ success: true, message: "User deleted successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "User deleted successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Internal Server Error", error });
+    res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error", error });
   }
 };
-
-
-
 
 //*********************     DELIVERY ADDRESS:      *******************/
 
 exports.addAddress = async (req, res) => {
   try {
-    const productId = req.params.id;
-    const { country, firstname, lastname, phone, address, city, state } =
-      req.body;
-    const addressList = await userAddresses.create({
+    const {
+      phone,
+      firstname,
+      lastname,
+      Street_Address,
+      village,
+      zipcode,
+      Mandal,
+      state,
+      country,
+    } = req.body;
+    await userAddresses.create({
       userId: req.user._id,
-      productId: productId,
       email: req.user.email,
       phone: phone,
       Shipping_Adderss: {
-        country: country,
         firstname: firstname,
-        lastname: lastname,
-        address: address,
-        city: city,
-        state: state,
+        lastname,
+        zipcode,
+        Street_Address,
+        village,
+        Mandal,
+        state,
+        country,
       },
     });
-    await addressList.save();
     return res.status(200).json({
       success: true,
       message: "address added successfully",
-      addressList,
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -484,44 +503,71 @@ exports.addAddress = async (req, res) => {
 
 exports.updateAddress = async (req, res) => {
   try {
-    const productId = req.params.id;
-    const { country, firstname, lastname, phone, address, city, state } =
-      req.body;
-    const newData = {
-      country,
-      firstname,
-      lastname,
-      phone,
-      address,
-      city,
-      state,
-    };
-    const updateAdd = await userAddresses.findOneAndUpdate(
-      { productId },
-      newData,
-      {
-        new: true,
-        runValidators: true,
-        useFindAndModify: true,
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "invalid Address ID",
+        error: "Bad Request",
+      });
+    }
+    const current = await userAddresses.findById(id);
+
+    if (!current) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Address not found" });
+    }
+    const updateData = {};
+    if (req.body.phone !== undefined) {
+      updateData.phone = req.body.phone;
+    }
+
+    // Merge nested Shipping_Adderss
+    const shippingFields = [
+      "firstname",
+      "lastname",
+      "Street_Address",
+      "village",
+      "zipcode",
+      "Mandal",
+      "state",
+      "country",
+    ];
+    const shippingUpdate = { ...current.Shipping_Adderss._doc }; // existing values
+
+    shippingFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        shippingUpdate[field] = req.body[field];
       }
+    });
+
+    updateData.Shipping_Adderss = shippingUpdate;
+
+    const updated = await userAddresses.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: true }
     );
-    if (!updateAdd) {
+
+    if (!updated) {
       return res.status(404).json({
         success: false,
         message: "Address not found",
       });
     }
-    await updateAdd.save();
+
     return res.status(200).json({
       success: true,
-      message: "updated successfully",
-      updateAdd,
+      message: "Address updated successfully",
+      data: updated,
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error,
     });
   }
 };
@@ -529,12 +575,6 @@ exports.updateAddress = async (req, res) => {
 exports.getAddress = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-          return res.status(400).json({
-            success: false,
-            message: "Invalid cart ID format",
-          });
-        }
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -563,8 +603,8 @@ exports.getAddress = async (req, res) => {
 
 exports.deleteAddress = async (req, res) => {
   try {
-    const { addressId } = req.params;
-    const deleted = await userAddresses.findByIdAndDelete(addressId);
+    const { id } = req.params;
+    const deleted = await userAddresses.findByIdAndDelete(id);
     if (!deleted) {
       return res.status(404).json({
         success: false,
@@ -586,16 +626,23 @@ exports.deleteAddress = async (req, res) => {
 
 exports.viewAllAddresses = async (req, res) => {
   try {
-    const alladdresses = await userAddresses.find({ userId: req.user._id });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const alladdresses = await userAddresses.find({ userId: req.user._id }).skip(skip).limit(limit);
     if (!alladdresses) {
       return res.status(404).json({
         success: false,
-        message: "address not found",
+        message: "user not found",
+        error: "Not Found",
       });
     }
     return res.status(200).json({
       success: true,
-      alladdresses,
+      currentpage: page,
+      limit : limit,
+      total : alladdresses.length,
+      data : alladdresses,
     });
   } catch (error) {
     return res.status(500).json({

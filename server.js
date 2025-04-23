@@ -10,7 +10,7 @@ const YAML = require("yamljs");
 const SwaggerDocument = YAML.load("./api.yaml");
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
-const path = require('path')
+const path = require('path');
 // const cron = require('node-cron');
 require('./src/config/passport.js');
 //functions :
@@ -18,6 +18,7 @@ const authroutes = require("./src/routes/usersRoutes.js");
 const postroutes = require("./src/routes/productsRoutes.js");
 const adminroutes = require("./src/routes/adminRoutes.js");
 const { dbConnnection } = require("./src/config/dbConnection.js");
+const orderroutes = require('./src/routes/orderRoutes.js');
 const MongoStore = require("connect-mongo");
 dbConnnection();
 const dbString = process.env.NODE_ENV === 'production'? process.env.MONGODB_PRODUCTION : process.env.MONGODB_LOCAL;
@@ -70,6 +71,7 @@ app.use(
 app.use("/patiofy/auth/user", authroutes);
 app.use("/patiofy/auth/products", postroutes);
 app.use("/patiofy/auth/admin", adminroutes);
+app.use('/patiofy/auth/user/order', orderroutes)
 
 
 //usage of swagger eith yaml code :

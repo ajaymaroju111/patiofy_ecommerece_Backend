@@ -84,10 +84,10 @@ router.put("/logout", authenticate, signOut);
 
 //address form :
 router.post("/address", authenticate, addAddress);
+router.get("/address/list", authenticate, viewAllAddresses);
 router.put("/address/:id", authenticate, updateAddress);
 router.get("/address/:id", authenticate, getAddress);
 router.delete("/address/:id", authenticate, deleteAddress);
-router.get("/adress/list", authenticate, viewAllAddresses);
 
 //Contact _ Us :
 router.post("/query", authenticateifNeeded, contactUs);

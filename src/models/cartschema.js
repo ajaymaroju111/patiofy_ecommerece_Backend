@@ -31,6 +31,9 @@ const cartSchema = new mongoose.Schema({
     type : Number,
     required : [true, "price is required"],
   },
+  discountedPrice:{
+    type: Number,
+  },
   status: {
     type: String,
     enum: ['active', 'completed', 'cancelled'],

@@ -1,7 +1,5 @@
 openapi: "3.1.0"
-security:
-  - BearerAuth: []
-  - tokenAuth: []
+
 tags:
   - name: Authentication_OAuth2.0
     description: operations related to OAuth20
@@ -26,11 +24,9 @@ components:
       scheme: bearer
       bearerFormat: JWT
       
-    tokenAuth:
-      type: apiKey
-      in: header
-      name: token
-      description: Authentication cookie containing the JWT token
+security:
+  - BearerAuth: []
+
 info:
   title: Patiofy website Api
   description: API for patiofy website
@@ -245,23 +241,26 @@ paths:
 
   /patiofy/auth/user/resend:
     post:
-      summary: Resend Account Verification Email
-      description: Sends a verification email with a new expiration time.
+      summary: Send account verification email
       tags:
         - users
+      description: Sends an account verification link to the specified email if the user exists.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - email
               properties:
-                userId:
+                email:
                   type: string
-                  example: "660e4f12a5b5f2b8c9b2a3d1"
+                  format: email
+                  example: user@example.com
       responses:
-        200:
-          description: Email sent successfully.
+        '200':
+          description: Verification link sent successfully
           content:
             application/json:
               schema:
@@ -272,13 +271,55 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Link sent to the email successfully."
-        400:
-          description: Bad request (invalid input).
-        404:
-          description: User not found.
-        500:
-          description: Internal Server Error.
+                    example: link send to the email successfully
+        '400':
+          description: Missing email in request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: email is required
+                  error:
+                    type: string
+                    example: Bad Request
+        '404':
+          description: User not found with given email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: user not found
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Some server error details
 
   /patiofy/auth/user/signin:
     post:
@@ -1187,29 +1228,112 @@ paths:
                     example: "Internal Server Error"
 
   # cart routes yaml :
-
-  /patiofy/auth/products/cart:
-    post:
-      summary: Add product to cart
+  /patiofy/auth/products/carts/mycarts:
+    get:
+      summary: Get all carts (paginated)
+      description: Retrieves a paginated list of cart items.
       tags:
         - Cart
       security:
         - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - productId
-              properties:
-                productId:
-                  type: string
-                  example: "6613a01ef3a482c4f2e32d77"
+      parameters:
+        - in: query
+          name: page
+          required: false
+          description: Page number (default is 1)
+          schema:
+            type: integer
+            example: 1
+        - in: query
+          name: limit
+          required: false
+          description: Number of items per page (default is 10)
+          schema:
+            type: integer
+            example: 10
       responses:
         '200':
-          description: Product successfully added to cart
+          description: Cart retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succcess:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: cart retrieved successfully
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                        userId:
+                          type: string
+                        productId:
+                          type: string
+                        price:
+                          type: number
+                        cartImages:
+                          type: array
+                          items:
+                            type: object
+        '404':
+          description: Carts are empty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: cats are empty
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Intenal Server Error
+                  error:
+                    type: string
+                    example: Some error details
+
+  /patiofy/auth/products/cart/{id}:
+    post:
+      summary: Add product to cart
+      description: Adds a product to the user's cart using the product ID.
+      tags:
+        - Cart
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID of the product to add to the cart
+          schema:
+            type: string
+            example: "662a1b2e3f7c4e001f93b12c"
+      responses:
+        '200':
+          description: Product added to cart successfully
           content:
             application/json:
               schema:
@@ -1228,7 +1352,13 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: false
                   message:
+                    type: string
+                    example: Not Found
+                  error:
                     type: string
                     example: product not found
         '500':
@@ -1246,8 +1376,7 @@ paths:
                     example: Internal Server Error
                   error:
                     type: string
-
-  /patiofy/auth/products/cart/{id}:
+                    example: Some error message
     get:
       summary: Get cart by ID
       tags:
@@ -1338,9 +1467,9 @@ paths:
       tags:
         - Cart
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       parameters:
-        - name: cartId
+        - name: id
           in: path
           required: true
           description: The unique identifier of the cart.
@@ -1388,9 +1517,9 @@ paths:
       tags:
         - Cart
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       parameters:
-        - name: cartId
+        - name: id
           in: path
           required: true
           description: The unique identifier of the cart to delete.
@@ -1421,50 +1550,58 @@ paths:
 
   /patiofy/auth/user/address:
     post:
-      summary: Add Shipping Address
-      description: Adds a new shipping address for the user.
+      summary: Add a user shipping address
+      description: Allows an authenticated user to add a detailed shipping address.
       tags:
         - Address
       security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: The product ID associated with the address.
-          schema:
-            type: string
+         - BearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - phone
+                - firstname
+                - lastname
+                - Street_Address
+                - village
+                - zipcode
+                - Mandal
+                - state
               properties:
-                country:
+                phone:
                   type: string
-                  example: "USA"
+                  example: "9876543210"
                 firstname:
                   type: string
                   example: "John"
                 lastname:
                   type: string
                   example: "Doe"
-                phone:
+                Street_Address:
                   type: string
-                  example: "+1234567890"
-                address:
+                  example: "123 Main St"
+                village:
                   type: string
-                  example: "1234 Elm Street"
-                city:
+                  example: "Lakshmipur"
+                zipcode:
                   type: string
-                  example: "New York"
+                  example: "500032"
+                Mandal:
+                  type: string
+                  example: "Serilingampally"
                 state:
                   type: string
-                  example: "NY"
+                  example: "Telangana"
+                country:
+                  type: string
+                  example: "India"
       responses:
-        200:
-          description: Address added successfully.
+        '200':
+          description: Address added successfully
           content:
             application/json:
               schema:
@@ -1475,19 +1612,47 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Address added successfully"
-        400:
-          description: Bad request, invalid input.
-        401:
-          description: Unauthorized, user not logged in.
-        500:
-          description: Internal Server Error.
+                    example: address added successfully
+                  addressList:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          description: Unauthorized - missing or invalid token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: please login
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
 
   /patiofy/auth/user/address/{id}:
     get:
       summary: Get Address by ID
       tags:
         - Address
+      security:
+         - BearerAuth: []
       parameters:
         - name: id
           in: path
@@ -1557,9 +1722,9 @@ paths:
       tags:
         - Address
       security:
-        - CookieAuth: []
+         - BearerAuth: []
       parameters:
-        - name: addressId
+        - name: id
           in: path
           required: true
           description: The unique identifier of the address to delete.
@@ -1586,20 +1751,19 @@ paths:
         500:
           description: Internal Server Error.
     put:
-      summary: Update Address by ID
-      description: Updates an address using its unique ID.
+      summary: Update user address
+      description: Update any fields of a user's address. Only provided fields will be updated.
       tags:
         - Address
       security:
-        - CookieAuth: []
+         - BearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
-          description: The unique ID of the address to update.
           schema:
             type: string
-            example: "661d9a2f5d5b6c001cbdb999"
+          description: Address document ID to update
       requestBody:
         required: true
         content:
@@ -1607,30 +1771,36 @@ paths:
             schema:
               type: object
               properties:
-                country:
+                phone:
                   type: string
-                  example: "USA"
+                  example: "9876543210"
                 firstname:
                   type: string
                   example: "John"
                 lastname:
                   type: string
                   example: "Doe"
-                phone:
+                Street_Address:
                   type: string
-                  example: "+1234567890"
-                address:
+                  example: "456 New Street"
+                village:
                   type: string
-                  example: "123 Main St"
-                city:
+                  example: "Rampur"
+                zipcode:
                   type: string
-                  example: "New York"
+                  example: "600001"
+                Mandal:
+                  type: string
+                  example: "Narsingi"
                 state:
                   type: string
-                  example: "NY"
+                  example: "Telangana"
+                country:
+                  type: string
+                  example: "India"
       responses:
-        200:
-          description: Successfully updated the address.
+        '200':
+          description: Address updated successfully
           content:
             application/json:
               schema:
@@ -1641,27 +1811,72 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "updated successfully"
-        400:
-          description: Bad request, invalid input.
-        401:
-          description: Unauthorized, user not logged in.
-        404:
-          description: Address not found.
-        500:
-          description: Internal Server Error.
+                    example: Address updated successfully
+                  data:
+                    type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: please login
+        '404':
+          description: Address not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Address not found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
 
-  /patiofy/auth/user/address/all:
+  /patiofy/auth/user/address/list:
     get:
-      summary: View All Addresses
-      description: Retrieve all shipping addresses associated with the authenticated user.
+      summary: Get paginated list of user addresses
       tags:
         - Address
       security:
-        - BearerAuth: []
+         - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Number of items per page
       responses:
-        200:
-          description: Successfully retrieved all addresses.
+        '200':
+          description: Successfully retrieved user addresses
           content:
             application/json:
               schema:
@@ -1670,44 +1885,90 @@ paths:
                   success:
                     type: boolean
                     example: true
-                  all:
+                  currentpage:
+                    type: integer
+                    example: 1
+                  limit:
+                    type: integer
+                    example: 10
+                  total:
+                    type: integer
+                    example: 3
+                  data:
                     type: array
                     items:
                       type: object
                       properties:
                         _id:
                           type: string
-                          example: "60d9c6e4b5f1b23a4c8d4f6b"
+                          example: "660f6b8f8eab0b001efc2f15"
                         userId:
                           type: string
-                          example: "60d9c7e8b5f1b23a4c8d4f6c"
+                          example: "660f6b8f8eab0b001efc2f10"
                         email:
                           type: string
                           example: "user@example.com"
                         phone:
                           type: string
-                          example: "+1234567890"
-                        Shipping_Address:
+                          example: "9876543210"
+                        Shipping_Adderss:
                           type: object
                           properties:
-                            country:
-                              type: string
-                              example: "USA"
                             firstname:
                               type: string
                               example: "John"
                             lastname:
                               type: string
                               example: "Doe"
-                            address:
+                            Street_Address:
                               type: string
-                              example: "1234 Elm Street"
-                            city:
+                              example: "123 Main St"
+                            village:
                               type: string
-                              example: "New York"
+                              example: "Example Village"
+                            zipcode:
+                              type: string
+                              example: "123456"
+                            Mandal:
+                              type: string
+                              example: "Example Mandal"
                             state:
                               type: string
-                              example: "NY"
+                              example: "Karnataka"
+                            country:
+                              type: string
+                              example: "India"
+        '404':
+          description: User not found or address list is empty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: user not found
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
         401:
           description: Unauthorized, user not logged in.
         500:
@@ -1857,7 +2118,7 @@ paths:
 
   /patiofy/auth/admin/allproducts:                 
   # get all products which are in published
-      get:
+    get:
       summary: Get all products with pagination
       tags:
         - Admin - products
@@ -1934,42 +2195,50 @@ paths:
   /patiofy/auth/admin/product/{id}:
   # update product
     put:
-      summary: Update an existing Product
-      description: Updates the details of a product.
+      summary: Update product details
       tags:
         - Admin - products
       security:
-        - CookieAuth: []
-      operationId: updatePost
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID of the Product to update
-          schema:
-            type: string
+        - BearerAuth: []
+      description: Allows partial updates to a product. Fields are optional.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - id
               properties:
+                id:
+                  type: string
+                  description: ID of the product to update
+                  example: "66260b88d87ff120a0f472e1"
                 name:
                   type: string
-                  description: Name of the product
-                  example: "Updated T-Shirt"
+                  example: "New Product Name"
                 description:
                   type: string
-                  description: Description of the product
-                  example: "An updated description for the t-shirt."
+                  example: "Updated description of the product"
                 price:
                   type: number
-                  format: float
-                  description: Price of the product
-                  example: 24.99
+                  example: 49.99
+                size:
+                  type: string
+                  example: "M"
+                fabric:
+                  type: string
+                  example: "Cotton"
+                category:
+                  type: string
+                  example: "Clothing"
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  example: ["casual", "summer"]
       responses:
-        "200":
+        '200':
           description: Product updated successfully
           content:
             application/json:
@@ -1981,17 +2250,36 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Product updated successfully"
-        "500":
+                    example: Product updated successfully
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Product not found
+        '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
                   error:
                     type: string
-                    example: "Internal Server Error"
+                    example: "Error details here"
     # Delete product
     delete:
       summary: Delete a Product
@@ -1999,7 +2287,7 @@ paths:
       tags:
         - Admin - products
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       operationId: deletePost
       parameters:
         - name: id
@@ -2221,7 +2509,80 @@ paths:
                     example: Internal Server Error
                   error:
                     type: string
-  
+
+  /patiofy/auth/admin/product/undiscount/{id}:
+    put:
+      summary: Remove discount from a product
+      tags:
+        - Admin - Products - discounts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the product to update
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Discount removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succcess:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Discount updated successfully
+                  current_discount:
+                    type: number
+                    example: 0
+        '401':
+          description: Invalid product ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Invalid ID
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succcess:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: product not found
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string  
+
   /patiofy/auth/admin/{id}:
      get:
       summary: Get user by ID
@@ -2606,22 +2967,22 @@ paths:
 
   /patiofy/auth/admin/product/publish/{id}:
     put:
-      summary: Unpublish a product
-      description: Sets a product's `ProductStatus` to 'unpublished' if it isn't already.
+      summary: Set a product's status to "published"
       tags:
         - Admin - products
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       parameters:
         - in: path
           name: id
           required: true
-          description: MongoDB ObjectId of the product
           schema:
             type: string
+            example: "6610f7b5b8eab4abc1234567"
+          description: The ID of the product to update
       responses:
         '200':
-          description: Product unpublished successfully
+          description: Product published successfully
           content:
             application/json:
               schema:
@@ -2632,9 +2993,9 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: product set to unpublished successfully
+                    example: product set to published successfully
         '204':
-          description: Product is already unpublished (No Content)
+          description: Product already in published status
           content:
             application/json:
               schema:
@@ -2648,9 +3009,9 @@ paths:
                     example: No Content
                   error:
                     type: string
-                    example: product is already in unpublished mode
+                    example: product is already in published mode
         '400':
-          description: Invalid ObjectId format
+          description: Invalid product ID
           content:
             application/json:
               schema:
@@ -2696,7 +3057,6 @@ paths:
                     example: Internal Server Error
                   error:
                     type: string
-                    example: An error message   
 
   /patiofy/auth/admin/product/unpublish/{id}:
     put:
@@ -2705,7 +3065,7 @@ paths:
       tags:
         - Admin - products
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       parameters:
         - in: path
           name: id
@@ -2799,7 +3159,7 @@ paths:
       tags:
         - Admin - Orders
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       responses:
         '200':
           description: Successfully retrieved active orders
@@ -2886,7 +3246,7 @@ paths:
       tags:
         - Admin - Orders
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       parameters:
         - in: query
           name: page
@@ -2988,7 +3348,7 @@ paths:
       tags:
         - Admin - Orders
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       responses:
         '200':
           description: Successfully retrieved refunded orders
@@ -3075,7 +3435,7 @@ paths:
       tags:
         - Admin - Orders
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       parameters:
         - in: query
           name: page
@@ -3170,6 +3530,95 @@ paths:
                     type: string
                     example: Error message
 
+  /patiofy/auth/admin/orders/pending:
+    get:
+      summary: Get all pending orders (paginated)
+      tags:
+        - Admin - Orders
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page number for pagination
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: Successfully retrieved orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  page:
+                    type: integer
+                    example: 1
+                  totla_items:
+                    type: integer
+                    example: 10
+                  message:
+                    type: string
+                    example: completed orders are retrieved
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                        userId:
+                          type: object
+                          properties:
+                            firstname:
+                              type: string
+                            lastname:
+                              type: string
+                        productId:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            price:
+                              type: number
+                            size:
+                              type: string
+                            discountPrice:
+                              type: number
+        '404':
+          description: No completed orders found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: No completed orders
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+
   /patiofy/auth/admin/payment/success:
     get:
       summary: Retrieve payment completed orders with pagination
@@ -3177,7 +3626,7 @@ paths:
       tags:
         - Admin - Orders
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       parameters:
         - in: query
           name: page
@@ -3279,7 +3728,7 @@ paths:
       tags:
         - Admin - Orders
       security:
-        - CookieAuth: []
+        - BearerAuth: []
       parameters:
         - in: query
           name: page
@@ -3374,9 +3823,257 @@ paths:
                     type: string
                     example: Error message
     
-    
+  #order calls :
 
+  /patiofy/auth/user/order/cart/{id}:
+    post:
+      summary: Place order using cart and address
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Cart ID (MongoDB ObjectId)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                addressId:
+                  type: string
+                  example: "6612ab34cd1234567890ef12"
+                  description: Address ID to use for delivery
+      responses:
+        '200':
+          description: Order placed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: order placed successfully
+                  orderId:
+                    type: string
+                    example: your order id is = 1234567890
+        '400':
+          description: Invalid ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: invalid cart ID
+        '404':
+          description: Not Found (cart or address)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string  
+  
+  /patiofy/auth/user/order/cancel/{id}:
+    put:
+      summary: Cancel an order by ID
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Order ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: Order cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: order cancelled successfully
+        '401':
+          description: Invalid Object ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: invalid ID
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: order not found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
 
+  /patiofy/auth/user/order/{id}:
+    post:
+      summary: Create a new order without cart
+      description: Creates an order for a given product and delivery address.
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Product ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quantity
+                - AddressId
+              properties:
+                quantity:
+                  type: integer
+                  example: 2
+                AddressId:
+                  type: string
+                  description: The ID of the user's delivery address
+                  example: "661f12c8cfb23292bc7c5e01"
+      responses:
+        '200':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: order added successfully
+                  data:
+                    type: object
+                    description: Created order object
+        '400':
+          description: Invalid product ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: invalid product ID
+                  error:
+                    type: string
+                    example: Bad Request
+        '404':
+          description: Address or product not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: address not found
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
 
 
 

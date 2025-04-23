@@ -1,8 +1,8 @@
-const products = require("../models/productschema.js");
 const carts = require("../models/cartschema.js");
 const bcrypt = require("bcrypt");
 const { default: mongoose } = require("mongoose");
-const reviews = require("../models/reviews.js");
+const reviews = require("../models/reviewschema.js");
+const products = require("../models/productschema.js");
 
 //create a product Product :
 exports.createProduct = async (req, res) => {
@@ -77,12 +77,15 @@ exports.createProduct = async (req, res) => {
 //update product Product  :
 exports.updateProduct = async (req, res) => {
   try {
-    const { id, name, description, price } = req.body;
-    const newData = {
-      name,
-      description,
-      price,
-    };
+    const allowedFields = ['name', 'description', 'price', 'size', 'fabric', 'category', 'tags'];
+
+    // Dynamically build update object
+    const newData = {};
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        newData[field] = req.body[field];
+      }
+    });
     await products.findByIdAndUpdate(id, newData, {
       new: true,
       runValidators: true,
@@ -108,7 +111,7 @@ exports.getProductById = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid cart ID format",
+        message: "Invalid product ID format",
       });
     }
     const product = await products.findById(id);
@@ -138,7 +141,7 @@ exports.getAllProducts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const allproducts = await products.find().skip(skip).limit(limit).exec();
+    const allproducts = await products.find({ProductStatus : 'unpublished'}).skip(skip).limit(limit).exec();
     if (allproducts.length === 0 || !allproducts) {
       return res.status(404).json({
         success: false,
@@ -288,25 +291,54 @@ exports.filterProducts = async (req, res) => {
 
 //*****************         PRODUCT CART ROUTES               ***********************/
 
+//view all carts : 
+ exports.viewAllCarts = async(req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const allCarts = await carts.find({ userId: req.user._id }).skip(skip).limit(limit);
+    if(!allCarts || allCarts.length === 0){
+      return res.status(404).json({
+        success: false,
+        message: "cats are empty",
+        error: "Not Found",
+      })
+    }
+
+    return res.status(200).json({
+      succcess: true,
+      message : "cart retrieved successfully",
+      data: allCarts,
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success:false,
+      message: "Intenal Server Error",
+      error: error
+    })
+  }
+ }
+
 //adding to the cart :
 exports.addToCart = async (req, res) => {
   try {
-    const { productId } = req.params;
-    const post = await products.findById(productId);
-    if (!post) {
+    const { id } = req.params;
+    const product = await products.findById(id);
+    if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Not Found",
-        error: "product not found",
+        message: "product not found",
+        error: "Not Found",
       });
     }
-    const cart = await carts.create({
-      cartImages: post.postImages,
+    await carts.create({
+      cartImages: product.postImages,
       userId: req.user._id,
-      productId: post._id,
-      price: post.price,
+      productId: product._id,
+      price: product.price,
+      discountedPrice: product.discountPrice
     });
-    await cart.save();
     return res.status(200).json({
       success: true,
       message: "product added to cart successfully",
@@ -356,15 +388,20 @@ exports.getCartById = async (req, res) => {
 exports.updateCart = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(id)
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(400).json({
+        success: false,
+        message: "invalid cart ID",
+        error: "Bad Request",
+      })
+    }
     const { quantity } = req.body;
     const update = await carts.findByIdAndUpdate(
       id,
-      { quantity: quantity },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+      { quantity },
+      { new: true, runValidators: true }
+    );    
     if (!update) {
       return res.status(404).json({
         success: false,
@@ -372,6 +409,7 @@ exports.updateCart = async (req, res) => {
       });
     }
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -384,6 +422,13 @@ exports.updateCart = async (req, res) => {
 exports.deleteCart = async (req, res) => {
   try {
     const { id } = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cart ID",
+        error : "Bad Request"
+      })
+    }
     await carts.findByIdAndDelete(id);
     return res.status(200).json({
       success: true,
@@ -407,7 +452,7 @@ exports.getRatingById = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid cart ID format",
+        message: "Invalid product ID format",
       });
     }
     const product = await products.findById(id);
@@ -445,7 +490,7 @@ exports.ratingProduct = async (req, res) => {
     }
     const rate = await reviews.findOne({ productId: id });
     if (!rate) {
-      rate = await reviews.create({
+       await reviews.create({
         productId: id,
         userId: [req.user._id],
         [`r${rating}`]: {
@@ -494,15 +539,14 @@ exports.ratingProduct = async (req, res) => {
       rate.finalRating =
         totalCount > 0 ? Math.round((totalScore / totalCount) * 10) / 10 : 0;
     }
-
-    await rate.save();
-
+    // await rate.save();
     return res.status(200).json({
       success: true,
-      message: "Review added successfully",
-      rate,
+      message: "Review posted successfully",
+      rating,
     });
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
