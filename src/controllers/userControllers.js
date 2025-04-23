@@ -7,7 +7,7 @@ const { generateUserToken } = require("../middlewares/authUser.js");
 const { conformSignup, forgetPassword } = require("../utils/emailTemplates.js");
 const { default: mongoose } = require("mongoose");
 const carts = require("../models/cartschema.js");
-const orders = require("../models/orderschema.js");
+const orders = require("../models/ordersschema.js");
 
 //set password after google oauth signup :
 exports.setNewPassword = async (req, res) => {
