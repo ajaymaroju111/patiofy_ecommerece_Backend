@@ -352,6 +352,30 @@ exports.newCollections = async(req, res) => {
   }
 }
 
+//finding the best seller : 
+exports.findBestSellerProducts = async(req, res) =>{
+  try {
+    const bestsellers = await products.find().sort({ number_of_sales: -1 }).limit(6);
+    if(!bestsellers || bestsellers.length === 0){
+      return res.status(404).json({
+        success: false,
+        message : "best sellers are empty",
+        error: "Not Found"
+      })
+    }
+    return res.status(200).json({
+      success:true,
+      message: "best sellers found successfully",
+      data: bestsellers
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    })
+  }
+}
 //*****************         PRODUCT CART ROUTES               ***********************/
 
 //view all carts :
@@ -522,8 +546,6 @@ exports.deleteCart = async (req, res) => {
     });
   }
 };
-
-
 
 ///////////////////// review //////////////////
 

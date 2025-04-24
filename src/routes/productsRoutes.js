@@ -15,14 +15,16 @@ const {
   ratingProduct,
   filterProducts,
   viewAllCarts,
-  newCollections
+  newCollections,
+  findBestSellerProducts
 } = require('../controllers/productControllers.js');
 
 // product Routes : 
 router.get("/filter", filterProducts); 
 router.get('/', getAllProducts);       
 router.get('/:id', getProductById);
-router.get('/latest', newCollections);       
+router.get('/latest', newCollections);
+router.get('/bestsellers', findBestSellerProducts);       
 
 // Cart Routes : 
 router.get('/carts/mycarts', authenticate, viewAllCarts);

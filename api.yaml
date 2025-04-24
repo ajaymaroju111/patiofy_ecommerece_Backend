@@ -1145,6 +1145,78 @@ paths:
                   error:
                     type: string
 
+  /patiofy/auth/products/bestsellers:
+    get:
+      summary: Get best-selling products
+      tags:
+        - products
+      security:
+        - BearerAuth: []
+      description: Returns a list of products with more than 500 sales, sorted by creation time. Supports pagination.
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number for pagination.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Number of items per page.
+      responses:
+        '200':
+          description: Best-selling products retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: best sellers found successfully
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+        '404':
+          description: No best sellers found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: best sellers are empty
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Error object
+
   /patiofy/auth/products/{id}:
     get:
       summary: Retrieve a product by ID
@@ -2228,78 +2300,6 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error" 
-
-  /patiofy/auth/admin/product/bestsellers:
-    get:
-      summary: Get best-selling products
-      tags:
-        - Admin - products
-      security:
-        - BearerAuth: []
-      description: Returns a list of products with more than 500 sales, sorted by creation time. Supports pagination.
-      parameters:
-        - in: query
-          name: page
-          schema:
-            type: integer
-            default: 1
-          description: Page number for pagination.
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            default: 10
-          description: Number of items per page.
-      responses:
-        '200':
-          description: Best-selling products retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: best sellers found successfully
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Product'
-        '404':
-          description: No best sellers found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
-                    type: string
-                    example: best sellers are empty
-                  error:
-                    type: string
-                    example: Not Found
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
-                    type: string
-                    example: Internal Server Error
-                  error:
-                    type: string
-                    example: Error object
 
   /patiofy/auth/admin/allproducts:                 
   # get all products which are in published
