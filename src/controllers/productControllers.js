@@ -65,7 +65,6 @@ exports.createProduct = async (req, res) => {
       message: "Product created successfully",
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -319,7 +318,6 @@ exports.filterProducts = async (req, res) => {
       filterproduct,
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -327,6 +325,32 @@ exports.filterProducts = async (req, res) => {
     });
   }
 };
+
+exports.newCollections = async(req, res) => {
+  try {
+    const newCollections = await products.find()
+    .sort({ createdAt: -1 }) // sort by newest first
+    .limit(6)
+    if(!newCollections || newCollections.length === 0){
+      return res.status(404).json({
+        success: false,
+        message: "Collections are empty",
+        error: "Not Found"
+      })
+    }
+    return res.status(200).json({
+      success: true,
+      message: "collection retrieved successfully",
+      data: newCollections,
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    })
+  }
+}
 
 //*****************         PRODUCT CART ROUTES               ***********************/
 
@@ -442,7 +466,6 @@ exports.getCartById = async (req, res) => {
 exports.updateCart = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(id);
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -451,23 +474,22 @@ exports.updateCart = async (req, res) => {
       });
     }
     const { quantity } = req.body;
-    const update = await carts.findByIdAndUpdate(id, quantity, {
-      new: true,
-      runValidators: true,
-    });
+    const update = await carts.findById(id);
     if (!update) {
       return res.status(404).json({
         success: false,
-        message: "error occured in updation",
+        message: "cart not found",
+        error: "Not Found"
       });
     }
+    update.quantity += quantity;
+    await update.save();
     return res.status(200).json({
       success: true,
       message: "cart updated successfully",
       data: update,
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -500,6 +522,8 @@ exports.deleteCart = async (req, res) => {
     });
   }
 };
+
+
 
 ///////////////////// review //////////////////
 
@@ -604,7 +628,6 @@ exports.ratingProduct = async (req, res) => {
       rating,
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",

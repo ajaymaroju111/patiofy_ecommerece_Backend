@@ -1227,6 +1227,82 @@ paths:
                     type: string
                     example: "Internal Server Error"
 
+  /patiofy/auth/products/latest:
+    get:
+      summary: Get the latest 6 product collections
+      tags:
+        - products
+      responses:
+        '200':
+          description: Latest product collections retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: collection retrieved successfully
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: 661f97f1426fa339c43cb3e7
+                        name:
+                          type: string
+                          example: Cotton Shirt
+                        price:
+                          type: number
+                          example: 29.99
+                        discountPrice:
+                          type: number
+                          example: 24.99
+                        category:
+                          type: string
+                          example: Men's Wear
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: "2025-04-24T09:45:23.000Z"
+        '404':
+          description: No collections found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Collections are empty
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: {}
+
   # cart routes yaml :
   /patiofy/auth/products/carts/mycarts:
     get:

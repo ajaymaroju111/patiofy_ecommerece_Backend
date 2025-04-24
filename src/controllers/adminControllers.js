@@ -45,7 +45,6 @@ exports.setUserInactive = async(req, res) => {
       message: "user account set inactive successfully"
     });
   } catch (error) {
-    console.log(error)
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -374,7 +373,6 @@ exports.viewAllCancelledOrders = async(req, res) => {
       data: allorders
     })
   } catch (error) {
-    console.log(error)
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",

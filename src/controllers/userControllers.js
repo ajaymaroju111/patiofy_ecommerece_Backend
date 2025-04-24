@@ -392,7 +392,6 @@ exports.myProducts = async (req, res) => {
       data: myproducts,
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -478,7 +477,6 @@ exports.addAddress = async (req, res) => {
       message: "address added successfully",
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -544,7 +542,6 @@ exports.updateAddress = async (req, res) => {
       data: updated,
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",

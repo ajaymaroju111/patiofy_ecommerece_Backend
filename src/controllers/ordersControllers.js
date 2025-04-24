@@ -322,6 +322,7 @@ exports.addShippingAddress = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "shipping address added successfully",
+      orderID: order._id,
     });
   } catch (error) {
     return res.status(500).json({
