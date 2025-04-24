@@ -1,8 +1,8 @@
 openapi: "3.1.0"
 
 tags:
-  - name: Authentication_OAuth2.0
-    description: operations related to OAuth20
+  - name: Google_OAuth2.0 
+    description: Google OAUTH2.0 
   - name: users
     description: operations related to users
   - name: products
@@ -44,7 +44,7 @@ paths:
       summary: Redirect to Google OAuth
       description: Initiates the Google authentication process.
       tags:
-        - Authentication_OAuth2.0
+        - Google_OAuth2.0
       responses:
         "302":
           description: Redirects to Google's authentication page
@@ -52,7 +52,7 @@ paths:
   /patiofy/auth/user/google/{id}:
     put:
       tags:
-        - Authentication_OAuth2.0
+        - Google_OAuth2.0
       summary: Set a new password for a user
       description: Update the password for a user based on their ID.
       parameters:
@@ -586,7 +586,7 @@ paths:
     put:
       summary: Set a new password for a user
       tags:
-        - Authentication_OAuth2.0
+        - Google_OAuth2.0
       requestBody:
         required: true
         content:
@@ -1302,23 +1302,33 @@ paths:
 
   /patiofy/auth/products/cart/{id}:
     post:
-      summary: Add product to cart
-      description: Adds a product to the user's cart using the product ID.
+      summary: Add a product to the cart
       tags:
         - Cart
       security:
         - BearerAuth: []
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
           required: true
-          description: ID of the product to add to the cart
+          description: The ID of the product to add
           schema:
             type: string
-            example: "662a1b2e3f7c4e001f93b12c"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quantity
+              properties:
+                quantity:
+                  type: integer
+                  example: 1
       responses:
         '200':
-          description: Product added to cart successfully
+          description: Product added to cart or cart updated
           content:
             application/json:
               schema:
@@ -1330,6 +1340,25 @@ paths:
                   message:
                     type: string
                     example: product added to cart successfully
+                  data:
+                    type: object
+                    description: Cart document (if quantity updated)
+        '400':
+          description: Invalid product ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: invalid ID
+                  error:
+                    type: string
+                    example: Bad Request
         '404':
           description: Product not found
           content:
@@ -1342,10 +1371,10 @@ paths:
                     example: false
                   message:
                     type: string
-                    example: Not Found
+                    example: product not found
                   error:
                     type: string
-                    example: product not found
+                    example: Not Found
         '500':
           description: Internal Server Error
           content:
@@ -1361,7 +1390,6 @@ paths:
                     example: Internal Server Error
                   error:
                     type: string
-                    example: Some error message
     get:
       summary: Get cart by ID
       tags:
@@ -1883,19 +1911,6 @@ paths:
         - Address
       security:
          - BearerAuth: []
-      parameters:
-        - in: query
-          name: page
-          schema:
-            type: integer
-            default: 1
-          description: Page number for pagination
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            default: 10
-          description: Number of items per page
       responses:
         '200':
           description: Successfully retrieved user addresses
@@ -3919,20 +3934,20 @@ paths:
     
   #order calls :
 
-  /patiofy/auth/user/order/cart/{id}:
+  /patiofy/auth/user/order/{id}:
     post:
-      summary: Place order using cart and address
+      summary: Place an order for a product or from cart
       tags:
         - Orders
       security:
         - BearerAuth: []
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
           required: true
+          description: Product ID or Cart ID
           schema:
             type: string
-          description: Cart ID (MongoDB ObjectId)
       requestBody:
         required: true
         content:
@@ -3940,10 +3955,36 @@ paths:
             schema:
               type: object
               properties:
+                email:
+                  type: string
+                  example: user@example.com
+                phone:
+                  type: string
+                  example: "+123456789"
+                country:
+                  type: string
+                  example: "USA"
+                firstname:
+                  type: string
+                  example: "John"
+                lastname:
+                  type: string
+                  example: "Doe"
+                address:
+                  type: string
+                  example: "123 Main St"
+                city:
+                  type: string
+                  example: "Los Angeles"
+                state:
+                  type: string
+                  example: "CA"
                 addressId:
                   type: string
-                  example: "6612ab34cd1234567890ef12"
-                  description: Address ID to use for delivery
+                  example: "661e21fc3b7cf9eb45ae09cd"
+                quantity:
+                  type: integer
+                  example: 2
       responses:
         '200':
           description: Order placed successfully
@@ -3957,12 +3998,12 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: order placed successfully
-                  orderId:
+                    example: your order placed successfully = 123456789
+                  order_id:
                     type: string
-                    example: your order id is = 1234567890
+                    example: 661e232dd645bb22c1dd42e3
         '400':
-          description: Invalid ID
+          description: Missing required fields (e.g. phone)
           content:
             application/json:
               schema:
@@ -3973,9 +4014,12 @@ paths:
                     example: false
                   message:
                     type: string
-                    example: invalid cart ID
+                    example: phone number is required
+                  error:
+                    type: string
+                    example: Bad Request
         '404':
-          description: Not Found (cart or address)
+          description: Product, cart or address not found
           content:
             application/json:
               schema:
@@ -3986,6 +4030,10 @@ paths:
                     example: false
                   message:
                     type: string
+                    example: cart not found
+                  error:
+                    type: string
+                    example: Not Found
         '500':
           description: Internal Server Error
           content:
@@ -4000,7 +4048,7 @@ paths:
                     type: string
                     example: Internal Server Error
                   error:
-                    type: string  
+                    type: string
   
   /patiofy/auth/user/order/cancel/{id}:
     put:
@@ -4072,19 +4120,109 @@ paths:
                   error:
                     type: string
 
-  /patiofy/auth/user/order/{id}:
-    post:
-      summary: Create a new order without cart
-      description: Creates an order for a given product and delivery address.
+  # /patiofy/auth/user/order/{id}:
+  #   post:
+  #     summary: Create a new order without cart
+  #     description: Creates an order for a given product and delivery address.
+  #     tags:
+  #       - Orders
+  #     security:
+  #       - BearerAuth: []
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         description: Product ID
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               quantity:
+  #                 type: integer
+  #                 example: 2
+  #     responses:
+  #       '200':
+  #         description: Order created successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                   example: true
+  #                 message:
+  #                   type: string
+  #                   example: order added successfully
+  #                 data:
+  #                   type: object
+  #                   description: Created order object
+  #       '400':
+  #         description: Invalid product ID
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                   example: false
+  #                 message:
+  #                   type: string
+  #                   example: invalid product ID
+  #                 error:
+  #                   type: string
+  #                   example: Bad Request
+  #       '404':
+  #         description: Address or product not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                   example: false
+  #                 message:
+  #                   type: string
+  #                   example: address not found
+  #                 error:
+  #                   type: string
+  #                   example: Not Found
+  #       '500':
+  #         description: Internal server error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                   example: false
+  #                 message:
+  #                   type: string
+  #                   example: Internal Server Error
+  #                 error:
+  #                   type: string
+ 
+  /patiofy/auth/user/order/shipaddress/{id}:
+    put:
       tags:
         - Orders
       security:
         - BearerAuth: []
+      summary: Add shipping address to an order
+      description: Updates the given order with a shipping address by address ID.
       parameters:
         - name: id
           in: path
           required: true
-          description: Product ID
+          description: The ID of the order
           schema:
             type: string
       requestBody:
@@ -4094,19 +4232,14 @@ paths:
             schema:
               type: object
               required:
-                - quantity
-                - AddressId
+                - addressId
               properties:
-                quantity:
-                  type: integer
-                  example: 2
-                AddressId:
+                addressId:
                   type: string
-                  description: The ID of the user's delivery address
-                  example: "661f12c8cfb23292bc7c5e01"
+                  example: "6627b859c7d8cd87487c7e55"
       responses:
-        '200':
-          description: Order created successfully
+        200:
+          description: Shipping address added successfully
           content:
             application/json:
               schema:
@@ -4117,12 +4250,9 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: order added successfully
-                  data:
-                    type: object
-                    description: Created order object
-        '400':
-          description: Invalid product ID
+                    example: shipping address added successfully
+        400:
+          description: Bad request (missing or invalid ID)
           content:
             application/json:
               schema:
@@ -4133,12 +4263,12 @@ paths:
                     example: false
                   message:
                     type: string
-                    example: invalid product ID
+                    example: invalid ID
                   error:
                     type: string
                     example: Bad Request
-        '404':
-          description: Address or product not found
+        404:
+          description: Order or address not found
           content:
             application/json:
               schema:
@@ -4149,12 +4279,12 @@ paths:
                     example: false
                   message:
                     type: string
-                    example: address not found
+                    example: order not found
                   error:
                     type: string
                     example: Not Found
-        '500':
-          description: Internal server error
+        500:
+          description: Internal Server Error
           content:
             application/json:
               schema:
@@ -4168,8 +4298,97 @@ paths:
                     example: Internal Server Error
                   error:
                     type: string
+                    example: Some internal error message
 
-
+  /patiofy/auth/user/order/billaddress/{id}:
+    put:
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      summary: Add billing address to an order
+      description: Updates an order with a billing address using the given address ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the order
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - addressId
+              properties:
+                addressId:
+                  type: string
+                  example: "6627b859c7d8cd87487c7e55"
+      responses:
+        200:
+          description: Billing address added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: billing address added successfully
+        400:
+          description: Bad request (missing or invalid ID)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: invalid ID
+                  error:
+                    type: string
+                    example: Bad Request
+        404:
+          description: Order or address not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: order not found
+                  error:
+                    type: string
+                    example: Not Found
+        500:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Some internal error message
 
 
 

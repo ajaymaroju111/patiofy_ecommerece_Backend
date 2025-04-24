@@ -180,6 +180,8 @@ exports.signIn = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "login successfully",
+      username: user.firstname + " " + user.lastname,
+      userID: user._id,
       JWTtoken: token,
     });
   } catch (error) {
@@ -461,31 +463,15 @@ exports.deleteUser = async (req, res) => {
 
 exports.addAddress = async (req, res) => {
   try {
-    const {
-      phone,
-      firstname,
-      lastname,
-      Street_Address,
-      village,
-      zipcode,
-      Mandal,
-      state,
-      country,
-    } = req.body;
+    const { firstname, lastname, address, city, state, country } = req.body;
     await userAddresses.create({
       userId: req.user._id,
-      email: req.user.email,
-      phone: phone,
-      Shipping_Adderss: {
-        firstname: firstname,
-        lastname,
-        zipcode,
-        Street_Address,
-        village,
-        Mandal,
-        state,
-        country,
-      },
+      firstname,
+      lastname,
+      address,
+      city,
+      state,
+      country,
     });
     return res.status(200).json({
       success: true,
@@ -518,23 +504,18 @@ exports.updateAddress = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Address not found" });
     }
-    const updateData = {};
-    if (req.body.phone !== undefined) {
-      updateData.phone = req.body.phone;
-    }
 
+    const updateData = {};
     // Merge nested Shipping_Adderss
     const shippingFields = [
       "firstname",
       "lastname",
-      "Street_Address",
-      "village",
-      "zipcode",
-      "Mandal",
+      "address",
+      "city",
       "state",
       "country",
     ];
-    const shippingUpdate = { ...current.Shipping_Adderss._doc }; // existing values
+    const shippingUpdate = { ...current._doc }; // existing values
 
     shippingFields.forEach((field) => {
       if (req.body[field] !== undefined) {
@@ -542,7 +523,7 @@ exports.updateAddress = async (req, res) => {
       }
     });
 
-    updateData.Shipping_Adderss = shippingUpdate;
+     updateData = shippingUpdate;
 
     const updated = await userAddresses.findByIdAndUpdate(
       id,
@@ -626,10 +607,8 @@ exports.deleteAddress = async (req, res) => {
 
 exports.viewAllAddresses = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-    const alladdresses = await userAddresses.find({ userId: req.user._id }).skip(skip).limit(limit);
+    const alladdresses = await userAddresses
+      .find({ userId: req.user._id })
     if (!alladdresses) {
       return res.status(404).json({
         success: false,
@@ -640,9 +619,9 @@ exports.viewAllAddresses = async (req, res) => {
     return res.status(200).json({
       success: true,
       currentpage: page,
-      limit : limit,
-      total : alladdresses.length,
-      data : alladdresses,
+      limit: limit,
+      total: alladdresses.length,
+      data: alladdresses,
     });
   } catch (error) {
     return res.status(500).json({

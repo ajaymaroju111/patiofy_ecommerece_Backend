@@ -68,6 +68,9 @@ const productschema = new mongoose.Schema(
     },
     number_of_sales :{
       type : Number,
+    },
+    shipping_cost:{
+      type: Number
     }
   },
   { timestamps: true }

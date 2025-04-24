@@ -77,11 +77,19 @@ exports.createProduct = async (req, res) => {
 //update product Product  :
 exports.updateProduct = async (req, res) => {
   try {
-    const allowedFields = ['name', 'description', 'price', 'size', 'fabric', 'category', 'tags'];
+    const allowedFields = [
+      "name",
+      "description",
+      "price",
+      "size",
+      "fabric",
+      "category",
+      "tags",
+    ];
 
     // Dynamically build update object
     const newData = {};
-    allowedFields.forEach(field => {
+    allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) {
         newData[field] = req.body[field];
       }
@@ -141,7 +149,12 @@ exports.getAllProducts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const allproducts = await products.find({ProductStatus : 'unpublished'}).skip(skip).limit(limit).exec();
+    const allproducts = await products
+      .find({ ProductStatus: "unpublished" })
+      .select("-createdAt, -updatedAt, -ProductStatus")
+      .skip(skip)
+      .limit(limit)
+      .exec();
     if (allproducts.length === 0 || !allproducts) {
       return res.status(404).json({
         success: false,
@@ -236,13 +249,14 @@ exports.filterProducts = async (req, res) => {
     //usage of aggregations pipelines :
     const filterproduct = await products
       .aggregate([
-        { $match: filter }, // your dynamic filters
+        { $match: filter }, // apply any dynamic filters
         { $sort: { price: 1 } },
         {
           $facet: {
             products: [
               {
                 $project: {
+                  name: 1,
                   category: 1,
                   price: 1,
                   size: 1,
@@ -253,12 +267,36 @@ exports.filterProducts = async (req, res) => {
                   savedPrice: 1,
                 },
               },
+              { $skip: skip },
+              { $limit: limit },
             ],
-            stockCounts: [
+            instockProducts: [
+              { $match: { inStock: "instock" } },
               {
-                $group: {
-                  _id: "$inStock",
-                  count: { $sum: 1 },
+                $project: {
+                  name: 1,
+                  category: 1,
+                  price: 1,
+                  size: 1,
+                  fabric: 1,
+                  discount: 1,
+                  discountPrice: 1,
+                  savedPrice: 1,
+                },
+              },
+            ],
+            outstockProducts: [
+              { $match: { inStock: "outstock" } },
+              {
+                $project: {
+                  name: 1,
+                  category: 1,
+                  price: 1,
+                  size: 1,
+                  fabric: 1,
+                  discount: 1,
+                  discountPrice: 1,
+                  savedPrice: 1,
                 },
               },
             ],
@@ -268,7 +306,6 @@ exports.filterProducts = async (req, res) => {
       .skip(skip)
       .limit(limit)
       .exec();
-
     if (!filterproduct || filterproduct.length === 0) {
       return res.status(404).json({
         success: false,
@@ -277,6 +314,8 @@ exports.filterProducts = async (req, res) => {
     }
     return res.status(200).json({
       success: true,
+      page: page,
+      totalItems: filterproduct.length,
       filterproduct,
     });
   } catch (error) {
@@ -291,35 +330,43 @@ exports.filterProducts = async (req, res) => {
 
 //*****************         PRODUCT CART ROUTES               ***********************/
 
-//view all carts : 
- exports.viewAllCarts = async(req, res) => {
+//view all carts :
+exports.viewAllCarts = async (req, res) => {
   try {
     const allCarts = await carts.find({ userId: req.user._id });
-    if(!allCarts || allCarts.length === 0){
+    if (!allCarts || allCarts.length === 0) {
       return res.status(404).json({
         success: false,
         message: "cats are empty",
         error: "Not Found",
-      })
+      });
     }
     return res.status(200).json({
       succcess: true,
-      message : "cart retrieved successfully",
+      message: "cart retrieved successfully",
       data: allCarts,
-    })
+    });
   } catch (error) {
     return res.status(500).json({
-      success:false,
+      success: false,
       message: "Intenal Server Error",
-      error: error
-    })
+      error: error,
+    });
   }
- }
+};
 
 //adding to the cart :
 exports.addToCart = async (req, res) => {
   try {
     const { id } = req.params;
+    const { quantity } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "invalid ID",
+        error: "Bad Request",
+      });
+    }
     const product = await products.findById(id);
     if (!product) {
       return res.status(404).json({
@@ -328,16 +375,27 @@ exports.addToCart = async (req, res) => {
         error: "Not Found",
       });
     }
-    await carts.create({
-      cartImages: product.postImages,
-      userId: req.user._id,
-      productId: product._id,
-      price: product.price,
-      discountedPrice: product.discountPrice
-    });
+    const isCartExist = await carts.findOne({ productId: id });
+    if (!isCartExist) {
+      await carts.create({
+        cartImages: product.postImages,
+        userId: req.user._id,
+        productId: product._id,
+        price: product.price,
+        discountedPrice: product.discountPrice,
+      });
+      return res.status(200).json({
+        success: true,
+        message: "product added to cart successfully",
+      });
+    }
+    isCartExist.quantity += quantity;
+    isCartExist.price += quantity * product.discountPrice;
+    await isCartExist.save();
     return res.status(200).json({
-      success: true,
-      message: "product added to cart successfully",
+      success: false,
+      message: " cart quantity updated successfully",
+      data: isCartExist,
     });
   } catch (error) {
     return res.status(500).json({
@@ -384,16 +442,19 @@ exports.getCartById = async (req, res) => {
 exports.updateCart = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(id)
-    if(!mongoose.Types.ObjectId.isValid(id)){
+    console.log(id);
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: "invalid cart ID",
         error: "Bad Request",
-      })
+      });
     }
     const { quantity } = req.body;
-    const update = await carts.findByIdAndUpdate(id, quantity, {new : true, runValidators: true });   
+    const update = await carts.findByIdAndUpdate(id, quantity, {
+      new: true,
+      runValidators: true,
+    });
     if (!update) {
       return res.status(404).json({
         success: false,
@@ -403,10 +464,10 @@ exports.updateCart = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "cart updated successfully",
-      data : update
-    })
+      data: update,
+    });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -419,12 +480,12 @@ exports.updateCart = async (req, res) => {
 exports.deleteCart = async (req, res) => {
   try {
     const { id } = req.params;
-    if(!mongoose.Types.ObjectId.isValid(id)){
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: "Invalid cart ID",
-        error : "Bad Request"
-      })
+        error: "Bad Request",
+      });
     }
     await carts.findByIdAndDelete(id);
     return res.status(200).json({
@@ -487,7 +548,7 @@ exports.ratingProduct = async (req, res) => {
     }
     const rate = await reviews.findOne({ productId: id });
     if (!rate) {
-       await reviews.create({
+      await reviews.create({
         productId: id,
         userId: [req.user._id],
         [`r${rating}`]: {
@@ -543,7 +604,7 @@ exports.ratingProduct = async (req, res) => {
       rating,
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",

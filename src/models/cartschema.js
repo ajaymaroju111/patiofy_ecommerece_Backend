@@ -19,10 +19,6 @@ const cartSchema = new mongoose.Schema({
     type : mongoose.Schema.Types.ObjectId,
     ref : 'products'
   },
-  userId : {
-    type : mongoose.Schema.Types.ObjectId,
-    ref : 'users'
-  },
   quantity : {
     type : Number,
     default : 1,
@@ -34,10 +30,9 @@ const cartSchema = new mongoose.Schema({
   discountedPrice:{
     type: Number,
   },
-  status: {
-    type: String,
-    enum: ['active', 'completed', 'cancelled'],
-    default: 'active'
+  shipping_cost:{
+    type: Number,
+    
   }
 }, {timestamps : true});
 
