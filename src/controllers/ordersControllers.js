@@ -150,7 +150,7 @@ exports.makeOrder = async (req, res) => {
         phone: phone,
         email: email || undefined,
         shipping_cost: isaCart.shipping_cost,
-        final_cost: isaCart.price*isaCart.quantity + isaCart.shipping_cost,
+        final_cost: isaCart.discountedPrice*isaCart.quantity + isaCart.shipping_cost,
       });
       return res.status(200).json({
         success: true,

@@ -367,21 +367,22 @@ exports.addToCart = async (req, res) => {
         error: "Bad Request",
       });
     }
-    const product = await products.findById(id);
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "product not found",
-        error: "Not Found",
-      });
-    }
+    let product;
     const isCartExist = await carts.findOne({ productId: id });
     if (!isCartExist) {
+      product = await products.findById(id);
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: "product not found",
+          error: "Not Found",
+        });
+      }
       await carts.create({
         cartImages: product.postImages,
+        quantity: quantity,
         userId: req.user._id,
         productId: product._id,
-        price: product.price,
         discountedPrice: product.discountPrice,
       });
       return res.status(200).json({
@@ -390,7 +391,6 @@ exports.addToCart = async (req, res) => {
       });
     }
     isCartExist.quantity += quantity;
-    isCartExist.price += quantity * product.discountPrice;
     await isCartExist.save();
     return res.status(200).json({
       success: false,
