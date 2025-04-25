@@ -255,9 +255,10 @@ exports.removeDiscountOnProduct = async(req, res) => {
     return res.status(200).json({
       succcess: true,
       message: "Discount updated successfully",
-      current_discount: product.discount,
+      data : product
     });
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",

@@ -86,8 +86,13 @@ productschema.pre('save', function (next) {
 
 productschema.pre("save", async function (next) {
   if (this.isModified("discount")) {
-    this.discountPrice = Math.round(((100 - this.discount)/100)*this.price)*100/100;
-    this.savedPrice = this.price - this.discountPrice; 
+    if(this.discount > 0){
+      this.discountPrice = Math.round(((100 - this.discount)/100)*this.price)*1000/1000;
+      this.savedPrice = Math.round((this.price - this.discountPrice)*100)/100; 
+    }else{
+      this.discountPrice = this.price;
+      this.savedPrice = 0;
+    }
   }
   next();
 });
