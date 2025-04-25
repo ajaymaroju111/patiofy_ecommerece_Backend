@@ -432,6 +432,7 @@ exports.addToCart = async (req, res) => {
         userId: req.user._id,
         productId: product._id,
         discountedPrice: product.discountPrice,
+        final_price: product.discountPrice*quantity
       });
       return res.status(200).json({
         success: true,
@@ -439,6 +440,7 @@ exports.addToCart = async (req, res) => {
       });
     }
     isCartExist.quantity += quantity;
+    isCartExist.final_price = isCartExist.quantity*isCartExist.discountedPrice;
     await isCartExist.save();
     return res.status(200).json({
       success: false,
@@ -506,7 +508,8 @@ exports.updateCart = async (req, res) => {
         error: "Not Found"
       });
     }
-    update.quantity += quantity;
+    update.quantity = quantity;
+    update.final_price = quantity * update.discountedPrice;
     await update.save();
     return res.status(200).json({
       success: true,
@@ -514,6 +517,7 @@ exports.updateCart = async (req, res) => {
       data: update,
     });
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -533,7 +537,14 @@ exports.deleteCart = async (req, res) => {
         error: "Bad Request",
       });
     }
-    await carts.findByIdAndDelete(id);
+    const deleted = await carts.findByIdAndDelete(id);
+    if(!deleted){
+      return res.status(404).json({
+        success: false,
+        message: "cart not found",
+        error: "Not Found"
+      })
+    }
     return res.status(200).json({
       success: true,
       message: "Cart deleted successfully",

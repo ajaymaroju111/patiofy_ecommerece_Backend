@@ -1153,19 +1153,6 @@ paths:
       security:
         - BearerAuth: []
       description: Returns a list of products with more than 500 sales, sorted by creation time. Supports pagination.
-      parameters:
-        - in: query
-          name: page
-          schema:
-            type: integer
-            default: 1
-          description: Page number for pagination.
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            default: 10
-          description: Number of items per page.
       responses:
         '200':
           description: Best-selling products retrieved successfully

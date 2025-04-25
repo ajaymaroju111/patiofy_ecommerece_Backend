@@ -21,10 +21,10 @@ const {
 
 // product Routes : 
 router.get("/filter", filterProducts); 
+router.get('/bestsellers', findBestSellerProducts);       
+router.get('/latest', newCollections);
 router.get('/', getAllProducts);       
 router.get('/:id', getProductById);
-router.get('/latest', newCollections);
-router.get('/bestsellers', findBestSellerProducts);       
 
 // Cart Routes : 
 router.get('/carts/mycarts', authenticate, viewAllCarts);

@@ -26,10 +26,20 @@ const cartSchema = new mongoose.Schema({
   discountedPrice:{
     type: Number,
   },
+  final_price:{
+    
+    type: Number,
+  },
   shipping_cost:{
     type: Number,
     
   }
 }, {timestamps : true});
+cartSchema.pre('save', async function(next){
+  if(this.final_price === 0 || this.final_price === 0 ){
+    this.final_price = this.discountedPrice
+  }
+})
+
 
 module.exports = mongoose.model('carts' , cartSchema);
