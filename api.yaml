@@ -1735,8 +1735,8 @@ paths:
 
   /patiofy/auth/user/address:
     post:
-      summary: Add a user shipping address
-      description: Allows an authenticated user to add a detailed shipping address.
+      summary: Add a new user address
+      description: Adds a new address to the authenticated user's address list.
       tags:
         - Address
       security:
@@ -1748,42 +1748,31 @@ paths:
             schema:
               type: object
               required:
-                - phone
                 - firstname
                 - lastname
-                - Street_Address
-                - village
-                - zipcode
-                - Mandal
+                - address
+                - city
                 - state
+                - country
               properties:
-                phone:
-                  type: string
-                  example: "9876543210"
                 firstname:
                   type: string
-                  example: "John"
+                  example: John
                 lastname:
                   type: string
-                  example: "Doe"
-                Street_Address:
+                  example: Doe
+                address:
                   type: string
-                  example: "123 Main St"
-                village:
+                  example: 123 Main St
+                city:
                   type: string
-                  example: "Lakshmipur"
-                zipcode:
-                  type: string
-                  example: "500032"
-                Mandal:
-                  type: string
-                  example: "Serilingampally"
+                  example: Springfield
                 state:
                   type: string
-                  example: "Telangana"
+                  example: Illinois
                 country:
                   type: string
-                  example: "India"
+                  example: USA
       responses:
         '200':
           description: Address added successfully
@@ -1798,23 +1787,6 @@ paths:
                   message:
                     type: string
                     example: address added successfully
-                  addressList:
-                    type: array
-                    items:
-                      type: object
-        '401':
-          description: Unauthorized - missing or invalid token
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
-                    type: string
-                    example: please login
         '500':
           description: Internal Server Error
           content:
@@ -1829,7 +1801,8 @@ paths:
                     type: string
                     example: Internal Server Error
                   error:
-                    type: string
+                    type: object
+                    description: Error details
 
   /patiofy/auth/user/address/{id}:
     get:
@@ -1936,8 +1909,8 @@ paths:
         500:
           description: Internal Server Error.
     put:
-      summary: Update user address
-      description: Update any fields of a user's address. Only provided fields will be updated.
+      summary: Update an existing user address
+      description: Updates an address by its ID for the authenticated user.
       tags:
         - Address
       security:
@@ -1946,9 +1919,10 @@ paths:
         - name: id
           in: path
           required: true
+          description: The ID of the address to update
           schema:
             type: string
-          description: Address document ID to update
+            example: 6629a0cfb5f7d02346f0f44e
       requestBody:
         required: true
         content:
@@ -1956,33 +1930,24 @@ paths:
             schema:
               type: object
               properties:
-                phone:
-                  type: string
-                  example: "9876543210"
                 firstname:
                   type: string
-                  example: "John"
+                  example: Jane
                 lastname:
                   type: string
-                  example: "Doe"
-                Street_Address:
+                  example: Smith
+                address:
                   type: string
-                  example: "456 New Street"
-                village:
+                  example: 456 Elm Street
+                city:
                   type: string
-                  example: "Rampur"
-                zipcode:
-                  type: string
-                  example: "600001"
-                Mandal:
-                  type: string
-                  example: "Narsingi"
+                  example: Metropolis
                 state:
                   type: string
-                  example: "Telangana"
+                  example: NY
                 country:
                   type: string
-                  example: "India"
+                  example: USA
       responses:
         '200':
           description: Address updated successfully
@@ -1999,8 +1964,34 @@ paths:
                     example: Address updated successfully
                   data:
                     type: object
-        '401':
-          description: Unauthorized
+                    description: The updated address
+                    properties:
+                      _id:
+                        type: string
+                        example: 6629a0cfb5f7d02346f0f44e
+                      userId:
+                        type: string
+                        example: 661fabcde1234567890a1b2c
+                      firstname:
+                        type: string
+                        example: Jane
+                      lastname:
+                        type: string
+                        example: Smith
+                      address:
+                        type: string
+                        example: 456 Elm Street
+                      city:
+                        type: string
+                        example: Metropolis
+                      state:
+                        type: string
+                        example: NY
+                      country:
+                        type: string
+                        example: USA
+        '400':
+          description: Invalid Address ID
           content:
             application/json:
               schema:
@@ -2011,7 +2002,10 @@ paths:
                     example: false
                   message:
                     type: string
-                    example: please login
+                    example: invalid Address ID
+                  error:
+                    type: string
+                    example: Bad Request
         '404':
           description: Address not found
           content:
@@ -2038,6 +2032,8 @@ paths:
                   message:
                     type: string
                     example: Internal Server Error
+                  error:
+                    type: object
 
   /patiofy/auth/user/address/list:
     get:

@@ -120,7 +120,7 @@ exports.makeOrder = async (req, res) => {
       });
     }
 
-    let newAddress;
+    var newAddress;
     if (country && firstname && lastname && address && city && state) {
       newAddress = await userAddresses.create({
         userId: req.user._id || undefined,
@@ -131,8 +131,8 @@ exports.makeOrder = async (req, res) => {
         city,
         state,
       });
+      
     }
-
     const product = await products.findById(id);
     if (!product) {
       const isaCart = await carts.findById(id);
@@ -172,7 +172,7 @@ exports.makeOrder = async (req, res) => {
     const newOrder = await orders.create({
       userId: req.user_id || undefined,
       productId: id,
-      shipping_addressId: newAddress._id || addressId,
+      shipping_addressId: addressId || newAddress._id,
       phone: phone,
       email: email || undefined,
       shipping_cost: product.shipping_cost,
@@ -184,6 +184,7 @@ exports.makeOrder = async (req, res) => {
       order_id : newOrder._id,
     })
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",

@@ -70,7 +70,8 @@ const productschema = new mongoose.Schema(
       type : Number,
     },
     shipping_cost:{
-      type: Number
+      type: Number,
+      default: 0,
     }
   },
   { timestamps: true }

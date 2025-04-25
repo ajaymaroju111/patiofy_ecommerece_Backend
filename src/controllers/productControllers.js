@@ -432,7 +432,8 @@ exports.addToCart = async (req, res) => {
         userId: req.user._id,
         productId: product._id,
         discountedPrice: product.discountPrice,
-        final_price: product.discountPrice*quantity
+        final_price: product.discountPrice*quantity,
+        shipping_cost: product.shipping_cost,
       });
       return res.status(200).json({
         success: true,
