@@ -2,7 +2,7 @@ const { default: mongoose } = require("mongoose");
 const users = require("../models/userschema");
 const products = require('../models/productschema');
 const orders = require("../models/ordersschema.js");
-const { all } = require("../routes/orderRoutes.js");
+// const { all } = require("../routes/orderRoutes.js");
 
 
 ///****************** User Management:  ***********************/

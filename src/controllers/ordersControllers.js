@@ -3,7 +3,7 @@ const orders = require("../models/ordersschema.js");
 const products = require("../models/productschema.js");
 const userAddresses = require("../models/addressschema.js");
 const carts = require("../models/cartschema.js");
-const redis = require("../utils/redisConfig.js");
+// const redis = require("../utils/redisConfig.js");
 
 //create an order:
 // exports.makeOrder = async (req, res) => {
@@ -401,19 +401,19 @@ exports.getOrderById = async (req, res) => {
         error: "Bad Request",
       });
     }
-    const cacheKey = `order:${id}`;
-    try {
-      const cacheOrder = await redis.get(cacheKey);
-      if (cacheOrder) {
-        return res.status(500).json({
-          success: false,
-          cached: true,
-          data: cacheOrder,
-        });
-      }
-    } catch (cacheError) {
-      console.error(cacheError);
-    }
+    // const cacheKey = `order:${id}`;
+    // try {
+    //   const cacheOrder = await redis.get(cacheKey);
+    //   if (cacheOrder) {
+    //     return res.status(500).json({
+    //       success: false,
+    //       cached: true,
+    //       data: cacheOrder,
+    //     });
+    //   }
+    // } catch (cacheError) {
+    //   console.error(cacheError);
+    // }
     const order = await orders.findById(id).select("-userId");
     if (!order) {
       return res.status(404).json({
@@ -422,11 +422,11 @@ exports.getOrderById = async (req, res) => {
         error: "Not Found"
       });
     }
-    try {
-      await redis.set(cacheKey, JSON.stringify(order), 'Ex', 3600)
-    } catch (cacheError) {
-      console.error(cacheError);
-    }
+    // try {
+    //   await redis.set(cacheKey, JSON.stringify(order), 'Ex', 3600)
+    // } catch (cacheError) {
+    //   console.error(cacheError);
+    // }
     return res.status(200).json({
       success: true,
       cached: false,
@@ -443,19 +443,19 @@ exports.getOrderById = async (req, res) => {
 
 exports.viewAllOrders = async (req, res) => {
   try {
-    const cacheKey = `orders:all`;
-    try {
-      const cacheOrders = await redis.get(cacheKey);
-      if (cacheOrders) {
-        return res.status(200).json({
-          success: true,
-          cached: true,
-          data: cacheOrders,
-        });
-      }
-    } catch (cacheError) {
-      console.error(cacheError);
-    }
+    // const cacheKey = `orders:all`;
+    // try {
+    //   const cacheOrders = await redis.get(cacheKey);
+    //   if (cacheOrders) {
+    //     return res.status(200).json({
+    //       success: true,
+    //       cached: true,
+    //       data: cacheOrders,
+    //     });
+    //   }
+    // } catch (cacheError) {
+    //   console.error(cacheError);
+    // }
     const allorders = await orders
       .find({ userId: req.user._id })
       .select("-userId, -productId");
@@ -466,11 +466,11 @@ exports.viewAllOrders = async (req, res) => {
         error: "Not Found",
       });
     }
-    try {
-      await redis.set(cacheKey, JSON.stringify(allorders), "EX", 3600);
-    } catch (redisError) {
-      console.error(redisError);
-    }
+    // try {
+    //   await redis.set(cacheKey, JSON.stringify(allorders), "EX", 3600);
+    // } catch (redisError) {
+    //   console.error(redisError);
+    // }
     return res.status(200).json({
       success: false,
       cached: false,

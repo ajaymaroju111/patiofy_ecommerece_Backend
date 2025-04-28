@@ -4,7 +4,7 @@ const { default: mongoose } = require("mongoose");
 const reviews = require("../models/reviewschema.js");
 const products = require("../models/productschema.js");
 // const {getFileBaseUrl} = require('../middlewares/multer.js')
-const redis = require('../utils/redisConfig.js');
+// const redis = require('../utils/redisConfig.js');
 
 //create a product Product :
 exports.createProduct = async (req, res) => {
@@ -40,6 +40,7 @@ exports.createProduct = async (req, res) => {
       postFiles.map(async (file) => {
         const base64Data = file.buffer.toString("base64");
         const hashedData = await bcrypt.hash(base64Data, 10); // 10 salt rounds
+        // const hashedData = base64Data;
         return {
           name: file.originalname,
           img: {
@@ -194,20 +195,20 @@ exports.getProductById = async (req, res) => {
         message: "Invalid product ID format",
       });
     }
-    const cacheKey = `product:${id}`;
+    // const cacheKey = `product:${id}`;
 
-    try {
-      const cacheProduct = await redis.get(cacheKey);
-    if(cacheProduct){
-      return res.status(200).json({
-        success: true,
-        cached: true,
-        data : cacheProduct
-      })
-    }
-    } catch (redisError) {
-      console.error(redisError);
-    }
+    // try {
+    //   const cacheProduct = await redis.get(cacheKey);
+    // if(cacheProduct){
+    //   return res.status(200).json({
+    //     success: true,
+    //     cached: true,
+    //     data : cacheProduct
+    //   })
+    // }
+    // } catch (redisError) {
+    //   console.error(redisError);
+    // }
     const product = await products.findById(id).select('-userId, -shipping_cost, -ProductStatus, -createdAt, -updatedAt -number_of_sales');
     if (!product) {
       return res.status(404).json({
@@ -217,12 +218,12 @@ exports.getProductById = async (req, res) => {
       });
     }
 
-    try {
-    await redis.set(cacheKey, JSON.stringify(product), 'EX', 3600) //cache expiery time is 1 hour
+    // try {
+    // await redis.set(cacheKey, JSON.stringify(product), 'EX', 3600) //cache expiery time is 1 hour
 
-    } catch (redisError) {
-      console.error(redisError);
-    }
+    // } catch (redisError) {
+    //   console.error(redisError);
+    // }
 
     return res.status(200).json({
       success: true,
@@ -245,21 +246,21 @@ exports.getAllProducts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const cacheKey = `products:all`
-    try {
-      const cacheProducts = await redis.get(cacheKey);
-      if(cacheProducts){
-        const total = cacheProducts.length;
-        return res.status(200).json({
-          page,
-          success:true,
-          cached: true,
-          data: cacheProducts,
-        })
-      } 
-    } catch (redisError) {
-      console.error(redisError);
-    }
+    // const cacheKey = `products:all`
+    // try {
+    //   const cacheProducts = await redis.get(cacheKey);
+    //   if(cacheProducts){
+    //     const total = cacheProducts.length;
+    //     return res.status(200).json({
+    //       page,
+    //       success:true,
+    //       cached: true,
+    //       data: cacheProducts,
+    //     })
+    //   } 
+    // } catch (redisError) {
+    //   console.error(redisError);
+    // }
     const allproducts = await products
       .find({ ProductStatus: "unpublished" })
       .select("-createdAt, -updatedAt, -ProductStatus, -userId -number_of_sales -shipping_cost")
@@ -273,11 +274,11 @@ exports.getAllProducts = async (req, res) => {
       });
     }
     const total = await products.countDocuments();
-    try {
-      await redis.set(cacheKey, JSON.stringify(allproducts), 'EX', 3600);
-    } catch (redisError) {
-      console.error(redisError);
-    }
+    // try {
+    //   await redis.set(cacheKey, JSON.stringify(allproducts), 'EX', 3600);
+    // } catch (redisError) {
+    //   console.error(redisError);
+    // }
     return res.status(200).json({
       success: true,
       page,
@@ -331,20 +332,20 @@ exports.filterProducts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const cacheKey = `products:filtered:page=${page}&limit=${limit}&categories=${categories || ''}&price=${price || ''}&size=${size || ''}&fabric=${fabric || ''}&discount=${Discount || ''}`;
-    try {
-      const cacheData = await redis.get(cacheKey);
-      if(cacheData){
-        return res.status(200).json({
-          success: true,
-          page: page,
-          cached: true,
-          data : JSON.parse(cacheData)
-        })
-      }
-    } catch (redisError) {
-      console.error(redisError)
-    }
+    // const cacheKey = `products:filtered:page=${page}&limit=${limit}&categories=${categories || ''}&price=${price || ''}&size=${size || ''}&fabric=${fabric || ''}&discount=${Discount || ''}`;
+    // try {
+    //   const cacheData = await redis.get(cacheKey);
+    //   if(cacheData){
+    //     return res.status(200).json({
+    //       success: true,
+    //       page: page,
+    //       cached: true,
+    //       data : JSON.parse(cacheData)
+    //     })
+    //   }
+    // } catch (redisError) {
+    //   console.error(redisError)
+    // }
     let filter = {};
     //initializing the filter condition :
     if (categories) {
@@ -400,7 +401,7 @@ exports.filterProducts = async (req, res) => {
               { $limit: limit },
             ],
             instockProducts: [
-              { $match: { inStock: "instock" } },
+              { $match: { inStock: true } },
               {
                 $project: {
                   name: 1,
@@ -415,7 +416,7 @@ exports.filterProducts = async (req, res) => {
               },
             ],
             outstockProducts: [
-              { $match: { inStock: "outstock" } },
+              { $match: { inStock: false } },
               {
                 $project: {
                   name: 1,
@@ -441,16 +442,16 @@ exports.filterProducts = async (req, res) => {
         message: "Products not found",
       });
     }
-    try {
-      await redis.set(cacheKey, JSON.stringify(filterproduct), 'EX', 1800);
-    } catch (redisError) {
-      console.error(redisError);
-    }
+    // try {
+    //   await redis.set(cacheKey, JSON.stringify(filterproduct), 'EX', 1800);
+    // } catch (redisError) {
+    //   console.error(redisError);
+    // }
     return res.status(200).json({
       success: true,
       page: page,
       cached: false,
-      totalItems: filterproduct.length,
+      totalpages: Math.ceil(filterproduct.length/10),
       filterproduct,
     });
   } catch (error) {
@@ -517,19 +518,19 @@ exports.findBestSellerProducts = async(req, res) =>{
 //view all carts :
 exports.viewAllCarts = async (req, res) => {
   try {
-    const cacheKey = `carts:all`
-    try {
-      const cacheCarts = await redis.get(cacheKey);
-      if(cacheCarts){
-        return res.status(200).json({
-          success: false,
-          cached: true,
-          data: cacheCarts
-        })
-      }
-    } catch (redisError) {
-      console.error(redisError)
-    }
+    // const cacheKey = `carts:all`
+    // try {
+    //   const cacheCarts = await redis.get(cacheKey);
+    //   if(cacheCarts){
+    //     return res.status(200).json({
+    //       success: false,
+    //       cached: true,
+    //       data: cacheCarts
+    //     })
+    //   }
+    // } catch (redisError) {
+    //   console.error(redisError)
+    // }
     const allCarts = await carts.find({ userId: req.user._id });
     if (!allCarts || allCarts.length === 0) {
       return res.status(404).json({
@@ -538,11 +539,11 @@ exports.viewAllCarts = async (req, res) => {
         error: "Not Found",
       });
     }
-    try {
-      await redis.set(cacheKey, JSON.stringify(allCarts), 'EX', 43200);
-    } catch (redisError) {
-      console.error(redisError);
-    }
+    // try {
+    //   await redis.set(cacheKey, JSON.stringify(allCarts), 'EX', 43200);
+    // } catch (redisError) {
+    //   console.error(redisError);
+    // }
     return res.status(200).json({
       succcess: true,
       cached: false,
@@ -621,19 +622,19 @@ exports.getCartById = async (req, res) => {
         message: "Invalid cart ID format",
       });
     }
-    const cacheKey = `cart:${id}`;
-    try {
-      const cacheCart = await redis.get(cacheKey);
-      if(cacheCart){
-        return res.status(200).json({
-          success: false,
-          cached: true,
-          data: cacheCart
-        })
-      }
-    } catch (redisError) {
-      console.error(redisError)
-    }
+    // const cacheKey = `cart:${id}`;
+    // try {
+    //   const cacheCart = await redis.get(cacheKey);
+    //   if(cacheCart){
+    //     return res.status(200).json({
+    //       success: false,
+    //       cached: true,
+    //       data: cacheCart
+    //     })
+    //   }
+    // } catch (redisError) {
+    //   console.error(redisError)
+    // }
     const cart = await carts.findById(id);
 
     if (!cart) {
@@ -643,11 +644,11 @@ exports.getCartById = async (req, res) => {
       });
     }
   
-    try {
-      await redis.set(cacheKey, JSON.stringify(cart), 'EX', 3600);
-    } catch (redisError) {
-      console.error(redisError);
-    }
+    // try {
+    //   await redis.set(cacheKey, JSON.stringify(cart), 'EX', 3600);
+    // } catch (redisError) {
+    //   console.error(redisError);
+    // }
     return res.status(200).json({
       success: true,
       cached: false,

@@ -8,7 +8,7 @@ const { conformSignup, forgetPassword } = require("../utils/emailTemplates.js");
 const { default: mongoose } = require("mongoose");
 const carts = require("../models/cartschema.js");
 const orders = require("../models/ordersschema.js");
-const redis = require("../utils/redisConfig.js");
+// const redis = require("../utils/redisConfig.js");
 
 //set password after google oauth signup :
 exports.setNewPassword = async (req, res) => {
@@ -371,12 +371,12 @@ exports.myProducts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const cacheKey = `myproducts:my`
-    try {
-      const cacheProducts = await redis.get(cacheKey)
-    } catch (redisError) {
-      console.error(redisError)
-    }
+    // const cacheKey = `myproducts:my`
+    // try {
+    //   const cacheProducts = await redis.get(cacheKey)
+    // } catch (redisError) {
+    //   console.error(redisError)
+    // }
     const myproducts = await products
       .find({ userId: id })
       .select("-_id -userId -createdAt -updatedAt -__v")
@@ -390,11 +390,11 @@ exports.myProducts = async (req, res) => {
       });
     }
     const total = await products.countDocuments();
-    try {
-      await redis.set(cacheKey, JSON.stringify(myproducts), 'EX', 3600)
-    } catch (redisError) {
-      console.error(redisError);
-    }
+    // try {
+    //   await redis.set(cacheKey, JSON.stringify(myproducts), 'EX', 3600)
+    // } catch (redisError) {
+    //   console.error(redisError);
+    // }
     return res.status(200).json({
       success: true,
       page,
