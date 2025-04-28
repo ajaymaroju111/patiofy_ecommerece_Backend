@@ -717,7 +717,7 @@ paths:
       summary: Get product review by ID
       description: Retrieve the review for a product if it exists.
       tags:
-        - Review
+        - Reviews (Products)
       security:
         - BearerAuth: []
       parameters:
@@ -775,7 +775,7 @@ paths:
                     description: Error object with details
     post:
       tags:
-        - Review
+        - Reviews (Products)
       security:
         - BearerAuth: []
       summary: Submit a rating and review for a product
@@ -3325,7 +3325,7 @@ paths:
       summary: Retrieve active orders (conformed, out_of_delivery)
       description: Retrieves orders that are currently active (conformed or out of delivery) and includes populated user and product details.
       tags:
-        - Admin - Orders
+        - Admin - (Orders statistics)
       security:
         - BearerAuth: []
       responses:
@@ -3412,7 +3412,7 @@ paths:
       summary: Retrieve cancelled orders with pagination
       description: Retrieves cancelled orders with pagination (using `page` query parameter) and includes populated user and product details.
       tags:
-        - Admin - Orders
+        - Admin - (Orders statistics)
       security:
         - BearerAuth: []
       parameters:
@@ -3514,7 +3514,7 @@ paths:
       summary: Retrieve refunded orders
       description: Fetches all orders with a status of "refunded", including user and product details.
       tags:
-        - Admin - Orders
+        - Admin - (Orders statistics)
       security:
         - BearerAuth: []
       responses:
@@ -3601,7 +3601,7 @@ paths:
       summary: Retrieve completed orders with pagination
       description: Fetches completed orders with pagination. Includes populated user and product details.
       tags:
-        - Admin - Orders
+        - Admin - (Orders statistics)
       security:
         - BearerAuth: []
       parameters:
@@ -3702,7 +3702,7 @@ paths:
     get:
       summary: Get all pending orders (paginated)
       tags:
-        - Admin - Orders
+        - Admin - (Orders statistics)
       security:
         - BearerAuth: []
       parameters:
@@ -3792,7 +3792,7 @@ paths:
       summary: Retrieve payment completed orders with pagination
       description: Retrieves paginated list of orders where payment status is 'paid', including populated user and product details.
       tags:
-        - Admin - Orders
+        - Admin - (Orders statistics)
       security:
         - BearerAuth: []
       parameters:
@@ -3894,7 +3894,7 @@ paths:
       summary: Retrieve unpaid payment orders with pagination
       description: Retrieves a paginated list of orders with a payment status of 'unpaid', including populated user and product details.
       tags:
-        - Admin - Orders
+        - Admin - (Orders statistics)
       security:
         - BearerAuth: []
       parameters:

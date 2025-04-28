@@ -3,6 +3,7 @@ const orders = require("../models/ordersschema.js");
 const products = require("../models/productschema.js");
 const userAddresses = require("../models/addressschema.js");
 const carts = require("../models/cartschema.js");
+const redis = require("../utils/redisConfig.js");
 
 //create an order:
 // exports.makeOrder = async (req, res) => {
@@ -131,7 +132,6 @@ exports.makeOrder = async (req, res) => {
         city,
         state,
       });
-      
     }
     const product = await products.findById(id);
     if (!product) {
@@ -150,15 +150,16 @@ exports.makeOrder = async (req, res) => {
         phone: phone,
         email: email || undefined,
         shipping_cost: isaCart.shipping_cost,
-        final_cost: isaCart.discountedPrice*isaCart.quantity + isaCart.shipping_cost,
+        final_cost:
+          isaCart.discountedPrice * isaCart.quantity + isaCart.shipping_cost,
       });
       return res.status(200).json({
         success: true,
         message: `your order placed successfully : ${newOrder.orderId}`,
-        order_id : newOrder._id,
-      })
+        order_id: newOrder._id,
+      });
     }
-    if(addressId){
+    if (addressId) {
       const shippingAddress = await userAddresses.findById(addressId);
       if (!shippingAddress) {
         return res.status(404).json({
@@ -176,15 +177,15 @@ exports.makeOrder = async (req, res) => {
       phone: phone,
       email: email || undefined,
       shipping_cost: product.shipping_cost,
-      final_cost: product.discountPrice*quantity + product.shipping_cost,
+      final_cost: product.discountPrice * quantity + product.shipping_cost,
     });
     return res.status(200).json({
       success: true,
       message: `your order placed successfully : ${newOrder.orderId}`,
-      order_id : newOrder._id,
-    })
+      order_id: newOrder._id,
+    });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -333,7 +334,6 @@ exports.addShippingAddress = async (req, res) => {
     });
   }
 };
-
 //adding billing address :
 exports.addbillingAddress = async (req, res) => {
   try {
@@ -381,6 +381,100 @@ exports.addbillingAddress = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "billing address added successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    });
+  }
+};
+
+exports.getOrderById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Order Id",
+        error: "Bad Request",
+      });
+    }
+    const cacheKey = `order:${id}`;
+    try {
+      const cacheOrder = await redis.get(cacheKey);
+      if (cacheOrder) {
+        return res.status(500).json({
+          success: false,
+          cached: true,
+          data: cacheOrder,
+        });
+      }
+    } catch (cacheError) {
+      console.error(cacheError);
+    }
+    const order = await orders.findById(id).select("-userId");
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "order not found",
+        error: "Not Found"
+      });
+    }
+    try {
+      await redis.set(cacheKey, JSON.stringify(order), 'Ex', 3600)
+    } catch (cacheError) {
+      console.error(cacheError);
+    }
+    return res.status(200).json({
+      success: true,
+      cached: false,
+      data: order,
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    });
+  }
+};
+
+exports.viewAllOrders = async (req, res) => {
+  try {
+    const cacheKey = `orders:all`;
+    try {
+      const cacheOrders = await redis.get(cacheKey);
+      if (cacheOrders) {
+        return res.status(200).json({
+          success: true,
+          cached: true,
+          data: cacheOrders,
+        });
+      }
+    } catch (cacheError) {
+      console.error(cacheError);
+    }
+    const allorders = await orders
+      .find({ userId: req.user._id })
+      .select("-userId, -productId");
+    if (!allorders || allorders.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "order are empty",
+        error: "Not Found",
+      });
+    }
+    try {
+      await redis.set(cacheKey, JSON.stringify(allorders), "EX", 3600);
+    } catch (redisError) {
+      console.error(redisError);
+    }
+    return res.status(200).json({
+      success: false,
+      cached: false,
+      data: allorders,
     });
   } catch (error) {
     return res.status(500).json({

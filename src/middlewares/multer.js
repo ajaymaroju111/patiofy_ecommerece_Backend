@@ -56,6 +56,73 @@ const fs = require("fs");
 ////////////////*****   FOR BASE64  ******************/
 
 // Memory storage to store files in buffer
+
+
+// 2nd
+
+// const PicUpload =
+//   process.env.NODE_ENV === "production"
+//     ? path.join(__dirname, '../uploads/productPics') // Local path for production (inside the server)
+//     : path.join(__dirname, "../uploads/productPics"); // Local development path
+
+// // Define the base URL to be used in the HTTP response
+// const getFileBaseUrl = () => {
+//   if (process.env.NODE_ENV === "production") {
+//     // Production URL (VPS or live server)
+//     return 'http://147.93.97.20:3000/Patiofy/uploads/productPics';
+//   } else {
+//     // Local development URL (localhost)
+//     return 'http://localhost:3000/uploads/productPics';
+//   }
+// };
+
+// // Initialize multer disk storage for handling file uploads
+// const upload = multer({
+//   storage: multer.diskStorage({
+//     destination: (req, file, cb) => {
+//       cb(null, PicUpload); // Set the destination folder for file storage
+//     },
+//     filename: (req, file, cb) => {
+//       // Function to sanitize the filename (to filter out invalid characters)
+//       const sanitizeFileName = (filename) => {
+//         return filename
+//           .toLowerCase() // Convert to lowercase
+//           .replace(/\s+/g, "-") // Replace spaces with hyphens
+//           .replace(/[^a-z0-9.\-_]/g, ""); // Remove invalid characters
+//       };
+
+//       const sanitizedOriginalName = sanitizeFileName(file.originalname);
+//       const uniqueSuffix = `${Date.now()}-${sanitizedOriginalName}`; // Create a unique filename
+
+//       if (!req.savedFileNames) {
+//         req.savedFileNames = []; // Initialize an array to store filenames
+//       }
+//       req.savedFileNames.push(uniqueSuffix); // Push sanitized filename to the array
+
+//       cb(null, uniqueSuffix); // Save file with sanitized filename
+//     },
+//   }),
+//   limits: { fileSize: 10 * 1024 * 1024 }, // Limit file size to 10 MB
+//   fileFilter(req, file, cb) {
+//     if (!file) {
+//       cb(new Error("No file passed"), false);
+//     } else if (file.mimetype.startsWith("image/")) {
+//       cb(null, true); // Accept image files
+//     } else {
+//       cb(new Error("Only image files are allowed"), false); // Reject non-image files
+//     }
+//   },
+// });
+
+// // Check if the productPics folder exists, if not, create it
+// if (!fs.existsSync(PicUpload)) {
+//   fs.mkdirSync(PicUpload, { recursive: true });
+// }
+
+// // Export the upload configuration
+// module.exports = {upload, getFileBaseUrl};
+
+
 const storage = multer.memoryStorage();
 
 // File filter to allow only images
