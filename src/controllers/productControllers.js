@@ -332,7 +332,7 @@ exports.deleteProduct = async (req, res) => {
 //search for products : ( NAN )
 exports.filterProducts = async (req, res) => {
   try {
-    const { categories, price, size, fabric, Discount } = req.query;
+    const { categories, price, size, fabric, Discount, stock } = req.query;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -354,6 +354,23 @@ exports.filterProducts = async (req, res) => {
     //initializing the filter condition :
     if (categories) {
       filter.category = { $regex: categories, $options: "i" };
+    }
+
+    if(stock){
+      const allstockProducts = await products.find({ stock: stock}).skip(skip).limit(limit).exec();
+      if(!allstockProducts){
+        return res.status(404).json({
+          success: false,
+          message: "Products not found",
+          error: "Not Found"
+        })
+      }
+
+      return res.status(200).json({
+        succcess: true,
+        message: `${stock} products are retrieved successfully!`,
+        products:  allstockProducts,
+      })
     }
 
     if (Discount) {
