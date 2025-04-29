@@ -944,7 +944,7 @@ paths:
           description: Filter by size
           schema:
             type: string
-            example: L
+            example: Large
         - name: fabric
           in: query
           required: false

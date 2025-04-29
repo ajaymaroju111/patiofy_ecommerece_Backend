@@ -68,7 +68,6 @@ exports.createProduct = async (req, res) => {
       message: "Product created successfully",
     });
   } catch (error) {
-    console.log(error)
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -145,8 +144,6 @@ exports.createProduct = async (req, res) => {
 //   }
 // };
 
-
-
 //update product Product  :
 exports.updateProduct = async (req, res) => {
   try {
@@ -209,12 +206,16 @@ exports.getProductById = async (req, res) => {
     // } catch (redisError) {
     //   console.error(redisError);
     // }
-    const product = await products.findById(id).select('-userId, -shipping_cost, -ProductStatus, -createdAt, -updatedAt -number_of_sales');
+    const product = await products
+      .findById(id)
+      .select(
+        "-userId, -shipping_cost, -ProductStatus, -createdAt, -updatedAt -number_of_sales"
+      );
     if (!product) {
       return res.status(404).json({
         success: false,
         message: "product not found",
-        error: 'Not Found'
+        error: "Not Found",
       });
     }
 
@@ -257,13 +258,15 @@ exports.getAllProducts = async (req, res) => {
     //       cached: true,
     //       data: cacheProducts,
     //     })
-    //   } 
+    //   }
     // } catch (redisError) {
     //   console.error(redisError);
     // }
     const allproducts = await products
       .find({ ProductStatus: "unpublished" })
-      .select("-createdAt, -updatedAt, -ProductStatus, -userId -number_of_sales -shipping_cost")
+      .select(
+        "-createdAt, -updatedAt, -ProductStatus, -userId -number_of_sales -shipping_cost"
+      )
       .skip(skip)
       .limit(limit)
       .exec();
@@ -284,7 +287,7 @@ exports.getAllProducts = async (req, res) => {
       page,
       cached: false,
       data: allproducts,
-      totalPages : Math.ceil(total/limit)
+      totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
     return res.status(500).json({
@@ -356,11 +359,12 @@ exports.filterProducts = async (req, res) => {
     if (Discount) {
       const [min, max] = Discount.split("_").map(Number);
       if (!isNaN(min) && !isNaN(max)) {
-        filter.price = { $gte: min, $lte: max };
-      } else if (isNaN(min)) {
-        filter.Discount = { $gte: min };
+        filter.discount = { $gte: min, $lte: max };
+      } else if (!isNaN(min)) {
+        filter.discount = { $gte: min };
       }
     }
+
     if (price) {
       const [min, max] = price.split("_").map(Number);
       if (!isNaN(min) && !isNaN(max)) {
@@ -452,7 +456,7 @@ exports.filterProducts = async (req, res) => {
       success: true,
       page: page,
       cached: false,
-      totalpages: Math.ceil(filterproduct.length/10),
+      totalpages: Math.ceil((filterproduct[0].products.length || 0) / limit),
       filterproduct,
     });
   } catch (error) {
@@ -464,56 +468,60 @@ exports.filterProducts = async (req, res) => {
   }
 };
 
-exports.newCollections = async(req, res) => {
+exports.newCollections = async (req, res) => {
   try {
-    const newCollections = await products.find()
-    .sort({ createdAt: -1 }) // sort by newest first
-    .limit(6)
-    if(!newCollections || newCollections.length === 0){
+    const newCollections = await products
+      .find()
+      .sort({ createdAt: -1 }) // sort by newest first
+      .limit(6);
+    if (!newCollections || newCollections.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Collections are empty",
-        error: "Not Found"
-      })
+        error: "Not Found",
+      });
     }
     return res.status(200).json({
       success: true,
       message: "collection retrieved successfully",
       data: newCollections,
-    })
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
       error: error,
-    })
+    });
   }
-}
+};
 
-//finding the best seller : 
-exports.findBestSellerProducts = async(req, res) =>{
+//finding the best seller :
+exports.findBestSellerProducts = async (req, res) => {
   try {
-    const bestsellers = await products.find().sort({ number_of_sales: -1 }).limit(6);
-    if(!bestsellers || bestsellers.length === 0){
+    const bestsellers = await products
+      .find()
+      .sort({ number_of_sales: -1 })
+      .limit(6);
+    if (!bestsellers || bestsellers.length === 0) {
       return res.status(404).json({
         success: false,
-        message : "best sellers are empty",
-        error: "Not Found"
-      })
+        message: "best sellers are empty",
+        error: "Not Found",
+      });
     }
     return res.status(200).json({
-      success:true,
+      success: true,
       message: "best sellers found successfully",
-      data: bestsellers
-    })
+      data: bestsellers,
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
       error: error,
-    })
+    });
   }
-}
+};
 //*****************         PRODUCT CART ROUTES               ***********************/
 
 //view all carts :
@@ -588,7 +596,7 @@ exports.addToCart = async (req, res) => {
         userId: req.user._id,
         productId: product._id,
         discountedPrice: product.discountPrice,
-        final_price: product.discountPrice*quantity,
+        final_price: product.discountPrice * quantity,
         shipping_cost: product.shipping_cost,
       });
       return res.status(200).json({
@@ -597,7 +605,8 @@ exports.addToCart = async (req, res) => {
       });
     }
     isCartExist.quantity += quantity;
-    isCartExist.final_price = isCartExist.quantity*isCartExist.discountedPrice;
+    isCartExist.final_price =
+      isCartExist.quantity * isCartExist.discountedPrice;
     await isCartExist.save();
     return res.status(200).json({
       success: false,
@@ -644,7 +653,7 @@ exports.getCartById = async (req, res) => {
         message: "Cart not found",
       });
     }
-  
+
     // try {
     //   await redis.set(cacheKey, JSON.stringify(cart), 'EX', 3600);
     // } catch (redisError) {
@@ -681,7 +690,7 @@ exports.updateCart = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "cart not found",
-        error: "Not Found"
+        error: "Not Found",
       });
     }
     update.quantity = quantity;
@@ -693,7 +702,7 @@ exports.updateCart = async (req, res) => {
       data: update,
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -714,12 +723,12 @@ exports.deleteCart = async (req, res) => {
       });
     }
     const deleted = await carts.findByIdAndDelete(id);
-    if(!deleted){
+    if (!deleted) {
       return res.status(404).json({
         success: false,
         message: "cart not found",
-        error: "Not Found"
-      })
+        error: "Not Found",
+      });
     }
     return res.status(200).json({
       success: true,
