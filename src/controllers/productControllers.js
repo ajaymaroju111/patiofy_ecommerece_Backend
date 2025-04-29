@@ -491,9 +491,10 @@ exports.viewProductsStock = async(req, res) => {
         error: "Not Found"
       });
     }
+    const total = await products.countDocuments({stock: stock})
     return res.status(200).json({
       page: page,
-      totalPages: Math.ceil(stockProducts.length/10),
+      totalPages: Math.ceil(total/10),
       success: true,
       message: `the ${stock} products retrieved successfully`,
       data : stockProducts,
