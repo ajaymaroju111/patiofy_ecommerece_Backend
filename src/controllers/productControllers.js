@@ -468,6 +468,40 @@ exports.filterProducts = async (req, res) => {
   }
 };
 
+//check the insock and out stock products : 
+exports.viewProductsStock = async(req, res) => {
+  try {
+    const { stock }  = req.query;
+    console.log(stock)
+    if(!stock){
+      return res.status(400).json({
+        success: false,
+        message : "stock keyword is required",
+        error: 'Bad Request'
+      });
+    }
+    const stockProducts = await products.find({stock : stock});
+    if(!stockProducts){
+      return res.status(404).json({
+        success: false,
+        message: 'Products are empty',
+        error: "Not Found"
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: `the ${stock} products retrieved successfully`,
+      data : stockProducts,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    })
+  }
+};
+
 exports.newCollections = async (req, res) => {
   try {
     const newCollections = await products

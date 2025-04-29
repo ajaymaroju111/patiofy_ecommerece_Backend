@@ -16,11 +16,13 @@ const {
   filterProducts,
   viewAllCarts,
   newCollections,
-  findBestSellerProducts
+  findBestSellerProducts,
+  viewProductsStock,
 } = require('../controllers/productControllers.js');
 
 // product Routes : 
 router.get("/filter", filterProducts); 
+router.get("/stock", viewProductsStock);
 router.get('/bestsellers', findBestSellerProducts);       
 router.get('/latest', newCollections);
 router.get('/', getAllProducts);       
