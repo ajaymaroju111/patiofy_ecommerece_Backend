@@ -471,6 +471,9 @@ exports.filterProducts = async (req, res) => {
 //check the insock and out stock products : 
 exports.viewProductsStock = async(req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
     const { stock }  = req.query;
     console.log(stock)
     if(!stock){
@@ -480,7 +483,7 @@ exports.viewProductsStock = async(req, res) => {
         error: 'Bad Request'
       });
     }
-    const stockProducts = await products.find({stock : stock});
+    const stockProducts = await products.find({stock : stock}).skip(skip).limit(limit);
     if(!stockProducts){
       return res.status(404).json({
         success: false,
@@ -489,6 +492,8 @@ exports.viewProductsStock = async(req, res) => {
       });
     }
     return res.status(200).json({
+      page: page,
+      totalPages: Math.ceil(stockProducts.length/10),
       success: true,
       message: `the ${stock} products retrieved successfully`,
       data : stockProducts,
