@@ -374,7 +374,7 @@ exports.viewAllCompletedOrders = async(req, res) => {
     res.status.json({
       success: true,
       page: page,
-      totla_items : allorders.length,
+      totlal_pages : Math.ceil(allorders.length/10),
       message: "completed orders are retrieved ",
       data: allorders
     })

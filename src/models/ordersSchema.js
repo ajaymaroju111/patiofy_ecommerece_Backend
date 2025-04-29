@@ -50,6 +50,10 @@ const orderSchema = new mongoose.Schema({
     enum: ['unpaid', 'paid', 'refunded'],
     default: 'unpaid',
   },
+  Date:{
+    type: Date,
+    default: Date.now(),
+  },
 },
 { timestamps: true }
 );

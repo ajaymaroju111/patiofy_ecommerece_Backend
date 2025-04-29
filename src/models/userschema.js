@@ -42,6 +42,12 @@ const userschema = new mongoose.Schema(
           "Password must contain at least 8 characters, including one uppercase letter, one lowercase letter, one number, and one special character.",
       },
     },
+    phone : {
+      type: Number,
+    },
+    Address: {
+      type: String,
+    },
     status: {
       type: String,
       enum: ["inactive", "active"],

@@ -284,6 +284,7 @@ exports.getAllProducts = async (req, res) => {
       page,
       cached: false,
       data: allproducts,
+      totalPages : Math.ceil(total/limit)
     });
   } catch (error) {
     return res.status(500).json({
@@ -401,7 +402,7 @@ exports.filterProducts = async (req, res) => {
               { $limit: limit },
             ],
             instockProducts: [
-              { $match: { inStock: true } },
+              { $match: { stock: 'instock' } },
               {
                 $project: {
                   name: 1,
@@ -416,7 +417,7 @@ exports.filterProducts = async (req, res) => {
               },
             ],
             outstockProducts: [
-              { $match: { inStock: false } },
+              { $match: { stock: 'outstock' } },
               {
                 $project: {
                   name: 1,

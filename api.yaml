@@ -471,6 +471,12 @@ paths:
                 lastname:
                   type: string
                   example: Doe
+                phone:
+                  type: number
+                  example: 9000000000
+                Address:
+                  type: string
+                  example: warangal, Telangana, India
       responses:
         '200':
           description: Profile updated successfully

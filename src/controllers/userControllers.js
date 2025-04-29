@@ -336,12 +336,18 @@ exports.changePassword = async (req, res) => {
 //update user profile using ID :
 exports.update = async (req, res) => {
   try {
-    const { firstname, lastname } = req.body;
-
-    const updatedData = {
-      firstname,
-      lastname,
-    };
+    const allowed = [ 
+      "firstname",
+      "lastname",
+      "phone", 
+      "Address"
+    ]
+    const updatedData = {};
+    allowed.forEach((field) => {
+      if(req.body[field] !== undefined){
+        allowed[field] = req.body[field];
+      }
+    });
     const updatedUser = await users.findByIdAndUpdate(
       req.user._id,
       updatedData,

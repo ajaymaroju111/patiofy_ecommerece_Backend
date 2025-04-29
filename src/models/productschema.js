@@ -52,9 +52,10 @@ const productschema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    inStock: {
-      type: Boolean,
-      default: true,
+    stock: {
+      type: String,
+      enum: ['instock', 'outstock'],
+      default: 'instock',
     },
     savedPrice: {
       type: Number,
