@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const { default: mongoose } = require("mongoose");
 const reviews = require("../models/reviewschema.js");
 const products = require("../models/productschema.js");
+const {categories, size, fabric} = require('../utils/data.js');
 // const {getFileBaseUrl} = require('../middlewares/multer.js')
 // const redis = require('../utils/redisConfig.js');
 
@@ -355,7 +356,6 @@ exports.filterProducts = async (req, res) => {
     if (categories) {
       filter.category = { $regex: categories, $options: "i" };
     }
-
     if(stock){
       const allstockProducts = await products.find({ stock: stock}).skip(skip).limit(limit).exec();
       if(!allstockProducts){
@@ -369,8 +369,10 @@ exports.filterProducts = async (req, res) => {
       return res.status(200).json({
         succcess: true,
         message: `${stock} products are retrieved successfully!`,
+        count: allstockProducts.length,
+        totalPages : Math.ceil(allstockProducts.length/10),
         products:  allstockProducts,
-      })
+      });
     }
 
     if (Discount) {
@@ -409,6 +411,7 @@ exports.filterProducts = async (req, res) => {
               {
                 $project: {
                   name: 1,
+                  postImages: 1,
                   category: 1,
                   price: 1,
                   size: 1,
@@ -422,36 +425,36 @@ exports.filterProducts = async (req, res) => {
               { $skip: skip },
               { $limit: limit },
             ],
-            instockProducts: [
-              { $match: { stock: 'instock' } },
-              {
-                $project: {
-                  name: 1,
-                  category: 1,
-                  price: 1,
-                  size: 1,
-                  fabric: 1,
-                  discount: 1,
-                  discountPrice: 1,
-                  savedPrice: 1,
-                },
-              },
-            ],
-            outstockProducts: [
-              { $match: { stock: 'outstock' } },
-              {
-                $project: {
-                  name: 1,
-                  category: 1,
-                  price: 1,
-                  size: 1,
-                  fabric: 1,
-                  discount: 1,
-                  discountPrice: 1,
-                  savedPrice: 1,
-                },
-              },
-            ],
+            // instockProducts: [
+            //   { $match: { stock: 'instock' } },
+            //   {
+            //     $project: {
+            //       name: 1,
+            //       category: 1,
+            //       price: 1,
+            //       size: 1,
+            //       fabric: 1,
+            //       discount: 1,
+            //       discountPrice: 1,
+            //       savedPrice: 1,
+            //     },
+            //   },
+            // ],
+            // outstockProducts: [
+            //   { $match: { stock: 'outstock' } },
+            //   {
+            //     $project: {
+            //       name: 1,
+            //       category: 1,
+            //       price: 1,
+            //       size: 1,
+            //       fabric: 1,
+            //       discount: 1,
+            //       discountPrice: 1,
+            //       savedPrice: 1,
+            //     },
+            //   },
+            // ],
           },
         },
       ])
@@ -473,8 +476,12 @@ exports.filterProducts = async (req, res) => {
       success: true,
       page: page,
       cached: false,
+      totalProducts: filterproduct[0].products.length,
       totalpages: Math.ceil((filterproduct[0].products.length || 0) / limit),
       filterproduct,
+      catogeries: categories,
+      fabric: fabric,
+      size: size,
     });
   } catch (error) {
     return res.status(500).json({

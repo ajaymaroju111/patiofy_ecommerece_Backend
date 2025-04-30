@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const crypto = require("crypto");
+const {categories, size, fabric} = require('../utils/data.js');
 
 const productschema = new mongoose.Schema(
   {
@@ -96,5 +97,30 @@ productschema.pre("save", async function (next) {
   }
   next();
 });
+
+productschema.pre("save", async function (next) {
+  if(this.isModified("category")){
+    if(!categories.includes(this.category)){
+      categories.push(this.category);
+    }
+  }
+  next();
+})
+productschema.pre("save", async function (next) {
+  if(this.isModified("size")){
+    if(!size.includes(this.category)){
+      size.push(this.category);
+    }
+  }
+  next();
+})
+productschema.pre("save", async function (next) {
+  if(this.isModified("fabric")){
+    if(!fabric.includes(this.category)){
+      fabric.push(this.category);
+    }
+  }
+  next();
+})
 
 module.exports = mongoose.model("products", productschema);
