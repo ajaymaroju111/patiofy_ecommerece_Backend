@@ -1,4 +1,4 @@
-let categories = [
+let categoriesNames = [
   "premium swing",
   "premium double seater swing",
   "cotton swing chair",
@@ -7,18 +7,18 @@ let categories = [
   "home chair",
 ]
 
-let size = [
+let sizeNames = [
   "small",
   "large",
   "medium",
 ]
 
-let fabric = [
+let fabricNames = [
   "cotton",
   "nylon",
   "polyster",
   "silk"
 ]
 
-module.exports =  {categories, size, fabric};
+module.exports =  {categoriesNames, sizeNames, fabricNames};
 

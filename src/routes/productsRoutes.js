@@ -18,10 +18,12 @@ const {
   newCollections,
   findBestSellerProducts,
   viewProductsStock,
+  getFilterNames,
 } = require('../controllers/productControllers.js');
 
 // product Routes : 
 router.get("/filter", filterProducts); 
+router.get("/filternames", getFilterNames); 
 router.get("/stock", viewProductsStock);
 router.get('/bestsellers', findBestSellerProducts);       
 router.get('/latest', newCollections);

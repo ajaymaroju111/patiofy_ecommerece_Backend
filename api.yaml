@@ -1025,6 +1025,54 @@ paths:
         '500':
           description: Internal Server Error
 
+  /patiofy/auth/products/filternames:
+     get:
+      summary: Get available filter names
+      description: Returns categories, sizes, and fabrics used for filtering products.
+      tags:
+        - products
+      responses:
+        '200':
+          description: Successfully retrieved filter names
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  catogeries:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Men", "Women", "Kids"]
+                  size:
+                    type: array
+                    items:
+                      type: string
+                    example: ["S", "M", "L", "XL"]
+                  fabric:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Cotton", "Linen", "Polyester"]
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: object
+
   /patiofy/auth/products/stock:
     get:
       summary: Get products by stock status
@@ -3223,6 +3271,99 @@ paths:
   /patiofy/auth/admin/product/publish/{id}:
     put:
       summary: Set a product's status to "published"
+      tags:
+        - Admin - products
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            example: "6610f7b5b8eab4abc1234567"
+          description: The ID of the product to update
+      responses:
+        '200':
+          description: Product published successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: product set to published successfully
+        '204':
+          description: Product already in published status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: No Content
+                  error:
+                    type: string
+                    example: product is already in published mode
+        '400':
+          description: Invalid product ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Bad Request
+                  error:
+                    type: string
+                    example: invalid object ID
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Not Found
+                  error:
+                    type: string
+                    example: item not found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+
+  /patiofy/auth/admin/product/viewin/{id}:
+    put:
+      summary: Set a product's viewIn to "new_collection || best_seller || both"
       tags:
         - Admin - products
       security:

@@ -3,7 +3,7 @@ const bcrypt = require("bcrypt");
 const { default: mongoose } = require("mongoose");
 const reviews = require("../models/reviewschema.js");
 const products = require("../models/productschema.js");
-const {categories, size, fabric} = require('../utils/data.js');
+// const { categoriesNames, sizeNames, fabricNames } = require("../utils/data.js");
 // const {getFileBaseUrl} = require('../middlewares/multer.js')
 // const redis = require('../utils/redisConfig.js');
 
@@ -330,6 +330,48 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
+//get catogeries, size and fabric :
+exports.getFilterNames = async (req, res) => {
+  try {
+    const uniquecategories = await products.distinct("category");
+    if(!uniquecategories){
+      return res.status(404).json({
+        success: false,
+        message: "categories are empty",
+        error: 'Not Found'
+      })
+    }
+    const uniquesizes = await products.distinct("size");
+    if(!uniquesizes){
+      return res.status(404).json({
+        success: false,
+        message: "sizes are empty",
+        error: 'Not Found'
+      })
+    }
+    const uniquefabrics = await products.distinct("fabric");
+    if(!uniquefabrics){
+      return res.status(404).json({
+        success: false,
+        message: "fabrics are empty",
+        error: 'Not Found'
+      })
+    }
+    return res.status(200).json({
+      success: true,
+      catogeries: uniquecategories,
+      size: uniquesizes,
+      fabric: uniquefabrics,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    });
+  }
+};
+
 //search for products : ( NAN )
 exports.filterProducts = async (req, res) => {
   try {
@@ -356,22 +398,26 @@ exports.filterProducts = async (req, res) => {
     if (categories) {
       filter.category = { $regex: categories, $options: "i" };
     }
-    if(stock){
-      const allstockProducts = await products.find({ stock: stock}).skip(skip).limit(limit).exec();
-      if(!allstockProducts){
+    if (stock) {
+      const allstockProducts = await products
+        .find({ stock: stock })
+        .skip(skip)
+        .limit(limit)
+        .exec();
+      if (!allstockProducts) {
         return res.status(404).json({
           success: false,
           message: "Products not found",
-          error: "Not Found"
-        })
+          error: "Not Found",
+        });
       }
 
       return res.status(200).json({
         succcess: true,
         message: `${stock} products are retrieved successfully!`,
         count: allstockProducts.length,
-        totalPages : Math.ceil(allstockProducts.length/10),
-        products:  allstockProducts,
+        totalPages: Math.ceil(allstockProducts.length / 10),
+        products: allstockProducts,
       });
     }
 
@@ -425,36 +471,36 @@ exports.filterProducts = async (req, res) => {
               { $skip: skip },
               { $limit: limit },
             ],
-            // instockProducts: [
-            //   { $match: { stock: 'instock' } },
-            //   {
-            //     $project: {
-            //       name: 1,
-            //       category: 1,
-            //       price: 1,
-            //       size: 1,
-            //       fabric: 1,
-            //       discount: 1,
-            //       discountPrice: 1,
-            //       savedPrice: 1,
-            //     },
-            //   },
-            // ],
-            // outstockProducts: [
-            //   { $match: { stock: 'outstock' } },
-            //   {
-            //     $project: {
-            //       name: 1,
-            //       category: 1,
-            //       price: 1,
-            //       size: 1,
-            //       fabric: 1,
-            //       discount: 1,
-            //       discountPrice: 1,
-            //       savedPrice: 1,
-            //     },
-            //   },
-            // ],
+            instockProducts: [
+              { $match: { stock: 'instock' } },
+              {
+                $project: {
+                  name: 1,
+                  category: 1,
+                  price: 1,
+                  size: 1,
+                  fabric: 1,
+                  discount: 1,
+                  discountPrice: 1,
+                  savedPrice: 1,
+                },
+              },
+            ],
+            outstockProducts: [
+              { $match: { stock: 'outstock' } },
+              {
+                $project: {
+                  name: 1,
+                  category: 1,
+                  price: 1,
+                  size: 1,
+                  fabric: 1,
+                  discount: 1,
+                  discountPrice: 1,
+                  savedPrice: 1,
+                },
+              },
+            ],
           },
         },
       ])
@@ -479,9 +525,6 @@ exports.filterProducts = async (req, res) => {
       totalProducts: filterproduct[0].products.length,
       totalpages: Math.ceil((filterproduct[0].products.length || 0) / limit),
       filterproduct,
-      catogeries: categories,
-      fabric: fabric,
-      size: size,
     });
   } catch (error) {
     return res.status(500).json({
@@ -492,52 +535,53 @@ exports.filterProducts = async (req, res) => {
   }
 };
 
-//check the insock and out stock products : 
-exports.viewProductsStock = async(req, res) => {
+//check the insock and out stock products :
+exports.viewProductsStock = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const { stock }  = req.query;
-    console.log(stock)
-    if(!stock){
+    const { stock } = req.query;
+    console.log(stock);
+    if (!stock) {
       return res.status(400).json({
         success: false,
-        message : "stock keyword is required",
-        error: 'Bad Request'
+        message: "stock keyword is required",
+        error: "Bad Request",
       });
     }
-    const stockProducts = await products.find({stock : stock}).skip(skip).limit(limit);
-    if(!stockProducts){
+    const stockProducts = await products
+      .find({ stock: stock })
+      .skip(skip)
+      .limit(limit);
+    if (!stockProducts) {
       return res.status(404).json({
         success: false,
-        message: 'Products are empty',
-        error: "Not Found"
+        message: "Products are empty",
+        error: "Not Found",
       });
     }
-    const total = await products.countDocuments({stock: stock})
+    const total = await products.countDocuments({ stock: stock });
     return res.status(200).json({
       page: page,
-      totalPages: Math.ceil(total/10),
+      totalPages: Math.ceil(total / 10),
       success: true,
       message: `the ${stock} products retrieved successfully`,
-      data : stockProducts,
+      data: stockProducts,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
       error: error,
-    })
+    });
   }
 };
 
 exports.newCollections = async (req, res) => {
   try {
     const newCollections = await products
-      .find()
-      .sort({ createdAt: -1 }) // sort by newest first
-      .limit(6);
+      .find({ $or: [{viewIn: 'new_collection'}, {viewIn: 'both'}]});
     if (!newCollections || newCollections.length === 0) {
       return res.status(404).json({
         success: false,
@@ -563,9 +607,7 @@ exports.newCollections = async (req, res) => {
 exports.findBestSellerProducts = async (req, res) => {
   try {
     const bestsellers = await products
-      .find()
-      .sort({ number_of_sales: -1 })
-      .limit(6);
+      .find({ $or: [{ viewIn: 'best_seller'}, {viewIn: 'both'}]});
     if (!bestsellers || bestsellers.length === 0) {
       return res.status(404).json({
         success: false,
@@ -604,7 +646,7 @@ exports.viewAllCarts = async (req, res) => {
     // } catch (redisError) {
     //   console.error(redisError)
     // }
-    const allCarts = await carts.find({ userId: req.user._id });
+    const allCarts = await carts.find({ userId: req.user._id }).populate('productId', 'name').exec();
     if (!allCarts || allCarts.length === 0) {
       return res.status(404).json({
         success: false,
@@ -644,7 +686,7 @@ exports.addToCart = async (req, res) => {
       });
     }
     let product;
-    const isCartExist = await carts.findOne({ productId: id });
+    const isCartExist = await carts.findOne({ productId: id }).populate('productId', 'name').exec();
     if (!isCartExist) {
       product = await products.findById(id);
       if (!product) {
@@ -709,7 +751,7 @@ exports.getCartById = async (req, res) => {
     // } catch (redisError) {
     //   console.error(redisError)
     // }
-    const cart = await carts.findById(id);
+    const cart = await carts.findById(id).populate('productId', 'name').exec();
 
     if (!cart) {
       return res.status(404).json({
@@ -749,7 +791,7 @@ exports.updateCart = async (req, res) => {
       });
     }
     const { quantity } = req.body;
-    const update = await carts.findById(id);
+    const update = await carts.findById(id).populate('productId', 'name').exec();
     if (!update) {
       return res.status(404).json({
         success: false,

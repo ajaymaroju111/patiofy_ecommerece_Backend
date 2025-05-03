@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const crypto = require("crypto");
-const {categories, size, fabric} = require('../utils/data.js');
+const {categoriesNames, sizeNames, fabricNames} = require('../utils/data.js');
 
 const productschema = new mongoose.Schema(
   {
@@ -27,23 +27,27 @@ const productschema = new mongoose.Schema(
     },
     price: {
       type: Number,
-      require: [true, "price shouls not be empty for the post"],
+      required: [true, "price shouls not be empty for the post"],
     },
     size: {
       type: String,
       required: [true, "size is required"],
+      lowercase: true,
     },
     fabric: {
       type: String,
       required: [true, "Fabric type is Required"],
+      lowercase: true,
     },
     category: {
       type: String,
       required: true,
+      lowercase: true,
     },
     tags: {
       type: String,
       required: true,
+      lowercase: true,
     },
     discount: {
       type: Number,
@@ -57,6 +61,11 @@ const productschema = new mongoose.Schema(
       type: String,
       enum: ['instock', 'outstock'],
       default: 'instock',
+    },
+    viewIn : {
+      type: String,
+      enum: ['new_collection', 'best_seller', 'both', 'none'],
+      default: 'none',
     },
     savedPrice: {
       type: Number,
@@ -98,29 +107,29 @@ productschema.pre("save", async function (next) {
   next();
 });
 
-productschema.pre("save", async function (next) {
-  if(this.isModified("category")){
-    if(!categories.includes(this.category)){
-      categories.push(this.category);
-    }
-  }
-  next();
-})
-productschema.pre("save", async function (next) {
-  if(this.isModified("size")){
-    if(!size.includes(this.category)){
-      size.push(this.category);
-    }
-  }
-  next();
-})
-productschema.pre("save", async function (next) {
-  if(this.isModified("fabric")){
-    if(!fabric.includes(this.category)){
-      fabric.push(this.category);
-    }
-  }
-  next();
-})
+// productschema.pre("save", async function (next) {
+//   if(this.isModified("category")){
+//     if(!categoriesNames.includes(this.category)){
+//       categoriesNames.push(this.category);
+//     }
+//   }
+//   next();
+// })
+// productschema.pre("save", async function (next) {
+//   if(this.isModified("size")){
+//     if(!sizeNames.includes(this.size)){
+//       sizeNames.push(this.size);
+//     }
+//   }
+//   next();
+// })
+// productschema.pre("save", async function (next) {
+//   if(this.isModified("fabric")){
+//     if(!fabricNames.includes(this.fabric)){
+//       fabricNames.push(this.fabric);
+//     }
+//   }
+//   next();
+// })
 
 module.exports = mongoose.model("products", productschema);
