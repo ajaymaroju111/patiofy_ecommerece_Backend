@@ -3376,6 +3376,18 @@ paths:
             type: string
             example: "6610f7b5b8eab4abc1234567"
           description: The ID of the product to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - viewin
+              properties:
+                viewin:
+                  type: string
+                  example: "new_collection"
       responses:
         '200':
           description: Product published successfully
