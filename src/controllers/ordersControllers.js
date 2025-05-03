@@ -97,9 +97,40 @@ const carts = require("../models/cartschema.js");
 //   }
 // };
 
+exports.getLatestSavedAddress = async(req, res) => {
+  try {
+    const latestAddress = await userAddresses.find({userId: req.user._id}).sort({ _id : -1}).limit(1);
+    if(!latestAddress){
+      return req.status(404).json({
+        success: false,
+        message: "address not found",
+        error: "Not Found",
+      })
+    }
+    return res.status(200).json({
+      success: true,
+      id : latestAddress._id,
+      data : latestAddress
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: true,
+      message: "Internal Server Error",
+      error : error
+    })
+  }
+}
+
 exports.makeOrder = async (req, res) => {
   try {
     const { id } = req.params; //product id :
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ID",
+        error: "Bad Request",
+      })
+    }
     const {
       email,
       phone,
@@ -109,7 +140,7 @@ exports.makeOrder = async (req, res) => {
       address,
       city,
       state,
-      addressId,
+      // addressId,
       quantity,
     } = req.body;
 
@@ -120,7 +151,7 @@ exports.makeOrder = async (req, res) => {
         error: "Bad Request",
       });
     }
-
+    const lastAddress = await userAddresses.findOne({userId : req.user._id}).sort({ _id : -1});
     var newAddress;
     if (country && firstname && lastname && address && city && state) {
       newAddress = await userAddresses.create({
@@ -133,6 +164,7 @@ exports.makeOrder = async (req, res) => {
         state,
       });
     }
+    
     const product = await products.findById(id);
     if (!product) {
       const isaCart = await carts.findById(id);
@@ -146,7 +178,7 @@ exports.makeOrder = async (req, res) => {
       const newOrder = await orders.create({
         userId: req.user_id || undefined,
         productId: isaCart.productId,
-        shipping_addressId: newAddress._id || addressId,
+        shipping_addressId: newAddress._id || lastAddress._id,
         phone: phone,
         email: email || undefined,
         shipping_cost: isaCart.shipping_cost,
@@ -159,30 +191,32 @@ exports.makeOrder = async (req, res) => {
         order_id: newOrder._id,
       });
     }
-    if (addressId) {
-      const shippingAddress = await userAddresses.findById(addressId);
-      if (!shippingAddress) {
-        return res.status(404).json({
-          success: false,
-          message: "Address not found",
-          error: "Not Found",
-        });
-      }
-    }
+    // if (addressId) {
+    //   const shippingAddress = await userAddresses.findById(addressId);
+    //   if (!shippingAddress) {
+    //     return res.status(404).json({
+    //       success: false,
+    //       message: "Address not found",
+    //       error: "Not Found",
+    //     });
+    //   }
+    // }
 
     const newOrder = await orders.create({
-      userId: req.user_id || undefined,
+      userId: req.user_id,
       productId: id,
-      shipping_addressId: addressId || newAddress._id,
+      shipping_addressId: lastAddress._id || newAddress._id,
       phone: phone,
       email: email || undefined,
       shipping_cost: product.shipping_cost,
       final_cost: product.discountPrice * quantity + product.shipping_cost,
     });
+    await newOrder.save();
     return res.status(200).json({
       success: true,
       message: `your order placed successfully : ${newOrder.orderId}`,
       order_id: newOrder._id,
+      data: newOrder
     });
   } catch (error) {
     console.log(error);
@@ -193,6 +227,7 @@ exports.makeOrder = async (req, res) => {
     });
   }
 };
+
 //cancel order :
 exports.cancelOrder = async (req, res) => {
   try {

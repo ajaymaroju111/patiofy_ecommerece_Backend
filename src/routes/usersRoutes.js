@@ -73,8 +73,10 @@ router.get("/failed", (req, res) => {
 router.put('/google/:id', setNewPassword);
 router.post("/signup", signUp);
 router.get("/verify", verify);
+router.get("/verify", verify);
 router.post("/resend", resend);
 router.post("/signin", signIn);
+router.put("/update", authenticate, update);
 router.get("/me/:id", authenticate, getById);
 router.post("/password/forget", forgetPassword);
 router.post("/password/change", authenticate, changePassword);

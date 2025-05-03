@@ -4278,9 +4278,9 @@ paths:
                 state:
                   type: string
                   example: "CA"
-                addressId:
-                  type: string
-                  example: "661e21fc3b7cf9eb45ae09cd"
+                # addressId:
+                #   type: string
+                #   example: "661e21fc3b7cf9eb45ae09cd"
                 quantity:
                   type: integer
                   example: 2
