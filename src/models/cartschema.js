@@ -27,7 +27,6 @@ const cartSchema = new mongoose.Schema({
     type: Number,
   },
   final_price:{
-    
     type: Number,
   },
   shipping_cost:{

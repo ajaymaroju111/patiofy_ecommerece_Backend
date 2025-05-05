@@ -97,39 +97,42 @@ const carts = require("../models/cartschema.js");
 //   }
 // };
 
-exports.getLatestSavedAddress = async(req, res) => {
+exports.getLatestSavedAddress = async (req, res) => {
   try {
-    const latestAddress = await userAddresses.find({userId: req.user._id}).sort({ _id : -1}).limit(1);
-    if(!latestAddress){
+    const latestAddress = await userAddresses
+      .find({ userId: req.user._id })
+      .sort({ _id: -1 })
+      .limit(1);
+    if (!latestAddress) {
       return req.status(404).json({
         success: false,
         message: "address not found",
         error: "Not Found",
-      })
+      });
     }
     return res.status(200).json({
       success: true,
-      id : latestAddress._id,
-      data : latestAddress
-    })
+      id: latestAddress._id,
+      data: latestAddress,
+    });
   } catch (error) {
     return res.status(500).json({
       success: true,
       message: "Internal Server Error",
-      error : error
-    })
+      error: error,
+    });
   }
-}
+};
 
 exports.makeOrder = async (req, res) => {
   try {
     const { id } = req.params; //product id :
-    if(!mongoose.Types.ObjectId.isValid(id)){
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: "Invalid ID",
         error: "Bad Request",
-      })
+      });
     }
     const {
       email,
@@ -151,11 +154,13 @@ exports.makeOrder = async (req, res) => {
         error: "Bad Request",
       });
     }
-    const lastAddress = await userAddresses.findOne({userId : req.user._id}).sort({ _id : -1});
+    const lastAddress = await userAddresses
+      .findOne({ userId: req.user._id })
+      .sort({ _id: -1 });
     var newAddress;
     if (country && firstname && lastname && address && city && state) {
       newAddress = await userAddresses.create({
-        userId: req.user._id || undefined,
+        userId: req.user._id,
         country,
         firstname,
         lastname,
@@ -163,8 +168,11 @@ exports.makeOrder = async (req, res) => {
         city,
         state,
       });
+      await newAddress.save();
     }
-    
+
+    console.log(newAddress);
+
     const product = await products.findById(id);
     if (!product) {
       const isaCart = await carts.findById(id);
@@ -176,19 +184,19 @@ exports.makeOrder = async (req, res) => {
         });
       }
       const newOrder = await orders.create({
-        userId: req.user_id || undefined,
+        userId: req.user_id,
         productId: isaCart.productId,
         shipping_addressId: newAddress._id || lastAddress._id,
         phone: phone,
         email: email || undefined,
         shipping_cost: isaCart.shipping_cost,
-        final_cost:
-          isaCart.discountedPrice * isaCart.quantity + isaCart.shipping_cost,
+        final_cost: isaCart.discountedPrice * isaCart.quantity + isaCart.shipping_cost,
       });
       return res.status(200).json({
         success: true,
         message: `your order placed successfully : ${newOrder.orderId}`,
         order_id: newOrder._id,
+        userId: newOrder.userId
       });
     }
     // if (addressId) {
@@ -216,7 +224,7 @@ exports.makeOrder = async (req, res) => {
       success: true,
       message: `your order placed successfully : ${newOrder.orderId}`,
       order_id: newOrder._id,
-      data: newOrder
+      data: newOrder,
     });
   } catch (error) {
     console.log(error);
@@ -454,7 +462,7 @@ exports.getOrderById = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "order not found",
-        error: "Not Found"
+        error: "Not Found",
       });
     }
     // try {
@@ -466,7 +474,7 @@ exports.getOrderById = async (req, res) => {
       success: true,
       cached: false,
       data: order,
-    })
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,

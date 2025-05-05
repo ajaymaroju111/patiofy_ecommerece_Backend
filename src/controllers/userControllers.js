@@ -14,10 +14,19 @@ const orders = require("../models/ordersschema.js");
 exports.setNewPassword = async (req, res) => {
   try {
     const { id } = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(401).json({
+        success: false,
+        message: "Invalid ID",
+        error: "Bad Request"
+      })
+    }
     const { newpassword } = req.body;
     if (!newpassword) {
       return res.status(400).json({
-        error: "password is required",
+        success: false,
+        message: "password is required",
+        error: "Bad Request"
       });
     }
     const update = await users.findById(id);
@@ -25,6 +34,7 @@ exports.setNewPassword = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "User not found",
+        error: "Not Found"
       });
     }
     update.password = newpassword;
@@ -52,7 +62,9 @@ exports.signUp = async (req, res) => {
 
     if (existed) {
       return res.status(401).json({
-        error: "email already exist, try another",
+        success: false,
+        message: "email already exist, try another",
+        error: "Bad Request"
       });
     }
     const User = await users.create({
@@ -122,17 +134,27 @@ exports.verify = async (req, res) => {
     const { verificationKey } = req.query;
     //decode the encoded email
     const decodedId = Buffer.from(verificationKey, "base64").toString("utf-8");
+    if(!decodedId){
+      return res.status(404).json({
+        success: false,
+        message : "Authentication code not found",
+        error: "Not Found",
+      })
+    }
     const User = await users.findById(decodedId);
     if (!User) {
       return res.status(404).json({
         success: false,
         message: "user does not exist",
+        error: 'Not Found',
       });
     }
     //timer for the account activation
     if (Date.now() > User.jwtExpiry || User.jwtExpiry === undefined) {
       return res.status(401).json({
-        error: "session expired",
+        success: false,
+        message: "session time expired",
+        error: "Session Expired",
       });
     }
     User.status = "active";
@@ -158,7 +180,9 @@ exports.signIn = async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({
-        error: "all fileds are required",
+        success: false,
+        message: "all fileds are required",
+        error: "Bad Request"
       });
     }
     const user = await users.findOne({
@@ -166,13 +190,17 @@ exports.signIn = async (req, res) => {
     });
     if (!user) {
       return res.status(401).json({
-        error: "Incorrect Email",
+        success: false,
+        message: "Incorrect Email",
+        error: "Bad Request",
       });
     }
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
       return res.status(401).json({
-        error: "password doesn't match",
+        success: false,
+        message: "password doesn't match",
+        error: "Bad Request"
       });
     }
     const token = generateUserToken(user);
@@ -202,21 +230,17 @@ exports.getById = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Invalid user ID format",
-      });
-    }
-    if (!id) {
-      return res.status(400).json({
-        success: false,
-        message: "Authentication Error",
+        error: 'Bad Request',
       });
     }
     const user = await users
       .findById(req.user._id)
-      .select("firstname lastname email -_id");
+      .select("firstname lastname email ");
     if (!user) {
       return res.status(404).json({
         success: false,
         message: "user does not exist",
+        error: "Not Found",
       });
     }
     return res.status(200).json({
@@ -238,13 +262,17 @@ exports.forgetPassword = async (req, res) => {
     const { email } = req.body;
     if (!email) {
       return res.status(400).json({
-        error: "email is reqiured",
+        success: false,
+        message: "email is reqiured",
+        error: "Bad Request",
       });
     }
     const user = await users.findOne({ email });
     if (!user) {
-      return res.status(401).json({
-        error: "user doesn't exist",
+      return res.status(404).json({
+        success: false,
+        message: "user doesn't found",
+        error: "Bad Request",
       });
     }
     const fullname = user.firstname + " " + user.lastname;
@@ -253,7 +281,7 @@ exports.forgetPassword = async (req, res) => {
       subject: "forget password link",
       text: forgetPassword(fullname),
     });
-    return res.status(200).json({
+    return res.status(204).json({
       success: true,
       message: "reset password link sent to the email",
     });
@@ -272,19 +300,22 @@ exports.setPassword = async (req, res) => {
     const { email, newpassword } = req.body;
     if (!email || !newpassword) {
       return res.status(400).json({
-        error: "All fields are required",
+        success: false,
+        message: "All fields are required",
+        error: "Bad Request",
       });
     }
     const user = await users.findOne({ email });
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: " incorrect email",
+        message: "user not found",
+        error: "Not Found",
       });
     }
     user.password = newpassword;
     await user.save();
-    return res.status(200).json({
+    return res.status(204).json({
       success: true,
       message: "new password updated , please login",
     });
@@ -316,13 +347,15 @@ exports.changePassword = async (req, res) => {
     const isPassword = await user.comparePassword(oldpassword);
     if (!isPassword) {
       return res.status(401).json({
-        error: "incorrect password",
+        success: false,
+        message: "incorrect password",
+        error: 'Bad Request'
       });
     }
     user.password = newpassword;
     await user.save();
     return res
-      .status(200)
+      .status(204)
       .json({ message: "password updated successfully, Please Login" });
   } catch (error) {
     return res.status(500).json({
@@ -345,7 +378,7 @@ exports.update = async (req, res) => {
     const updatedData = {};
     allowed.forEach((field) => {
       if(req.body[field] !== undefined){
-        allowed[field] = req.body[field];
+        updatedData[field] = req.body[field];
       }
     });
     const updatedUser = await users.findByIdAndUpdate(
