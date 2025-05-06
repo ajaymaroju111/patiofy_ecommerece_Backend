@@ -38,7 +38,7 @@ cartSchema.pre('save', async function(next){
   if(this.final_price === 0 || this.final_price === 0 ){
     this.final_price = this.discountedPrice
   }
-})
+}) 
 
 
 module.exports = mongoose.model('carts' , cartSchema);
