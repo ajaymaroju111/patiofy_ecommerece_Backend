@@ -184,7 +184,7 @@ exports.makeOrder = async (req, res) => {
         });
       }
       const newOrder = await orders.create({
-        userId: req.user_id,
+        userId: req.user._id,
         productId: isaCart.productId,
         shipping_addressId: newAddress._id || lastAddress._id,
         phone: phone,
@@ -499,6 +499,7 @@ exports.viewAllOrders = async (req, res) => {
     // } catch (cacheError) {
     //   console.error(cacheError);
     // }
+    console.log(req.user._id)
     const allorders = await orders
       .find({ userId: req.user._id })
       .select("-userId, -productId");

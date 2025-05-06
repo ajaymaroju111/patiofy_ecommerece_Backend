@@ -19,13 +19,17 @@ const {
   findBestSellerProducts,
   viewProductsStock,
   getFilterNames,
+  searchProducts,
+  trendingCollections,
 } = require('../controllers/productControllers.js');
 
 // product Routes : 
 router.get("/filter", filterProducts); 
+router.get("/search", searchProducts);
 router.get("/filternames", getFilterNames); 
 router.get("/stock", viewProductsStock);
 router.get('/bestsellers', findBestSellerProducts);       
+router.get('/trending', trendingCollections);       
 router.get('/latest', newCollections);
 router.get('/', getAllProducts);       
 router.get('/:id', getProductById);

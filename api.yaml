@@ -1025,6 +1025,87 @@ paths:
         '500':
           description: Internal Server Error
 
+  /patiofy/auth/products/search:
+    get:
+      summary: Search for products
+      tags:
+        - products
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: The search query for product name, description, category, or tags.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful search response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "search products received successfully"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: "12345"
+                        name:
+                          type: string
+                          example: "Product Name"
+                        description:
+                          type: string
+                          example: "Product Description"
+                        category:
+                          type: string
+                          example: "Category Name"
+                        tags:
+                          type: array
+                          items:
+                            type: string
+                            example: "tag1"
+        '404':
+          description: Products not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "products not found"
+                  error:
+                    type: string
+                    example: "Not Found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Internal Server Error"
+                  error:
+                    type: string
+                    example: "Error details"
+
   /patiofy/auth/products/filternames:
      get:
       summary: Get available filter names
@@ -1283,6 +1364,65 @@ paths:
   /patiofy/auth/products/bestsellers:
     get:
       summary: Get best-selling products
+      tags:
+        - products
+      security:
+        - BearerAuth: []
+      description: Returns a list of products with more than 500 sales, sorted by creation time. Supports pagination.
+      responses:
+        '200':
+          description: Best-selling products retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: best sellers found successfully
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+        '404':
+          description: No best sellers found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: best sellers are empty
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Error object
+
+  /patiofy/auth/products/trending:
+    get:
+      summary: Get trending products
       tags:
         - products
       security:
@@ -4349,6 +4489,81 @@ paths:
                   error:
                     type: string
   
+  /patiofy/auth/user/order/myorders:
+    get:
+      summary: Retrieve all orders for a user
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      description: Fetches all orders associated with the authenticated user.
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Successful retrieval of orders
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+              cached:
+                type: boolean
+                example: false
+              data:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    orderId:
+                      type: string
+                      example: "12345"
+                    productId:
+                      type: string
+                      example: "67890"
+                    quantity:
+                      type: integer
+                      example: 2
+                    totalPrice:
+                      type: number
+                      format: float
+                      example: 19.99
+        '404':
+          description: No orders found
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: "order are empty"
+              error:
+                type: string
+                example: "Not Found"
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: "Internal Server Error"
+              error:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: "Error"
+                  message:
+                    type: string
+                    example: "Detailed error message"
+         
   /patiofy/auth/user/order/cancel/{id}:
     put:
       summary: Cancel an order by ID

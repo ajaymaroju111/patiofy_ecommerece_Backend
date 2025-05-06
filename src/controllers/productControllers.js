@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const { default: mongoose } = require("mongoose");
 const reviews = require("../models/reviewschema.js");
 const products = require("../models/productschema.js");
+const { options } = require("../routes/orderRoutes.js");
 // const { categoriesNames, sizeNames, fabricNames } = require("../utils/data.js");
 // const {getFileBaseUrl} = require('../middlewares/multer.js')
 // const redis = require('../utils/redisConfig.js');
@@ -211,7 +212,7 @@ exports.getProductById = async (req, res) => {
       .findById(id)
       .select(
         "-userId, -shipping_cost, -ProductStatus, -createdAt, -updatedAt -number_of_sales"
-      );
+      ).populate('rating', 'finfinalRating');
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -267,7 +268,7 @@ exports.getAllProducts = async (req, res) => {
       .find({ ProductStatus: "unpublished" })
       .select(
         "-createdAt, -updatedAt, -ProductStatus, -userId -number_of_sales -shipping_cost"
-      )
+      ).populate('rating', 'finfinalRating')
       .skip(skip)
       .limit(limit)
       .exec();
@@ -581,7 +582,7 @@ exports.viewProductsStock = async (req, res) => {
 exports.newCollections = async (req, res) => {
   try {
     const newCollections = await products
-      .find({ $or: [{viewIn: 'new_collection'}, {viewIn: 'both'}]});
+      .find({ $or: [{viewIn: 'new_collection'}, {viewIn: 'new_best'},{viewIn: 'new_trnd'}, {viewIn: 'all'}]});
     if (!newCollections || newCollections.length === 0) {
       return res.status(404).json({
         success: false,
@@ -603,11 +604,36 @@ exports.newCollections = async (req, res) => {
   }
 };
 
+exports.trendingCollections = async(req, res) => {
+  try {
+    const trendingCollections = await products
+      .find({ $or: [{viewIn: 'trending'}, {viewIn: 'new_trnd'},{viewIn: 'best_trend'}, {viewIn: 'all'}]});
+    if (!trendingCollections || trendingCollections.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Collections are empty",
+        error: "Not Found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "collection retrieved successfully",
+      data: trendingCollections,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    });
+  }
+}
+
 //finding the best seller :
 exports.findBestSellerProducts = async (req, res) => {
   try {
     const bestsellers = await products
-      .find({ $or: [{ viewIn: 'best_seller'}, {viewIn: 'both'}]});
+      .find({ $or: [{ viewIn: 'best_seller'}, {viewIn: 'new_best'}, {viewIn: 'best_trend'}, {viewIn: 'all'}]});
     if (!bestsellers || bestsellers.length === 0) {
       return res.status(404).json({
         success: false,
@@ -626,6 +652,38 @@ exports.findBestSellerProducts = async (req, res) => {
       message: "Internal Server Error",
       error: error,
     });
+  }
+};
+
+exports.searchProducts = async(req, res) => {
+  try {
+    const query = req.query.q;
+    const output = products.find({
+      $or: [
+        {name : {$regex : query, $options: 'i'}},
+        {description : {$regex : query, $options : 'i'}},
+        {category : {$regex : query, $options : 'i'}},
+        {tags : {$regex : query, $options : 'i'}}
+      ]
+    });
+    if(!output || (await output).length === 0){
+      return res.status(404).json({
+        success: false,
+        message: "products not found",
+        error: "Not Found"
+      })
+    }
+    return res.status(200).json({
+      success: false,
+      message: "search products recieved successfully",
+      data: output,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error : error
+    })
   }
 };
 //*****************         PRODUCT CART ROUTES               ***********************/

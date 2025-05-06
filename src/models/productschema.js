@@ -1,6 +1,4 @@
 const mongoose = require("mongoose");
-const crypto = require("crypto");
-const {categoriesNames, sizeNames, fabricNames} = require('../utils/data.js');
 
 const productschema = new mongoose.Schema(
   {
@@ -64,7 +62,7 @@ const productschema = new mongoose.Schema(
     },
     viewIn : {
       type: String,
-      enum: ['new_collection', 'best_seller', 'both', 'none'],
+      enum: ['new_collection', 'best_seller', 'new_best','trending','new_trnd', 'best_trend','all', 'none'],
       default: 'none',
     },
     savedPrice: {
@@ -82,6 +80,10 @@ const productschema = new mongoose.Schema(
     shipping_cost:{
       type: Number,
       default: 0,
+    },
+    rating: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref : 'reviews',
     }
   },
   { timestamps: true }
@@ -107,29 +109,11 @@ productschema.pre("save", async function (next) {
   next();
 });
 
-// productschema.pre("save", async function (next) {
-//   if(this.isModified("category")){
-//     if(!categoriesNames.includes(this.category)){
-//       categoriesNames.push(this.category);
-//     }
-//   }
-//   next();
-// })
-// productschema.pre("save", async function (next) {
-//   if(this.isModified("size")){
-//     if(!sizeNames.includes(this.size)){
-//       sizeNames.push(this.size);
-//     }
-//   }
-//   next();
-// })
-// productschema.pre("save", async function (next) {
-//   if(this.isModified("fabric")){
-//     if(!fabricNames.includes(this.fabric)){
-//       fabricNames.push(this.fabric);
-//     }
-//   }
-//   next();
-// })
+productschema.pre('save', async function(next){
+  if(this.isModified('_id')){
+    this.rating = this._id;
+  }
+  next();
+})
 
 module.exports = mongoose.model("products", productschema);
