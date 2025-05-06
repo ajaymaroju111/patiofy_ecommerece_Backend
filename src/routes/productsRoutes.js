@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { 
   authenticate,
- } = require('../middlewares/authUser.js');
+} = require('../middlewares/authUser.js');
 
 const {
   getAllProducts,

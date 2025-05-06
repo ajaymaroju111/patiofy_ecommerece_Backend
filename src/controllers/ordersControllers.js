@@ -434,6 +434,7 @@ exports.addbillingAddress = async (req, res) => {
   }
 };
 
+//get an order by id : 
 exports.getOrderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -484,6 +485,7 @@ exports.getOrderById = async (req, res) => {
   }
 };
 
+//get all orders: 
 exports.viewAllOrders = async (req, res) => {
   try {
     // const cacheKey = `orders:all`;

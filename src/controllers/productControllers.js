@@ -658,7 +658,7 @@ exports.findBestSellerProducts = async (req, res) => {
 exports.searchProducts = async(req, res) => {
   try {
     const query = req.query.q;
-    const output = products.find({
+    const output = await products.find({
       $or: [
         {name : {$regex : query, $options: 'i'}},
         {description : {$regex : query, $options : 'i'}},
@@ -679,6 +679,7 @@ exports.searchProducts = async(req, res) => {
       data: output,
     });
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
