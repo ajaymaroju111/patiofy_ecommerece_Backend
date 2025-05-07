@@ -4904,7 +4904,87 @@ paths:
                     type: string
                     example: Some internal error message
 
-
+  /patiofy/auth/user/order/verify-payment:
+    post:
+      summary: Verify Razorpay payment
+      tags:
+        - Payments
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - razorpay_order_id
+                - razorpay_payment_id
+                - razorpay_signature
+                - order_id
+              properties:
+                razorpay_order_id:
+                  type: string
+                  example: order_LWzn7Wq8W5FDFt
+                razorpay_payment_id:
+                  type: string
+                  example: pay_LWznP45gy7B7El
+                razorpay_signature:
+                  type: string
+                  example: 9e2e0a85a0f5e4cc8e5c254c7f7e5cb5aa15c20d59d2d86c1a...
+                order_id:
+                  type: string
+                  description: Internal order ID from your database (MongoDB ObjectId)
+                  example: 665abc1234f5a6c7890def01
+      responses:
+        '200':
+          description: Payment verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Payment verified successfully
+                  data:
+                    type: object
+                    description: Updated order document
+        '400':
+          description: Bad request due to invalid signature or order ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Payment signature verification failed
+                  error:
+                    type: string
+                    example: Bad Request
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal server error
+                  error:
+                    type: string
+                    example: Signature generation failed
 
 
 

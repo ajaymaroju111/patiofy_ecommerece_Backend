@@ -30,17 +30,17 @@ exports.setUserInactive = async (req, res) => {
         message: "user not found",
       });
     }
-    if (user.status === "inactive") {
+    if (user.status === "terminate") {
       res.status(204).json({
         success: false,
-        message: "account already in inactive state",
+        message: "account already in terminate state",
         error: "No Content",
       });
     }
-    (user.status = "inactive"), await user.save();
+    (user.status = "terminate"), await user.save();
     return res.status(200).json({
       success: true,
-      message: "user account set inactive successfully",
+      message: "user account set terminate successfully",
     });
   } catch (error) {
     return res.status(500).json({

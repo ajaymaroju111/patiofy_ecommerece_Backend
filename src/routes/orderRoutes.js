@@ -8,16 +8,20 @@ const {
   addShippingAddress,
   addbillingAddress,
   viewAllOrders,
+  verifyPayment,
 } = require('../controllers/ordersControllers.js');
 
 //add cart to the orders : 
 //add product to product without
 // router.post('/:id', authenticate, makeOrderWithoutCart);
 //cancel the order : 
+router.post('/verify-payment', authenticate, verifyPayment);
 router.put('/cancel/:id', authenticate, cancelOrder);
 router.get('/myorders', authenticate, viewAllOrders);
 router.put('/shipaddress/:id', authenticate, addShippingAddress);
 router.put('/billaddress/:id', authenticate, addbillingAddress);
 router.post('/:id', authenticate, makeOrder);
 
+
+// payment routes : 
 module.exports = router;

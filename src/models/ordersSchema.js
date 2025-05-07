@@ -50,6 +50,17 @@ const orderSchema = new mongoose.Schema({
     enum: ['unpaid', 'paid', 'refunded'],
     default: 'unpaid',
   },
+  paymentInfo: {
+    razorpay_payment_id: {
+      type: String,
+    },
+    razorpay_order_id:{
+      type: String
+    },
+    razorpay_signature: {
+      type: String
+    },
+  },
   Date:{
     type: Date,
     default: Date.now(),

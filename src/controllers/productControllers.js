@@ -946,12 +946,27 @@ exports.getRatingById = async (req, res) => {
 exports.ratingProduct = async (req, res) => {
   try {
     const { id } = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(401).json({
+        success: false,
+        message : "Invalid product ID",
+        error: "Bad Request",
+      })
+    }
     const { rating } = req.body;
     if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({
         success: false,
         error: "Please provide a valid rating (1 - 5)",
       });
+    }
+    const product = await products.findById(id);
+    if(!product){
+      return res.status(404).json({
+        success: false,
+        message: "product not found",
+        error: "Not Found"
+      })
     }
     const rate = await reviews.findOne({ productId: id });
     if (!rate) {
@@ -1004,6 +1019,8 @@ exports.ratingProduct = async (req, res) => {
       rate.finalRating =
         totalCount > 0 ? Math.round((totalScore / totalCount) * 10) / 10 : 0;
     }
+    product.rating = rate.finalRating;
+    await product.save();
     // await rate.save();
     return res.status(200).json({
       success: true,

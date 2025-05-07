@@ -3,6 +3,10 @@ const orders = require("../models/ordersschema.js");
 const products = require("../models/productschema.js");
 const userAddresses = require("../models/addressschema.js");
 const carts = require("../models/cartschema.js");
+const crypto = require('crypto');
+require('dotenv').config();
+
+
 // const redis = require("../utils/redisConfig.js");
 
 //create an order:
@@ -137,12 +141,23 @@ exports.makeOrder = async (req, res) => {
     const {
       email,
       phone,
+      // shipping :{
       country,
       firstname,
       lastname,
       address,
       city,
       state,
+      // },
+      // billing: {
+      Bcountry,
+      Bfirstname,
+      Blastname,
+      Baddress,
+      Bcity,
+      Bstate,
+      Bphone,
+      // },
       // addressId,
       quantity,
     } = req.body;
@@ -170,8 +185,27 @@ exports.makeOrder = async (req, res) => {
       });
       await newAddress.save();
     }
-
-    console.log(newAddress);
+    var billAddress;
+    if (
+      Bcountry &&
+      Bfirstname &&
+      Blastname &&
+      Baddress &&
+      Bcity &&
+      Bstate &&
+      Bphone
+    ) {
+      billAddress = await userAddresses.create({
+        userId: req.user._id,
+        country: Bcountry,
+        firstname: Bfirstname,
+        lastname: Blastname,
+        address: Baddress,
+        city: Bcity,
+        state: Bstate,
+        phone: Bphone,
+      });
+    }
 
     const product = await products.findById(id);
     if (!product) {
@@ -186,17 +220,28 @@ exports.makeOrder = async (req, res) => {
       const newOrder = await orders.create({
         userId: req.user._id,
         productId: isaCart.productId,
-        shipping_addressId: newAddress._id || lastAddress._id,
+        shipping_addressId: newAddress?._id || lastAddress?._id,
+        billing_addressId: billAddress?._id || lastAddress?._id,
         phone: phone,
         email: email || undefined,
         shipping_cost: isaCart.shipping_cost,
-        final_cost: isaCart.discountedPrice * isaCart.quantity + isaCart.shipping_cost,
+        final_cost:
+          isaCart.discountedPrice * isaCart.quantity + isaCart.shipping_cost,
       });
       return res.status(200).json({
         success: true,
         message: `your order placed successfully : ${newOrder.orderId}`,
         order_id: newOrder._id,
-        userId: newOrder.userId
+        userId: newOrder.userId,
+        data: await (
+          await newOrder.populate(
+            "shipping_addressId",
+            "country firstname lastname Address city state"
+          )
+        ).populate(
+          "billing_addressId",
+          "country firstname lastname Address city state phone"
+        ),
       });
     }
     // if (addressId) {
@@ -211,20 +256,31 @@ exports.makeOrder = async (req, res) => {
     // }
 
     const newOrder = await orders.create({
-      userId: req.user_id,
+      userId: req.user._id,
       productId: id,
-      shipping_addressId: lastAddress._id || newAddress._id,
+      shipping_addressId: newAddress?._id || lastAddress?._id,
+      billing_addressId: billAddress?._id || lastAddress?._id,
       phone: phone,
       email: email || undefined,
       shipping_cost: product.shipping_cost,
       final_cost: product.discountPrice * quantity + product.shipping_cost,
     });
     await newOrder.save();
+    // const receipt = await newOrder.populate('shipping_addressId', 'country, firstname, lastname, Address, city, state').populate('billing_addressId',  'country, firstname, lastname, Address, city, state');
     return res.status(200).json({
       success: true,
       message: `your order placed successfully : ${newOrder.orderId}`,
       order_id: newOrder._id,
-      data: newOrder,
+      data: await (
+        await newOrder.populate(
+          "shipping_addressId",
+          "country firstname lastname Address city state"
+        )
+      ).populate(
+        "billing_addressId",
+        "country firstname lastname Address city state phone"
+      ),
+      // data : receipt
     });
   } catch (error) {
     console.log(error);
@@ -434,7 +490,7 @@ exports.addbillingAddress = async (req, res) => {
   }
 };
 
-//get an order by id : 
+//get an order by id :
 exports.getOrderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -485,7 +541,7 @@ exports.getOrderById = async (req, res) => {
   }
 };
 
-//get all orders: 
+//get all orders:
 exports.viewAllOrders = async (req, res) => {
   try {
     // const cacheKey = `orders:all`;
@@ -501,7 +557,7 @@ exports.viewAllOrders = async (req, res) => {
     // } catch (cacheError) {
     //   console.error(cacheError);
     // }
-    console.log(req.user._id)
+    console.log(req.user._id);
     const allorders = await orders
       .find({ userId: req.user._id })
       .select("-userId, -productId");
@@ -530,3 +586,69 @@ exports.viewAllOrders = async (req, res) => {
     });
   }
 };
+
+//////////////**********************   Payment Gateways       ************************************/
+
+
+exports.verifyPayment = async (req, res) => {
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      order_id, // your own database order ID
+    } = req.body;
+    if(!mongoose.Types.ObjectId.isValid(order_id)){
+      return res.status(400).json({
+        success: false,
+        messsage: "Invalid ID",
+        error: "Bad Request",
+      })
+    }
+
+    // 1. Generate the signature using Razorpay secret
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_SECRET)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest('hex');
+
+    // 2. Verify that signatures match
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment signature verification failed',
+        error: "Bad Request",
+      });
+    }
+
+    // 3. Mark order as paid 
+    const updatedOrder = await orders.findByIdAndUpdate(
+      order_id,
+      {
+        payment_status: 'paid',
+        payment_mode: 'online',
+        paymentInfo: {
+          razorpay_payment_id,
+          razorpay_order_id,
+          razorpay_signature,
+        },
+      },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Payment verified successfully',
+      data: updatedOrder,
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};
+

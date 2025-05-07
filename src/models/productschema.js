@@ -82,8 +82,7 @@ const productschema = new mongoose.Schema(
       default: 0,
     },
     rating: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref : 'reviews',
+      type: String,
     }
   },
   { timestamps: true }

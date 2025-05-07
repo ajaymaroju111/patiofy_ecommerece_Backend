@@ -26,12 +26,15 @@ const addressSchaema = new mongoose.Schema(
     },
     city: {
       type: String,
-      required: [true, "village name is required"],
+      required: [true, "city name is required"],
     },
     state: {
       type: String,
       required: [true, "state is required"],
     },
+    phone: {
+      type: Number
+    }
   },
   { timestamps: true }
 );
