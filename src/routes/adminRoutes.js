@@ -74,7 +74,7 @@ router.get('/orders/pending', authenticate, isAdmin, viewAllPendingOrders);
 router.get('/payment/success', authenticate, isAdmin, viewAllSuccessPaymentOrders);
 router.get('/payment/pending', authenticate, isAdmin, viewAllUnSuccessPaymentOrders);
 
-// /admin account Management : 
+//admin account Management : 
 router.get('/myProducts',authenticate, isAdmin, myProducts);
 router.get('/:id',  authenticate, isAdmin, getById);
 
