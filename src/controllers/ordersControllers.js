@@ -3,9 +3,8 @@ const orders = require("../models/ordersschema.js");
 const products = require("../models/productschema.js");
 const userAddresses = require("../models/addressschema.js");
 const carts = require("../models/cartschema.js");
-const crypto = require('crypto');
-require('dotenv').config();
-
+const crypto = require("crypto");
+require("dotenv").config();
 
 // const redis = require("../utils/redisConfig.js");
 
@@ -433,6 +432,7 @@ exports.addShippingAddress = async (req, res) => {
     });
   }
 };
+
 //adding billing address :
 exports.addbillingAddress = async (req, res) => {
   try {
@@ -589,7 +589,6 @@ exports.viewAllOrders = async (req, res) => {
 
 //////////////**********************   Payment Gateways       ************************************/
 
-
 exports.verifyPayment = async (req, res) => {
   try {
     const {
@@ -598,35 +597,35 @@ exports.verifyPayment = async (req, res) => {
       razorpay_signature,
       order_id, // your own database order ID
     } = req.body;
-    if(!mongoose.Types.ObjectId.isValid(order_id)){
+    if (!mongoose.Types.ObjectId.isValid(order_id)) {
       return res.status(400).json({
         success: false,
         messsage: "Invalid ID",
         error: "Bad Request",
-      })
+      });
     }
 
     // 1. Generate the signature using Razorpay secret
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_SECRET)
+      .createHmac("sha256", process.env.RAZORPAY_SECRET)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest('hex');
+      .digest("hex");
 
     // 2. Verify that signatures match
     if (expectedSignature !== razorpay_signature) {
       return res.status(400).json({
         success: false,
-        message: 'Payment signature verification failed',
+        message: "Payment signature verification failed",
         error: "Bad Request",
       });
     }
 
-    // 3. Mark order as paid 
+    // 3. Mark order as paid
     const updatedOrder = await orders.findByIdAndUpdate(
       order_id,
       {
-        payment_status: 'paid',
-        payment_mode: 'online',
+        payment_status: "paid",
+        payment_mode: "online",
         paymentInfo: {
           razorpay_payment_id,
           razorpay_order_id,
@@ -638,17 +637,15 @@ exports.verifyPayment = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Payment verified successfully',
+      message: "Payment verified successfully",
       data: updatedOrder,
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error',
+      message: "Internal server error",
       error: error.message,
     });
   }
 };
-
