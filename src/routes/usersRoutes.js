@@ -46,9 +46,17 @@ router.get(
     const { user, token } = req.user;
     // If password is not set (new user via Google), redirect to set password
     const newUser = await users.findById(user._id);
-    if (!newUser.password) {     //this only works when select : true in schema which is by default value 
-      return res.redirect("/patiofy/auth/user/google/password");
+    if(!newUser){
+      return res.status(404).json({
+        success: false,
+        message: "User not Found",
+        error: "Not Found"
+      })
     }
+    // if (!newUser.password) {     //this only works when select : true in schema which is by default value 
+    //   // return res.redirect("/patiofy/auth/user/google/password");
+    //   return
+    // }
     // return res.redirect("/patiofy/auth/user/home");
     return res.status(200).json({
       success: true,

@@ -558,8 +558,10 @@ exports.viewAllOrders = async (req, res) => {
     //   console.error(cacheError);
     // }
     const allorders = await orders
-      .find({ userId: req.user._id })
-      .select("-userId, -productId");
+      .find();
+    // const allorders = await orders
+    //   .find({ userId: req.user._id })
+    //   .select("-userId, -productId");
     if (!allorders || allorders.length === 0) {
       return res.status(404).json({
         success: false,
