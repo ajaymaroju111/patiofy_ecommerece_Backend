@@ -557,7 +557,6 @@ exports.viewAllOrders = async (req, res) => {
     // } catch (cacheError) {
     //   console.error(cacheError);
     // }
-    console.log(req.user._id);
     const allorders = await orders
       .find({ userId: req.user._id })
       .select("-userId, -productId");
@@ -587,7 +586,7 @@ exports.viewAllOrders = async (req, res) => {
   }
 };
 
-//////////////**********************   Payment Gateways       ************************************/
+//////////////**********************   Payment Gateways      *************************************/
 
 exports.verifyPayment = async (req, res) => {
   try {
