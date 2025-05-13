@@ -4489,6 +4489,95 @@ paths:
                   error:
                     type: string
   
+  /patiofy/auth/user/order/lastaddress:
+    get:
+      summary: Get the latest saved addresses of the authenticated user
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Latest address(es) fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Address found Successfully
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Address'
+        '404':
+          description: Address not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Address not found
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+      # components:
+      #  schemas:
+      #    Address:
+      #      type: object
+      #      properties:
+      #        _id:
+      #          type: string
+      #          example: 661a0e2f123abc4567890def
+      #        userId:
+      #          type: string
+      #          example: 661a0d1e123abc4567890dea
+      #        country:
+      #          type: string
+      #          example: India
+      #        firstname:
+      #          type: string
+      #          example: John
+      #        lastname:
+      #          type: string
+      #          example: Doe
+      #        address:
+      #          type: string
+      #          example: 123 Main Street
+      #        city:
+      #          type: string
+      #          example: Mumbai
+      #        state:
+      #          type: string
+      #          example: Maharashtra
+      #        phone:
+      #          type: string
+      #          example: "+919876543210"
+
   /patiofy/auth/user/order/myorders:
     get:
       summary: Retrieve all orders for a user

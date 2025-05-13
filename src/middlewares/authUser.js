@@ -26,14 +26,17 @@ exports.authenticate = async (req, res, next) => {
     // Verify the token
     const token = bearerKey.split(" ")[1];
     const decode = jwt.verify(token, process.env.JWT_SECRET);
-    // Check account status :
-    if (decode.status !== "active") {
+    if (!decode) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+    // Fetch user from DB
+    const user = await users.findById(decode.id);
+     // Check account status :
+    if (user.status !== "active") {
       return res
         .status(403)
         .json({ error: "Account is inactive. Please verify." });
     }
-    // Fetch user from DB
-    const user = await users.findById(decode.id);
     req.user = user;
     next();
   } catch (error) {

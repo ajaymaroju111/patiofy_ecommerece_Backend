@@ -187,7 +187,7 @@ exports.signIn = async (req, res) => {
     }
     const user = await users.findOne({
       email: email,
-    });
+    }).select('password firstname lastname');
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -209,11 +209,12 @@ exports.signIn = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "login successfully",
+      JWTtoken: token,
       username: user.firstname + " " + user.lastname,
       userID: user._id,
-      JWTtoken: token,
-    });
+    });       
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",

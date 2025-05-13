@@ -6,7 +6,7 @@ const orderSchema = new mongoose.Schema({
     ref: 'users'
   },
   productId:{
-    type: mongoose.Schema.Types.ObjectId,
+    type: [mongoose.Schema.Types.ObjectId],
     ref: 'products',
   },
   orderId:{
@@ -23,7 +23,7 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'conformed', 'out_of_delivery', 'delivered', 'completed', 'cancelled', 'returned', 'failed', 'refunded' ],
+    enum: ['pending', 'conformed', 'delivered', 'completed', 'cancelled', 'returned', 'failed', 'refunded' ],
     default: 'pending',
   },
   shipping_cost:{
@@ -51,16 +51,10 @@ const orderSchema = new mongoose.Schema({
     default: 'unpaid',
   },
   paymentInfo: {
-    razorpay_payment_id: {
-      type: String,
+      razorpay_payment_id: String,
+      razorpay_order_id: String,
+      razorpay_signature: String,
     },
-    razorpay_order_id:{
-      type: String
-    },
-    razorpay_signature: {
-      type: String
-    },
-  },
   Date:{
     type: Date,
     default: Date.now(),
@@ -70,31 +64,27 @@ const orderSchema = new mongoose.Schema({
 );
 
 function generateOrderId() {
-  const prefix = 'ORDPATIOFY'; 
-  const timestamp = Date.now(); 
-  const random = Math.floor(Math.random() * 10000); // 4-digit random number
+  const prefix = "ORDPATIOFY";
+  const timestamp = Date.now();
+  const random = Math.floor(Math.random() * 10000);
   return `${prefix}${timestamp}${random}`;
 }
 
-orderSchema.pre('save', async function(next){
-  if(this.isModified('productId')){
-    this.orderId =  generateOrderId();
+orderSchema.pre("save", function (next) {
+  if (!this.orderId) {
+    this.orderId = generateOrderId();
   }
-  next();
-});
 
-orderSchema.pre('save', async function(next){
-  if(this.isModified('shipping_cost')){
-    this.final_cost += this.shipping_cost;
-  }
-  next();
-})
-
-orderSchema.pre('save', function (next) {
-  if (this.billing_addressId === 0 || this.billing_addressId == null) {
+  if (!this.billing_addressId) {
     this.billing_addressId = this.shipping_addressId;
   }
+
+  if (!this.final_cost && this.shipping_cost) {
+    this.final_cost = this.shipping_cost; // fallback default if not calculated
+  }
+
   next();
 });
+
 
 module.exports = mongoose.model('orders', orderSchema);
