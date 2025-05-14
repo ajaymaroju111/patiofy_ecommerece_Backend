@@ -5010,7 +5010,6 @@ paths:
                 - razorpay_order_id
                 - razorpay_payment_id
                 - razorpay_signature
-                - order_id
               properties:
                 razorpay_order_id:
                   type: string
@@ -5021,10 +5020,6 @@ paths:
                 razorpay_signature:
                   type: string
                   example: 9e2e0a85a0f5e4cc8e5c254c7f7e5cb5aa15c20d59d2d86c1a...
-                order_id:
-                  type: string
-                  description: Internal order ID from your database (MongoDB ObjectId)
-                  example: 665abc1234f5a6c7890def01
       responses:
         '200':
           description: Payment verified successfully

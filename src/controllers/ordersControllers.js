@@ -344,6 +344,7 @@ exports.getLastAddress = async(req, res) => {
   }
 }
 
+//place an order with array of cart products and mono product
 exports.makeOrder = async (req, res) => {
   try {
     const { id } = req.params; // can be single product id or comma-separated cart ids
@@ -366,6 +367,7 @@ exports.makeOrder = async (req, res) => {
       Bstate,
       Bphone,
       quantity,
+      total_pay,
     } = req.body;
 
     if (!phone) {
@@ -439,14 +441,15 @@ exports.makeOrder = async (req, res) => {
         },
       });
 
-      const populatedOrder = await newOrder
-        .populate("shipping_addressId", "country firstname lastname address city state")
+      const populatedOrder = await (await newOrder
+        .populate("shipping_addressId", "country firstname lastname address city state"))
         .populate("billing_addressId", "country firstname lastname address city state phone");
 
       return res.status(200).json({
         success: true,
         message: `Your product order was placed successfully`,
         order_id: newOrder._id,
+        razorpay_orderId: razorpayOrder.id,
         data: populatedOrder,
       });
 
@@ -454,18 +457,18 @@ exports.makeOrder = async (req, res) => {
       // Multiple cart IDs
       const allOrders = [];
 
+      const razorpayOrder = await razorpay.orders.create({
+          amount: total_pay * 100,
+          currency: "INR",
+          receipt: `receipt#${Date.now()}`,
+          payment_capture: 1,
+        }); 
+
       for (let cartId of ids) {
         if (!mongoose.Types.ObjectId.isValid(cartId)) continue;
 
         const cart = await carts.findById(cartId);
         if (!cart) continue;
-
-        const razorpayOrder = await razorpay.orders.create({
-          amount: (cart.discountedPrice * cart.quantity + cart.shipping_cost) * 100,
-          currency: "INR",
-          receipt: `receipt#${Date.now()}`,
-          payment_capture: 1,
-        });
 
         const newOrder = await orders.create({
           userId: req.user._id,
@@ -477,16 +480,15 @@ exports.makeOrder = async (req, res) => {
           shipping_cost: cart.shipping_cost,
           final_cost: (cart.discountedPrice * cart.quantity + cart.shipping_cost),
           payment_mode: "online",
-          cartId: cartId,
           paymentInfo: {
             razorpay_order_id: razorpayOrder.id,
           },
         });
 
-        const populatedOrder = await newOrder
-          .populate("shipping_addressId", "country firstname lastname address city state")
-          .populate("billing_addressId", "country firstname lastname address city state phone")
-          .populate("cartId", "quantity discountedPrice");
+        const populatedOrder = await(await (await newOrder
+          .populate("shipping_addressId", "country firstname lastname address city state"))
+          .populate("billing_addressId", "country firstname lastname address city state phone"))
+          .populate("productId", " discountedPrice");
 
         allOrders.push(populatedOrder);
       }
@@ -494,6 +496,7 @@ exports.makeOrder = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: "Your cart orders were placed successfully",
+        razorpay_orderId: razorpayOrder.id,
         orders: allOrders,
       });
     }
