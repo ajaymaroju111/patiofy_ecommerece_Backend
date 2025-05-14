@@ -368,6 +368,7 @@ exports.makeOrder = async (req, res) => {
       Bphone,
       quantity,
       total_pay,
+      payment_mode,
     } = req.body;
 
     if (!phone) {
@@ -434,10 +435,10 @@ exports.makeOrder = async (req, res) => {
         phone,
         email,
         shipping_cost: product.shipping_cost,
+        payment_mode: payment_mode,
         final_cost: (product.discountPrice * quantity + product.shipping_cost),
-        payment_mode: "online",
         paymentInfo: {
-          razorpay_order_id: razorpayOrder.id,
+          razorpay_order_id: payment_mode === 'online'?razorpayOrder.id: undefined,
         },
       });
 
@@ -478,13 +479,13 @@ exports.makeOrder = async (req, res) => {
           phone,
           email,
           shipping_cost: cart.shipping_cost,
+          payment_mode: payment_mode,
           final_cost: (cart.discountedPrice * cart.quantity + cart.shipping_cost),
-          payment_mode: "online",
           paymentInfo: {
-            razorpay_order_id: razorpayOrder.id,
+            razorpay_order_id: payment_mode === 'online'?razorpayOrder.id: undefined,
           },
         });
-
+        await carts.deleteOne({_id : cart});
         const populatedOrder = await(await (await newOrder
           .populate("shipping_addressId", "country firstname lastname address city state"))
           .populate("billing_addressId", "country firstname lastname address city state phone"))
@@ -872,10 +873,10 @@ exports.viewAllOrders = async (req, res) => {
 
 exports.verifyPayment = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, order_id } =
       req.body;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !order_id) {
       return res.status(400).json({
         success: false,
         message: "Missing payment details",
@@ -900,10 +901,9 @@ exports.verifyPayment = async (req, res) => {
 
     // 3. Find your order in DB by your internal order_id mapped to razorpay_order_id
     const updatedOrder = await orders.findOneAndUpdate(
-      { razorpay_order_id },
+      { _id: order_id},
       {
         payment_status: "paid",
-        payment_mode: "online",
         paymentInfo: {
           razorpay_payment_id,
           razorpay_order_id,

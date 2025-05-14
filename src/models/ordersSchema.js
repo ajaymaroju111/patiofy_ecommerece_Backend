@@ -44,6 +44,7 @@ const orderSchema = new mongoose.Schema({
   payment_mode: {
     type: String,
     enum: ['online', 'COD'],
+    default: 'COD'
   },
   payment_status: {
     type: String,
