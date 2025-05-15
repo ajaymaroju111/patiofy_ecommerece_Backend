@@ -319,36 +319,38 @@ exports.getLatestSavedAddress = async (req, res) => {
 //   }
 // };
 
-//get the latest Address of the user : 
-exports.getLastAddress = async(req, res) => {
+//get the latest Address of the user :
+exports.getLastAddress = async (req, res) => {
   try {
-    const lastAddress = await userAddresses.findOne({userId: req.user._id}).sort({ _id: -1 });
-    if(!lastAddress){
+    const lastAddress = await userAddresses
+      .findOne({ userId: req.user._id })
+      .sort({ _id: -1 });
+    if (!lastAddress) {
       return res.status(404).json({
         success: false,
         message: "Address not found",
         error: "Not Found",
-      })
+      });
     }
     return res.status(200).json({
       success: false,
       message: "Address found Successfully",
-      data: lastAddress
-    })
+      data: lastAddress,
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Interna Server Error",
       error: error,
-    })
+    });
   }
-}
+};
 
 //place an order with array of cart products and mono product
 exports.makeOrder = async (req, res) => {
   try {
     const { id } = req.params; // can be single product id or comma-separated cart ids
-    const ids = id.includes(',') ? id.split(',') : [id];
+    const ids = id.includes(",") ? id.split(",") : [id];
 
     const {
       email,
@@ -378,8 +380,27 @@ exports.makeOrder = async (req, res) => {
         error: "Bad Request",
       });
     }
+    if (!total_pay) {
+      return res.status(400).json({
+        success: false,
+        message: "total pay is required",
+        error: "Bad Request",
+      });
+    }
 
-    const lastAddress = await userAddresses.findOne({ userId: req.user._id }).sort({ _id: -1 });
+    // let total_cost = Math.ceil(total_pay * 100) / 100;
+
+    if(Math.round(total_pay*100) !== total_pay*100){
+      return res.status(401).json({
+        success: false,
+        message: "total_pay must be contain only two digits after the decimal",
+        error: "Bad Request",
+      })
+    }
+
+    const lastAddress = await userAddresses
+      .findOne({ userId: req.user._id })
+      .sort({ _id: -1 });
     let newAddress;
     if (country && firstname && lastname && address && city && state) {
       newAddress = await userAddresses.create({
@@ -395,7 +416,15 @@ exports.makeOrder = async (req, res) => {
     }
 
     let billAddress;
-    if (Bcountry && Bfirstname && Blastname && Baddress && Bcity && Bstate && Bphone) {
+    if (
+      Bcountry &&
+      Bfirstname &&
+      Blastname &&
+      Baddress &&
+      Bcity &&
+      Bstate &&
+      Bphone
+    ) {
       billAddress = await userAddresses.create({
         userId: req.user._id,
         country: Bcountry,
@@ -408,7 +437,10 @@ exports.makeOrder = async (req, res) => {
       });
     }
 
-    const isSingleProduct = ids.length === 1 && mongoose.Types.ObjectId.isValid(ids[0]) && await products.findById(ids[0]);
+    const isSingleProduct =
+      ids.length === 1 &&
+      mongoose.Types.ObjectId.isValid(ids[0]) &&
+      (await products.findById(ids[0]));
 
     if (isSingleProduct) {
       const product = await products.findById(ids[0]);
@@ -421,7 +453,8 @@ exports.makeOrder = async (req, res) => {
       }
 
       const razorpayOrder = await razorpay.orders.create({
-        amount: (product.discountPrice * quantity + product.shipping_cost) * 100,
+        amount:
+          total_pay,
         currency: "INR",
         receipt: `receipt#${Date.now()}`,
         payment_capture: 1,
@@ -434,17 +467,26 @@ exports.makeOrder = async (req, res) => {
         billing_addressId: billAddress?._id || lastAddress?._id,
         phone,
         email,
-        shipping_cost: product.shipping_cost,
+        quantity: quantity,
         payment_mode: payment_mode,
-        final_cost: (product.discountPrice * quantity + product.shipping_cost),
+        final_cost: product.discountPrice * quantity,
         paymentInfo: {
-          razorpay_order_id: payment_mode === 'online'?razorpayOrder.id: undefined,
+          razorpay_order_id:
+            payment_mode === "online" ? razorpayOrder.id : undefined,
         },
       });
 
-      const populatedOrder = await (await newOrder
-        .populate("shipping_addressId", "country firstname lastname address city state"))
-        .populate("billing_addressId", "country firstname lastname address city state phone");
+      const populatedOrder = await (
+        await (
+          await newOrder.populate(
+            "shipping_addressId",
+            "country firstname lastname address city state"
+          )
+        ).populate(
+          "billing_addressId",
+          "country firstname lastname address city state phone"
+        )
+      ).populate("productId", "discountedPrice");
 
       return res.status(200).json({
         success: true,
@@ -453,17 +495,16 @@ exports.makeOrder = async (req, res) => {
         razorpay_orderId: razorpayOrder.id,
         data: populatedOrder,
       });
-
     } else {
       // Multiple cart IDs
       const allOrders = [];
 
       const razorpayOrder = await razorpay.orders.create({
-          amount: total_pay * 100,
-          currency: "INR",
-          receipt: `receipt#${Date.now()}`,
-          payment_capture: 1,
-        }); 
+        amount: total_pay,
+        currency: "INR",
+        receipt: `receipt#${Date.now()}`,
+        payment_capture: 1,
+      });
 
       for (let cartId of ids) {
         if (!mongoose.Types.ObjectId.isValid(cartId)) continue;
@@ -478,18 +519,26 @@ exports.makeOrder = async (req, res) => {
           billing_addressId: billAddress?._id || lastAddress?._id,
           phone,
           email,
-          shipping_cost: cart.shipping_cost,
+          quantity: cart.quantity,
           payment_mode: payment_mode,
-          final_cost: (cart.discountedPrice * cart.quantity + cart.shipping_cost),
+          final_cost: cart.discountedPrice * cart.quantity,
           paymentInfo: {
-            razorpay_order_id: payment_mode === 'online'?razorpayOrder.id: undefined,
+            razorpay_order_id:
+              payment_mode === "online" ? razorpayOrder.id : undefined,
           },
         });
-        await carts.deleteOne({_id : cart});
-        const populatedOrder = await(await (await newOrder
-          .populate("shipping_addressId", "country firstname lastname address city state"))
-          .populate("billing_addressId", "country firstname lastname address city state phone"))
-          .populate("productId", " discountedPrice");
+        await carts.deleteOne({ _id: cart });
+        const populatedOrder = await (
+          await (
+            await newOrder.populate(
+              "shipping_addressId",
+              "country firstname lastname address city state"
+            )
+          ).populate(
+            "billing_addressId",
+            "country firstname lastname address city state phone"
+          )
+        ).populate("productId", " discountedPrice");
 
         allOrders.push(populatedOrder);
       }
@@ -501,7 +550,6 @@ exports.makeOrder = async (req, res) => {
         orders: allOrders,
       });
     }
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -778,7 +826,7 @@ exports.viewAllOrders = async (req, res) => {
     // } catch (cacheError) {
     //   console.error(cacheError);
     // }
-    const allorders = await orders.find();
+    const allorders = await orders.find().populate('userId', 'discountPrice');
     // const allorders = await orders
     //   .find({ userId: req.user._id })
     //   .select("-userId, -productId");
@@ -797,7 +845,7 @@ exports.viewAllOrders = async (req, res) => {
     return res.status(200).json({
       success: false,
       cached: false,
-      data: allorders,
+      data: await allorders,
     });
   } catch (error) {
     return res.status(500).json({
@@ -873,10 +921,17 @@ exports.viewAllOrders = async (req, res) => {
 
 exports.verifyPayment = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, order_id } =
-      req.body;
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    } = req.body;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !order_id) {
+    if (
+      !razorpay_order_id ||
+      !razorpay_payment_id ||
+      !razorpay_signature
+    ) {
       return res.status(400).json({
         success: false,
         message: "Missing payment details",
@@ -898,33 +953,29 @@ exports.verifyPayment = async (req, res) => {
         error: "Invalid Signature",
       });
     }
-
-    // 3. Find your order in DB by your internal order_id mapped to razorpay_order_id
-    const updatedOrder = await orders.findOneAndUpdate(
-      { _id: order_id},
+    const updatedResult = await orders.updateMany(
+      { "paymentInfo.razorpay_order_id": razorpay_order_id },
       {
-        payment_status: "paid",
-        paymentInfo: {
-          razorpay_payment_id,
-          razorpay_order_id,
-          razorpay_signature,
+        $set: {
+          payment_status: "paid",
+          "paymentInfo.razorpay_payment_id": razorpay_payment_id,
+          "paymentInfo.razorpay_signature": razorpay_signature,
         },
-      },
-      { new: true }
+      }
     );
 
-    if (!updatedOrder) {
+    if (updatedResult.modifiedCount === 0) {
       return res.status(404).json({
         success: false,
-        message: "Order not found in database",
+        message: "No orders found with the given Razorpay Order ID",
         error: "Not Found",
       });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Payment verified successfully",
-      data: updatedOrder,
+      message: "Payment verified and orders updated successfully",
+      modifiedCount: updatedResult.modifiedCount,
     });
   } catch (error) {
     return res.status(500).json({

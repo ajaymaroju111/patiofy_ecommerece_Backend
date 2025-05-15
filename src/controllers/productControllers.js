@@ -11,7 +11,7 @@ const { options } = require("../routes/orderRoutes.js");
 //create a product Product :
 exports.createProduct = async (req, res) => {
   try {
-    const { name, description, price, size, fabric, category, tags } = req.body;
+    const { name, description, price, size, fabric, category, tags, rating } = req.body;
 
     if (
       !name ||
@@ -20,7 +20,8 @@ exports.createProduct = async (req, res) => {
       !size ||
       !fabric ||
       !category ||
-      !tags
+      !tags ||
+      !rating
     ) {
       return res.status(400).json({
         success: false,
@@ -63,6 +64,7 @@ exports.createProduct = async (req, res) => {
       fabric,
       category,
       tags,
+      rating,
     });
 
     return res.status(200).json({
@@ -265,7 +267,7 @@ exports.getAllProducts = async (req, res) => {
     //   console.error(redisError);
     // }
     const allproducts = await products
-      .find({ ProductStatus: "unpublished" })
+      .find({ ProductStatus: "published" })
       .select(
         "-createdAt, -updatedAt, -ProductStatus, -userId -number_of_sales -shipping_cost"
       ).populate('rating', 'finfinalRating')

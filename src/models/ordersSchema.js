@@ -33,6 +33,9 @@ const orderSchema = new mongoose.Schema({
   final_cost: {
     type: Number,
   },
+  quantity:{
+    type: Number,
+  },
   shipping_addressId:{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'userAddresses'

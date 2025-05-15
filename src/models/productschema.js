@@ -108,11 +108,11 @@ productschema.pre("save", async function (next) {
   next();
 });
 
-productschema.pre('save', async function(next){
-  if(this.isModified('_id')){
-    this.rating = this._id;
-  }
-  next();
-})
+// productschema.pre('save', async function(next){
+//   if(this.isModified('_id')){
+//     this.rating = this._id;
+//   }
+//   next();
+// })
 
 module.exports = mongoose.model("products", productschema);

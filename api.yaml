@@ -2518,6 +2518,10 @@ paths:
                   type: string
                   description: tags of the product
                   example: "Baby cradle, baby jhula"
+                rating:
+                  type: number
+                  description: rating of the product
+                  example: 4.5
                 images:
                   type: array
                   items:
