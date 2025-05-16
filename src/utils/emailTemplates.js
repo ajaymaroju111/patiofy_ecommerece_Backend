@@ -1,7 +1,4 @@
-
-
-
-exports.conformSignup = (username , securityKey) =>{
+exports.conformSignup = (username, securityKey) => {
   return `
  <!DOCTYPE html>
 <html lang="en">
@@ -122,10 +119,10 @@ exports.conformSignup = (username , securityKey) =>{
     </div>
 </body>
 </html>
-  `
-}
+  `;
+};
 
-exports.forgetPassword = (username) =>{
+exports.forgetPassword = (username) => {
   return `
   <!DOCTYPE html>
 <html lang="en">
@@ -196,10 +193,10 @@ exports.forgetPassword = (username) =>{
 </body>
 </html>
 
-  `
-}
+  `;
+};
 
-exports.forgetUsername = (fullname, username) =>{
+exports.forgetUsername = (fullname, username) => {
   return `
   <!DOCTYPE html>
 <html lang="en">
@@ -270,12 +267,12 @@ exports.forgetUsername = (fullname, username) =>{
 </body>
 </html>
 
-  `
-}
+  `;
+};
 
 exports.getSuccessMark = () => {
   return `
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -290,66 +287,77 @@ exports.getSuccessMark = () => {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
     }
 
     .success-container {
       text-align: center;
       background: white;
-      padding: 40px 30px;
+      padding: 2.5em 2em;
       border-radius: 12px;
       box-shadow: 0 6px 20px rgba(0, 128, 0, 0.1);
       max-width: 400px;
-      width: 90%;
+      width: 100%;
     }
 
     .success-icon {
-      background: #4CAF50;
-      color: white;
-      border-radius: 50%;
-      width: 80px;
-      height: 80px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 0 auto 20px;
-      font-size: 40px;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 1.5em;
+      animation: blink 1.5s infinite ease-in-out;
+    }
+
+    @keyframes blink {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.6;
+        transform: scale(1.1);
+      }
     }
 
     .success-message {
-      font-size: 24px;
+      font-size: 1.5em;
       color: #333;
-      margin-bottom: 10px;
+      margin-bottom: 0.5em;
     }
 
     .success-subtext {
       color: #666;
-      font-size: 16px;
+      font-size: 1em;
+      margin-bottom: 1.5em;
     }
 
-    @media (max-width: 480px) {
-      .success-container {
-        padding: 30px 20px;
-      }
-      .success-message {
-        font-size: 20px;
-      }
-      .success-subtext {
-        font-size: 14px;
-      }
+    .redirect-button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 0.6em 1.5em;
+      text-decoration: none;
+      border: none;
+      border-radius: 5px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .redirect-button:hover {
+      background-color: #45a049;
     }
   </style>
 </head>
 <body>
 
   <div class="success-container">
-    <div class="success-icon">✔</div>
+    <img src="../public/uploads/check.png" alt="Success Icon" class="success-icon" />
     <div class="success-message">Success!</div>
     <div class="success-subtext">Account verified successfully, please login.</div>
+    <a href="/" class="redirect-button">Go to Homepage</a>
   </div>
 
 </body>
 </html>
 
-  `
-}
+  `;
+};

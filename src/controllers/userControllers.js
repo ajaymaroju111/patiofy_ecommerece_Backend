@@ -153,7 +153,6 @@ exports.verify = async (req, res) => {
         error: "Not Found",
       })
     }
-    console.log(decodedId);
     const User = await users.findById(decodedId);
     if (!User) {
       return res.status(404).json({
@@ -179,9 +178,8 @@ exports.verify = async (req, res) => {
     //   // message: "Account verified successfully",
       
     // });
-    res.status(200).send(getSuccessMark);
+    res.status(200).send(getSuccessMark());
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
