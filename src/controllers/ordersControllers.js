@@ -390,12 +390,12 @@ exports.makeOrder = async (req, res) => {
 
     // let total_cost = Math.ceil(total_pay * 100) / 100;
 
-    if(Math.round(total_pay*100) !== total_pay*100){
+    if (Math.round(total_pay * 100) !== total_pay * 100) {
       return res.status(401).json({
         success: false,
         message: "total_pay must be contain only two digits after the decimal",
         error: "Bad Request",
-      })
+      });
     }
 
     const lastAddress = await userAddresses
@@ -453,8 +453,7 @@ exports.makeOrder = async (req, res) => {
       }
 
       const razorpayOrder = await razorpay.orders.create({
-        amount:
-          total_pay,
+        amount: total_pay,
         currency: "INR",
         receipt: `receipt#${Date.now()}`,
         payment_capture: 1,
@@ -571,6 +570,13 @@ exports.cancelOrder = async (req, res) => {
       });
     }
     const order = await orders.findById(id);
+    if (order.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "you are not authorized",
+        error: "UnAuthorized",
+      });
+    }
     if (!order) {
       return res.status(404).json({
         success: false,
@@ -783,7 +789,14 @@ exports.getOrderById = async (req, res) => {
     // } catch (cacheError) {
     //   console.error(cacheError);
     // }
-    const order = await orders.findById(id).select("-userId");
+    const order = await orders.findById(id);
+    if (order.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "you are not authorized",
+        error: "UnAuthorized",
+      });
+    }
     if (!order) {
       return res.status(404).json({
         success: false,
@@ -826,10 +839,21 @@ exports.viewAllOrders = async (req, res) => {
     // } catch (cacheError) {
     //   console.error(cacheError);
     // }
-    const allorders = await orders.find().populate('userId', 'discountPrice');
+    const allorders = await orders
+      .find({ userId: req.user._id })
+      .populate("productId", "discountPrice");
     // const allorders = await orders
     //   .find({ userId: req.user._id })
     //   .select("-userId, -productId");
+    for (const order of allorders) {
+      if (order.userId.toString() !== req.user._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to access this order.",
+          error: "Unauthorized",
+        });
+      }
+    }
     if (!allorders || allorders.length === 0) {
       return res.status(404).json({
         success: false,
@@ -921,17 +945,10 @@ exports.viewAllOrders = async (req, res) => {
 
 exports.verifyPayment = async (req, res) => {
   try {
-    const {
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-    } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+      req.body;
 
-    if (
-      !razorpay_order_id ||
-      !razorpay_payment_id ||
-      !razorpay_signature
-    ) {
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({
         success: false,
         message: "Missing payment details",
@@ -952,6 +969,18 @@ exports.verifyPayment = async (req, res) => {
         message: "Payment signature verification failed",
         error: "Invalid Signature",
       });
+    }
+    const isUser = await orders.find({
+      "paymentInfo.razorpay_order_id": razorpay_order_id,
+    });
+    for (const order of isUser) {
+      if (order.userId.toString() !== req.user._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to access this order.",
+          error: "Unauthorized",
+        });
+      }
     }
     const updatedResult = await orders.updateMany(
       { "paymentInfo.razorpay_order_id": razorpay_order_id },

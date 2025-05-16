@@ -18,7 +18,7 @@ const {
 //cancel the order : 
 router.post('/verify-payment', authenticate, verifyPayment);
 router.put('/cancel/:id', authenticate, cancelOrder);
-router.get('/myorders', viewAllOrders);   //this is public access of everyones order : 
+router.get('/myorders', authenticate, viewAllOrders);   //this is public access of everyones order : 
 // router.get('/myorders', authenticate, viewAllOrders);
 router.put('/shipaddress/:id', authenticate, addShippingAddress);
 router.put('/billaddress/:id', authenticate, addbillingAddress);

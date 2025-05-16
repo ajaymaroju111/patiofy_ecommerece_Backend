@@ -148,6 +148,9 @@ paths:
                   type: string
                   format: password
                   example: Ajay@110125
+                istermsandConditions:
+                  type: boolean
+                  example: true
       responses:
         '200':
           description: User created and verification email sent

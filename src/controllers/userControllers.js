@@ -4,10 +4,11 @@ const userAddresses = require("../models/addressschema.js");
 const queryForm = require("../models/contactschema.js");
 const { sendEmail } = require("../utils/sendEmail.js");
 const { generateUserToken } = require("../middlewares/authUser.js");
-const { conformSignup, forgetPassword } = require("../utils/emailTemplates.js");
+const { conformSignup, forgetPassword, getSuccessMark } = require("../utils/emailTemplates.js");
 const { default: mongoose } = require("mongoose");
 const carts = require("../models/cartschema.js");
 const orders = require("../models/ordersschema.js");
+// const path = require('path')
 // const redis = require("../utils/redisConfig.js");
 
 //set password after google oauth signup :
@@ -55,7 +56,7 @@ exports.setNewPassword = async (req, res) => {
 //account signup for user :
 exports.signUp = async (req, res) => {
   try {
-    const { firstname, lastname, email, password } = req.body;
+    const { firstname, lastname, email, password , istermsandConditions} = req.body;
     const existed = await users.findOne({
       $or: [{ email: email }],
     });
@@ -67,13 +68,24 @@ exports.signUp = async (req, res) => {
         error: "Bad Request"
       });
     }
+
+    if(!istermsandConditions || istermsandConditions === false){
+      return res.status(401).json({
+        success : false,
+        message: "terms and condition are not accespted",
+        error: "Bad Request"
+      })
+    }
+
     const User = await users.create({
       firstname,
       lastname,
       email,
       password,
     });
+    User.isTermsAndConditions  = istermsandConditions
     await User.save();
+    
     return res.status(200).json({
       success: true,
       message: "verification has been send to the email, please verify",
@@ -141,6 +153,7 @@ exports.verify = async (req, res) => {
         error: "Not Found",
       })
     }
+    console.log(decodedId);
     const User = await users.findById(decodedId);
     if (!User) {
       return res.status(404).json({
@@ -160,12 +173,15 @@ exports.verify = async (req, res) => {
     User.status = "active";
     User.jwtExpiry = undefined;
     await User.save();
-    return res.status(200).json({
-      redirect: "http://147.97.93.20:3000/patiofy/auth/user/signin",
-      success: true,
-      message: "Account verified successfully",
-    });
+    // return res.status(200).json({
+    //   // redirect: "http://147.97.93.20:3000/patiofy/auth/user/signin",
+    //   // success: true,
+    //   // message: "Account verified successfully",
+      
+    // });
+    res.status(200).send(getSuccessMark);
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -173,6 +189,8 @@ exports.verify = async (req, res) => {
     });
   }
 };
+
+//istermsAndConditions acceptrf
 
 //user sign in
 exports.signIn = async (req, res) => {
@@ -306,13 +324,20 @@ exports.setPassword = async (req, res) => {
         error: "Bad Request",
       });
     }
-    const user = await users.findOne({ email });
+    const user = await users.findOne({ email }).select("password _id");
     if (!user) {
       return res.status(404).json({
         success: false,
         message: "user not found",
         error: "Not Found",
       });
+    }
+    if(user._id.toString() !== req.user._id.toString()){
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized",
+        error: "UnAuthorized"
+      })
     }
     user.password = newpassword;
     await user.save();
@@ -338,7 +363,7 @@ exports.changePassword = async (req, res) => {
         error: "all fields are required",
       });
     }
-    const user = await users.findById(req.user._id);
+    const user = await users.findById(req.user._id).select("password");
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -555,6 +580,14 @@ exports.updateAddress = async (req, res) => {
         .json({ success: false, message: "Address not found" });
     }
 
+    if(current.userId.toString() !== req.user._id.toString()){
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized",
+        error: "UnAuthorized",
+      })
+    }
+
     const updateData = {};
     // Merge nested Shipping_Adderss
     const shippingFields = [
@@ -618,6 +651,13 @@ exports.getAddress = async (req, res) => {
         message: "Address not found",
       });
     }
+    if(address.userId.toString() !== req.user._id.toString()){
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized",
+        error: "UnAuthorized"
+      })
+    }
     return res.status(200).json({
       success: true,
       address,
@@ -634,6 +674,14 @@ exports.getAddress = async (req, res) => {
 exports.deleteAddress = async (req, res) => {
   try {
     const { id } = req.params;
+    const isUser = await userAddresses.findById(id);
+    if(isUser.userId.toString() !== req.user._id.toString()){
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized",
+        error: "UnAuthorized",
+      })
+    }
     const deleted = await userAddresses.findByIdAndDelete(id);
     if (!deleted) {
       return res.status(404).json({

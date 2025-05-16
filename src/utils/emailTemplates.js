@@ -272,3 +272,84 @@ exports.forgetUsername = (fullname, username) =>{
 
   `
 }
+
+exports.getSuccessMark = () => {
+  return `
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Success</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f4fdf4;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .success-container {
+      text-align: center;
+      background: white;
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0, 128, 0, 0.1);
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .success-icon {
+      background: #4CAF50;
+      color: white;
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto 20px;
+      font-size: 40px;
+    }
+
+    .success-message {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .success-subtext {
+      color: #666;
+      font-size: 16px;
+    }
+
+    @media (max-width: 480px) {
+      .success-container {
+        padding: 30px 20px;
+      }
+      .success-message {
+        font-size: 20px;
+      }
+      .success-subtext {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="success-container">
+    <div class="success-icon">✔</div>
+    <div class="success-message">Success!</div>
+    <div class="success-subtext">Account verified successfully, please login.</div>
+  </div>
+
+</body>
+</html>
+
+  `
+}

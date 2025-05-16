@@ -663,9 +663,9 @@ exports.searchProducts = async(req, res) => {
     const output = await products.find({
       $or: [
         {name : {$regex : query, $options: 'i'}},
-        {description : {$regex : query, $options : 'i'}},
-        {category : {$regex : query, $options : 'i'}},
-        {tags : {$regex : query, $options : 'i'}}
+        // {description : {$regex : query, $options : 'i'}},
+        // {category : {$regex : query, $options : 'i'}},
+        // {tags : {$regex : query, $options : 'i'}}
       ]
     });
     if(!output || (await output).length === 0){
@@ -813,7 +813,13 @@ exports.getCartById = async (req, res) => {
     //   console.error(redisError)
     // }
     const cart = await carts.findById(id).populate('productId', 'name').exec();
-
+    if(cart.userId.toString() !== req.user._id.toString()){
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized",
+        error: "UnAuthorized"
+      })
+    }
     if (!cart) {
       return res.status(404).json({
         success: false,
@@ -860,6 +866,13 @@ exports.updateCart = async (req, res) => {
         error: "Not Found",
       });
     }
+    if(update.userId.toString() !== req.user._id.toString()){
+      return res.status(403).json({
+        success: false,
+        message: "You are not Authorized",
+        error: "UnAuthorized"
+      })
+    }
     update.quantity = quantity;
     update.final_price = quantity * update.discountedPrice;
     await update.save();
@@ -888,6 +901,14 @@ exports.deleteCart = async (req, res) => {
         message: "Invalid cart ID",
         error: "Bad Request",
       });
+    }
+    const isUser = await carts.findById(id);
+    if(isUser.userId.toString !== req.user.id.toString()){
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized",
+        error: "UnAuthorized"
+      })
     }
     const deleted = await carts.findByIdAndDelete(id);
     if (!deleted) {
