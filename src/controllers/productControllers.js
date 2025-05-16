@@ -317,6 +317,7 @@ exports.deleteProduct = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "product not found",
+        error: "Not Found"
       });
     }
     const review = await reviews.deleteOne({ productId: id });
@@ -676,7 +677,7 @@ exports.searchProducts = async(req, res) => {
       })
     }
     return res.status(200).json({
-      success: false,
+      success: true,
       message: "search products recieved successfully",
       data: output,
     });
@@ -776,7 +777,7 @@ exports.addToCart = async (req, res) => {
       isCartExist.quantity * isCartExist.discountedPrice;
     await isCartExist.save();
     return res.status(200).json({
-      success: false,
+      success: true,
       message: " cart quantity updated successfully",
       data: isCartExist,
     });
@@ -903,7 +904,7 @@ exports.deleteCart = async (req, res) => {
       });
     }
     const isUser = await carts.findById(id);
-    if(isUser.userId.toString !== req.user.id.toString()){
+    if(isUser.userId.toString() !== req.user.id.toString()){
       return res.status(403).json({
         success: false,
         message: "You are not authorized",

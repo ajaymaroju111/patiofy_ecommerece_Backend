@@ -333,7 +333,7 @@ exports.getLastAddress = async (req, res) => {
       });
     }
     return res.status(200).json({
-      success: false,
+      success: true,
       message: "Address found Successfully",
       data: lastAddress,
     });
@@ -867,7 +867,7 @@ exports.viewAllOrders = async (req, res) => {
     //   console.error(redisError);
     // }
     return res.status(200).json({
-      success: false,
+      success: true,
       cached: false,
       data: await allorders,
     });

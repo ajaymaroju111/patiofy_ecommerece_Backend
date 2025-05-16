@@ -65,7 +65,7 @@ exports.viewAllUsers = async (req, res) => {
       });
     }
     return res.status(200).json({
-      success: false,
+      success: true,
       message: "users retrieved successfully",
       data: allusers,
     });
@@ -98,7 +98,7 @@ exports.viewUser = async (req, res) => {
       });
     }
     return res.status(200).json({
-      success: false,
+      success: true,
       message: "user retrieved successfully",
       data: user,
     });
@@ -142,7 +142,7 @@ exports.unPublishProduct = async (req, res) => {
     item.ProductStatus = "unpublished";
     await item.save();
     return res.status(200).json({
-      success: false,
+      success: true,
       message: "product set to unpublished successfully",
     });
   } catch (error) {
@@ -183,7 +183,7 @@ exports.publishProduct = async (req, res) => {
     item.ProductStatus = "published";
     await item.save();
     return res.status(200).json({
-      success: false,
+      success: true,
       message: "product set to published successfully",
     });
   } catch (error) {
