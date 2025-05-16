@@ -4,7 +4,7 @@ const userAddresses = require("../models/addressschema.js");
 const queryForm = require("../models/contactschema.js");
 const { sendEmail } = require("../utils/sendEmail.js");
 const { generateUserToken } = require("../middlewares/authUser.js");
-const { conformSignup, forgetPassword, getSuccessMark } = require("../utils/emailTemplates.js");
+const { conformSignup, forgetPassword, getSuccessMark, sessionExpired, userNotFound } = require("../utils/emailTemplates.js");
 const { default: mongoose } = require("mongoose");
 const carts = require("../models/cartschema.js");
 const orders = require("../models/ordersschema.js");
@@ -155,19 +155,11 @@ exports.verify = async (req, res) => {
     }
     const User = await users.findById(decodedId);
     if (!User) {
-      return res.status(404).json({
-        success: false,
-        message: "user does not exist",
-        error: 'Not Found',
-      });
+      return res.send(userNotFound());
     }
     //timer for the account activation
     if (Date.now() > User.jwtExpiry || User.jwtExpiry === undefined) {
-      return res.status(401).json({
-        success: false,
-        message: "session time expired",
-        error: "Session Expired",
-      });
+      return res.send(sessionExpired());
     }
     User.status = "active";
     User.jwtExpiry = undefined;

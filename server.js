@@ -48,6 +48,8 @@ const limiter = Limiter({
 });
 app.use(limiter);
 app.use(bodyParser.json());
+app.use(express.static('src/public'));
+
 
 // enable CORS :
 app.use(

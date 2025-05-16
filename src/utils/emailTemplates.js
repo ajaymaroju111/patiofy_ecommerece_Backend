@@ -348,12 +348,11 @@ exports.getSuccessMark = () => {
   </style>
 </head>
 <body>
-
   <div class="success-container">
-    <img src="../public/uploads/check.png" alt="Success Icon" class="success-icon" />
+    <img src="/images/check.png" alt="Success Icon" class="success-icon" />
     <div class="success-message">Success!</div>
     <div class="success-subtext">Account verified successfully, please login.</div>
-    <a href="/" class="redirect-button">Go to Homepage</a>
+    <a href="http://192.168.1.39:5173/" class="redirect-button">Go to Homepage</a>
   </div>
 
 </body>
@@ -361,3 +360,270 @@ exports.getSuccessMark = () => {
 
   `;
 };
+
+exports.sessionExpired = () => {
+ return `
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Session Expired</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .container {
+      background-color: white;
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .icon {
+      font-size: 60px;
+      margin-bottom: 20px;
+      color: #ff6b6b;
+      animation: pulse 1.5s infinite;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 15px;
+      color: #222;
+    }
+
+    p {
+      font-size: 16px;
+      margin-bottom: 25px;
+      color: #555;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 25px;
+      background-color: #007BFF;
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: background 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.15);
+        opacity: 0.6;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 30px 20px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      p {
+        font-size: 14px;
+      }
+
+      .btn {
+        font-size: 14px;
+        padding: 10px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">&#x23F3;</div>
+    <h1>Session Expired</h1>
+    <p>Your session has timed out due to inactivity or exceeded time limit.</p>
+    <a href="/" class="btn">Go to Homepage</a>
+  </div>
+</body>
+</html>
+
+ `
+};
+
+exports.userNotFound = () => {
+  return `
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Not Found</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f4f8;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      background-color: #ffffff;
+      padding: 3rem;
+      border-radius: 1rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .icon {
+      font-size: 70px;
+      color: #e63946;
+      margin-bottom: 1.5rem;
+      animation: pulse 1.6s infinite ease-in-out;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+      color: #1a1a1a;
+    }
+
+    p {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 2rem;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 1.8rem;
+      background-color: #007bff;
+      color: #fff;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-size: 1rem;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.1);
+        opacity: 0.7;
+      }
+    }
+
+    /* Responsive Styling */
+    @media (max-width: 768px) {
+      .container {
+        padding: 2rem;
+      }
+
+      .icon {
+        font-size: 60px;
+      }
+
+      h1 {
+        font-size: 1.75rem;
+      }
+
+      p {
+        font-size: 0.95rem;
+      }
+
+      .btn {
+        font-size: 0.95rem;
+        padding: 0.7rem 1.6rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 1.5rem;
+      }
+
+      .icon {
+        font-size: 50px;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      p {
+        font-size: 0.9rem;
+      }
+
+      .btn {
+        font-size: 0.9rem;
+        padding: 0.65rem 1.4rem;
+      }
+    }
+
+    @media (max-width: 360px) {
+      h1 {
+        font-size: 1.3rem;
+      }
+
+      .btn {
+        font-size: 0.85rem;
+        padding: 0.6rem 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">⚠️</div>
+    <h1>User Not Found</h1>
+    <p>Sorry, the user you're trying to find doesn't exist or may have been removed.</p>
+    <a href="/" class="btn">Return to Homepage</a>
+  </div>
+</body>
+</html>
+
+  `
+}
