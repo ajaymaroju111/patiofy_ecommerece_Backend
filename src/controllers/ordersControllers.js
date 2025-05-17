@@ -371,6 +371,7 @@ exports.makeOrder = async (req, res) => {
       quantity,
       total_pay,
       payment_mode,
+      saveNextTime,
     } = req.body;
 
     if (!phone) {
@@ -388,12 +389,13 @@ exports.makeOrder = async (req, res) => {
       });
     }
 
+    const totalPay = Number(total_pay)
     // let total_cost = Math.ceil(total_pay * 100) / 100;
 
-    if (Math.round(total_pay * 100) !== total_pay * 100) {
+    if (isNaN(totalPay)) {
       return res.status(401).json({
         success: false,
-        message: "total_pay must be contain only two digits after the decimal",
+        message: "total pay must be a number",
         error: "Bad Request",
       });
     }
@@ -453,22 +455,32 @@ exports.makeOrder = async (req, res) => {
       }
 
       const razorpayOrder = await razorpay.orders.create({
-        amount: total_pay,
+        amount: totalPay,
         currency: "INR",
         receipt: `receipt#${Date.now()}`,
         payment_capture: 1,
       });
-
+      if(isNaN(Number(quantity))){
+          return res.status(401).json({
+            message: "not a number quntity"
+          })
+        }
+      const finalCost = Number((product.discountPrice) * (quantity));
+      if(isNaN(finalCost)){
+          return res.status(401).json({
+            message: "not a "
+          })
+        }
       const newOrder = await orders.create({
         userId: req.user._id,
         productId: product._id,
-        shipping_addressId: newAddress?._id || lastAddress?._id,
-        billing_addressId: billAddress?._id || lastAddress?._id,
+        shipping_addressId: newAddress?._id,
+        billing_addressId: billAddress?._id,
         phone,
         email,
         quantity: quantity,
         payment_mode: payment_mode,
-        final_cost: product.discountPrice * quantity,
+        final_cost: finalCost,
         paymentInfo: {
           razorpay_order_id:
             payment_mode === "online" ? razorpayOrder.id : undefined,
@@ -487,6 +499,12 @@ exports.makeOrder = async (req, res) => {
         )
       ).populate("productId", "discountedPrice");
 
+      if(!saveNextTime){
+        await userAddresses.deleteMany({_id: req.user._id});
+      }
+      await userAddresses.findByIdAndDelete(billAddress?._id);
+      await userAddresses.deleteMany({_id: { $ne: lastAddress._id}});
+      
       return res.status(200).json({
         success: true,
         message: `Your product order was placed successfully`,
@@ -499,7 +517,7 @@ exports.makeOrder = async (req, res) => {
       const allOrders = [];
 
       const razorpayOrder = await razorpay.orders.create({
-        amount: total_pay,
+        amount: totalPay,
         currency: "INR",
         receipt: `receipt#${Date.now()}`,
         payment_capture: 1,
@@ -509,18 +527,30 @@ exports.makeOrder = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(cartId)) continue;
 
         const cart = await carts.findById(cartId);
-        if (!cart) continue;
-
+        if (!cart) {
+          return res.status(404).json({
+            success: false,
+            message: "cart does not exst ",
+            error: "Not Found"
+          })
+        };
+        const quantity = Number(cart.quantity)
+        const finalCost = Number((cart.discountedPrice)* quantity);
+        if(isNaN(finalCost)){
+          return res.status(401).json({
+            message: "not a number"
+          })
+        }
         const newOrder = await orders.create({
           userId: req.user._id,
           productId: cart.productId,
-          shipping_addressId: newAddress?._id || lastAddress?._id,
-          billing_addressId: billAddress?._id || lastAddress?._id,
+          shipping_addressId: newAddress?._id, 
+          billing_addressId: billAddress?._id,
           phone,
           email,
           quantity: cart.quantity,
           payment_mode: payment_mode,
-          final_cost: cart.discountedPrice * cart.quantity,
+          final_cost: finalCost,
           paymentInfo: {
             razorpay_order_id:
               payment_mode === "online" ? razorpayOrder.id : undefined,
@@ -541,6 +571,11 @@ exports.makeOrder = async (req, res) => {
 
         allOrders.push(populatedOrder);
       }
+      if(!saveNextTime){
+        await userAddresses.deleteMany({_id: req.user._id});
+      }
+      await userAddresses.findByIdAndDelete(billAddress?._id);
+      await userAddresses.deleteMany({_id: { $ne: lastAddress._id}});
 
       return res.status(200).json({
         success: true,

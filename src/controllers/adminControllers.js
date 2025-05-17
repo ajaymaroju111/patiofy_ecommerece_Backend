@@ -334,7 +334,7 @@ exports.viewAllInProgressOrders = async (req, res) => {
         message: "No current active orders",
       });
     }
-    res.status.json({
+    res.status(200).json({
       success: true,
       page: page,
       totla_items: allorders.length,
@@ -366,7 +366,7 @@ exports.viewAllRefundedOrders = async (req, res) => {
         message: "No refunded orders ",
       });
     }
-    res.status.json({
+    res.status(200).json({
       success: true,
       page: page,
       totla_items: allorders.length,
@@ -440,7 +440,7 @@ exports.viewAllCompletedOrders = async (req, res) => {
         message: "No completed  orders",
       });
     }
-    res.status.json({
+    res.status(200).json({
       success: true,
       page: page,
       totlal_pages: Math.ceil(allorders.length / 10),
@@ -477,7 +477,7 @@ exports.viewAllPendingOrders = async (req, res) => {
         message: "No completed  orders",
       });
     }
-    res.status.json({
+    res.status(200).json({
       success: true,
       page: page,
       totla_items: allorders.length,
@@ -515,7 +515,7 @@ exports.viewAllSuccessPaymentOrders = async (req, res) => {
         message: "No payment completed orders",
       });
     }
-    res.status.json({
+    res.status(200).json({
       success: true,
       page: page,
       totla_items: allorders.length,

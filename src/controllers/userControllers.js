@@ -244,7 +244,7 @@ exports.getById = async (req, res) => {
     }
     const user = await users
       .findById(req.user._id)
-      .select("firstname lastname email ");
+      .select("firstname lastname email Address phone");
     if (!user) {
       return res.status(404).json({
         success: false,

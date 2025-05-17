@@ -709,13 +709,13 @@ exports.viewAllCarts = async (req, res) => {
     //   console.error(redisError)
     // }
     const allCarts = await carts.find({ userId: req.user._id }).populate('productId', 'name').exec();
-    if (!allCarts || allCarts.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "cats are empty",
-        error: "Not Found",
-      });
-    }
+    // if (!allCarts || allCarts.length === 0) {
+    //   return res.status(404).json({
+    //     success: false,
+    //     message: "cats are empty",
+    //     error: "Not Found",
+    //   });
+    // }
     // try {
     //   await redis.set(cacheKey, JSON.stringify(allCarts), 'EX', 43200);
     // } catch (redisError) {
@@ -725,6 +725,7 @@ exports.viewAllCarts = async (req, res) => {
       succcess: true,
       cached: false,
       data: allCarts,
+      count: allCarts.length
     });
   } catch (error) {
     return res.status(500).json({

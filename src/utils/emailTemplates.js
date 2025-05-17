@@ -626,4 +626,4 @@ exports.userNotFound = () => {
 </html>
 
   `
-}
+};
