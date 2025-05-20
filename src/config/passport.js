@@ -10,6 +10,7 @@ passport.use(
       clientSecret: process.env.GOOGLE_SECRET_KEY,
       // callbackURL: process.env.NODE_ENV === "production"? process.env.PRODUCTION_CALLBACK_URL :process.env.CALLBACK_URL,
       callbackURL:process.env.CALLBACK_URL,
+      proxy: true,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {

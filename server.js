@@ -85,7 +85,8 @@ app.listen(port, () => {
   console.log(`Server is Running on the port : ${port}`);
   if(process.env.NODE_ENV === 'production'){
     console.log(
-      `Swagger - Docs are running on Production server: http://147.93.97.20:${port}/api-docs 🚀 `
+      `Swagger - Docs are running on Production server: http://147.93.97.20:${port}/api-docs 🚀 
+      Swagger - Docs are running on live Production server: https://patiofy.smartaihr.com/api-docs 🚀 `
     );
   }else{
     console.log(

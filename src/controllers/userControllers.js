@@ -195,7 +195,7 @@ exports.signIn = async (req, res) => {
     }
     const user = await users.findOne({
       email: email,
-    }).select('password firstname lastname');
+    }).select('password firstname lastname accountType');
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -214,12 +214,14 @@ exports.signIn = async (req, res) => {
     const token = generateUserToken(user);
     user.jwtExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
     await user.save();
+    const role = user.accountType;
     return res.status(200).json({
       success: true,
       message: "login successfully",
       JWTtoken: token,
       username: user.firstname + " " + user.lastname,
       userID: user._id,
+      role: role,
     });       
   } catch (error) {
     console.log(error);

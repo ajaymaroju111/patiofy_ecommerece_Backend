@@ -352,7 +352,7 @@ exports.getSuccessMark = () => {
     <img src="/images/check.png" alt="Success Icon" class="success-icon" />
     <div class="success-message">Success!</div>
     <div class="success-subtext">Account verified successfully, please login.</div>
-    <a href="http://192.168.1.39:5173/" class="redirect-button">Go to Homepage</a>
+    <a href="https://patiofy.comfortbikes.in/" class="redirect-button">Go to Homepage</a>
   </div>
 
 </body>
@@ -466,7 +466,7 @@ exports.sessionExpired = () => {
     <div class="icon">&#x23F3;</div>
     <h1>Session Expired</h1>
     <p>Your session has timed out due to inactivity or exceeded time limit.</p>
-    <a href="/" class="btn">Go to Homepage</a>
+    <a href="https://patiofy.comfortbikes.in/" class="btn">Go to Homepage</a>
   </div>
 </body>
 </html>
@@ -620,7 +620,7 @@ exports.userNotFound = () => {
     <div class="icon">⚠️</div>
     <h1>User Not Found</h1>
     <p>Sorry, the user you're trying to find doesn't exist or may have been removed.</p>
-    <a href="/" class="btn">Return to Homepage</a>
+    <a href="https://patiofy.comfortbikes.in/" class="btn">Return to Homepage</a>
   </div>
 </body>
 </html>
