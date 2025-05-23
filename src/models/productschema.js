@@ -6,15 +6,16 @@ const productschema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "users",
     },
-    postImages: [
-      {
-      name: String,
-      img: {
-        data: Buffer, // Binary image data
-        contentType: String, // Image type (jpeg/png)
-      },
-      },
-    ],
+    // postImages: [
+    //   {
+    //   name: String,
+    //   img: {
+    //     data: Buffer, // Binary image data
+    //     contentType: String, // Image type (jpeg/png)
+    //   },
+    //   },
+    // ],
+    imagesUrl: [{ type: String, required: true}],
     name: {
       type: String,
       required: [true, "product name is required"],
@@ -43,7 +44,7 @@ const productschema = new mongoose.Schema(
       lowercase: true,
     },
     tags: {
-      type: String,
+      type: [String],
       required: true,
       lowercase: true,
     },
@@ -76,10 +77,6 @@ const productschema = new mongoose.Schema(
     },
     number_of_sales :{
       type : Number,
-    },
-    shipping_cost:{
-      type: Number,
-      default: 0,
     },
     rating: {
       type: String,

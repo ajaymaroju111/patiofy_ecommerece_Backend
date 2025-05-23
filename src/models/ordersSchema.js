@@ -26,10 +26,6 @@ const orderSchema = new mongoose.Schema({
     enum: ['pending', 'conformed', 'delivered', 'completed', 'cancelled', 'returned', 'failed', 'refunded' ],
     default: 'pending',
   },
-  shipping_cost:{
-    type: Number,
-    default:0
-  },
   final_cost: {
     type: Number,
   },
@@ -83,9 +79,9 @@ orderSchema.pre("save", function (next) {
     this.billing_addressId = this.shipping_addressId;
   }
 
-  if (!this.final_cost && this.shipping_cost) {
-    this.final_cost = this.shipping_cost; // fallback default if not calculated
-  }
+  // if (!this.final_cost && this.shipping_cost) {
+  //   this.final_cost = this.shipping_cost; // fallback default if not calculated
+  // }
 
   next();
 });

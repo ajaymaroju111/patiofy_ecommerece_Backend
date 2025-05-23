@@ -2525,6 +2525,15 @@ paths:
                   type: number
                   description: rating of the product
                   example: 4.5
+                discount:
+                  type: number
+                  description: discount of the product
+                  example: 20
+                viewIn:
+                  type: string
+                  enum: ["new_collection","best_seller","new_best","trending","new_trnd","best_trend","all","none",]
+                  description: viewIn a product as
+                  example: 'all'
                 images:
                   type: array
                   items:
@@ -2644,49 +2653,65 @@ paths:
 
   /patiofy/auth/admin/product/{id}:
   # update product
-    put:
-      summary: Update product details
+    patch:
+      summary: Update a product
+      description: Updates product details. Only fields provided in the request body will be updated.
       tags:
         - Admin - products
       security:
         - BearerAuth: []
-      description: Allows partial updates to a product. Fields are optional.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the product to update
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - id
               properties:
-                id:
-                  type: string
-                  description: ID of the product to update
-                  example: "66260b88d87ff120a0f472e1"
                 name:
                   type: string
-                  example: "New Product Name"
+                  example: jhula swing
                 description:
                   type: string
-                  example: "Updated description of the product"
+                  example: high quality premium swing
                 price:
                   type: number
-                  example: 49.99
+                  example: 50000
                 size:
                   type: string
-                  example: "M"
+                  example: L
                 fabric:
                   type: string
-                  example: "Cotton"
+                  example: cotton
                 category:
                   type: string
-                  example: "Clothing"
+                  example: jhula
+                rating:
+                  type: number
+                  example: 5
                 tags:
                   type: array
                   items:
                     type: string
                   example: ["casual", "summer"]
+                discount:
+                  type: number
+                  example: 30
+                viewIn:
+                  type: string
+                  example: all
+                ProductStatus:
+                  type: string
+                  example: unpublished
+                stock:
+                  type: integer
+                  example: instock
       responses:
         '200':
           description: Product updated successfully
@@ -2697,39 +2722,53 @@ paths:
                 properties:
                   success:
                     type: boolean
-                    example: true
                   message:
                     type: string
-                    example: Product updated successfully
+                  data:
+                    $ref: '#/components/schemas/Product'
+        '400':
+          description: Invalid ID or bad request
         '404':
           description: Product not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
-                    type: string
-                    example: Product not found
         '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
+          description: Internal server error
+    #updating the images : 
+    put:
+      summary: Update product images
+      description: Deletes old images and uploads new ones for a given product.
+      tags:
+        - Admin - products
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the product
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                images:
+                  type: array
+                  items:
                     type: string
-                    example: Internal Server Error
-                  error:
-                    type: string
-                    example: "Error details here"
+                    format: binary
+                  description: Multiple image files to upload
+      responses:
+        '200':
+          description: Product images updated successfully
+        '400':
+          description: Invalid request or ID
+        '404':
+          description: Product not found
+        '500':
+          description: Internal server error
     # Delete product
     delete:
       summary: Delete a Product

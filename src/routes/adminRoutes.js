@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const upload = require('../middlewares/multer.js');
-const productmages = upload.array('images' , 10);
+const productmages = upload.array('images', 6);
 const {
   setDiscountOnProduct,
   setUserInactive,
@@ -36,6 +36,7 @@ const {
   updateProduct,
   deleteProduct,
   filterProducts,
+  updateImages,
 } = require('../controllers/productControllers.js');
 
 
@@ -52,7 +53,8 @@ router.put('/product/viewin/:id', authenticate, isAdmin, setViewinProduct);
 router.get('/allproducts', authenticate, isAdmin, getAllProducts);
 router.get('/products/filter', authenticate, isAdmin, filterProducts);
 router.get('/product/:id', authenticate, isAdmin, getProductById);
-router.put('/product/:id', authenticate, isAdmin, updateProduct);
+router.patch('/product/:id', authenticate, isAdmin, updateProduct);
+router.put('/product/:id', authenticate, isAdmin, productmages, updateImages);
 router.delete('/product/:id', authenticate, isAdmin, deleteProduct);
 
 //set publish and unpublish the users : 

@@ -500,7 +500,7 @@ exports.makeOrder = async (req, res) => {
       ).populate("productId", "discountedPrice");
 
       if(!saveNextTime){
-        await userAddresses.deleteMany({_id: req.user._id});
+        await userAddresses.deleteMany({userId: req.user._id});
       }
       await userAddresses.findByIdAndDelete(billAddress?._id);
       await userAddresses.deleteMany({_id: { $ne: lastAddress._id}});
@@ -556,7 +556,7 @@ exports.makeOrder = async (req, res) => {
               payment_mode === "online" ? razorpayOrder.id : undefined,
           },
         });
-        await carts.deleteOne({ _id: cart });
+        await carts.deleteOne({ _id: cart._id });
         const populatedOrder = await (
           await (
             await newOrder.populate(
@@ -572,7 +572,7 @@ exports.makeOrder = async (req, res) => {
         allOrders.push(populatedOrder);
       }
       if(!saveNextTime){
-        await userAddresses.deleteMany({_id: req.user._id});
+        await userAddresses.deleteMany({userId: req.user._id});
       }
       await userAddresses.findByIdAndDelete(billAddress?._id);
       await userAddresses.deleteMany({_id: { $ne: lastAddress._id}});

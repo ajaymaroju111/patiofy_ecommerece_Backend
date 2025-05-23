@@ -20,6 +20,7 @@ const adminroutes = require("./src/routes/adminRoutes.js");
 const { dbConnnection } = require("./src/config/dbConnection.js");
 const orderroutes = require('./src/routes/orderRoutes.js');
 const MongoStore = require("connect-mongo");
+const { default: mongoose } = require("mongoose");
 dbConnnection();
 const dbString = process.env.NODE_ENV === 'production'? process.env.MONGODB_PRODUCTION : process.env.MONGODB_LOCAL;
  
@@ -56,11 +57,13 @@ app.use(
   cors({
     // origin: ['http://147.93.97.20:3000' , 'https://yourfrontend.com'],
     origin: '*',
+     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials : true,
   })
 );
 
 app.set('trust proxy', 1);
+
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -85,8 +88,8 @@ app.listen(port, () => {
   console.log(`Server is Running on the port : ${port}`);
   if(process.env.NODE_ENV === 'production'){
     console.log(
-      `Swagger - Docs are running on Production server: http://147.93.97.20:${port}/api-docs 🚀 
-      Swagger - Docs are running on live Production server: https://patiofy.smartaihr.com/api-docs 🚀 `
+      `       Swagger - Docs are running on Production server: http://147.93.97.20:${port}/api-docs 🚀 
+       Swagger - Docs are running on live Production server: https://patiofy.smartaihr.com/api-docs 🚀 `
     );
   }else{
     console.log(
