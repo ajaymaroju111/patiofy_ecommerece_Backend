@@ -160,10 +160,29 @@ const upload = multer({
   storage: multers3({
     s3: s3Client,
     bucket: process.env.application_bucket_name,
+    contentType:  multers3.AUTO_CONTENT_TYPE,
+    cacheControl: 'public, max-age=31536000',
+  //   contentType: (req, file, cb) => {
+  //     cb(null, file.mimetype || 'image/jpeg'); 
+  //  },
+  
+    contentDisposition: 'inline',
     key: function (req, file, cb) {
-      cb(null, Date.now().toString() + '-' + file.originalname)
+      const filename = Date.now().toString() + '-' + file.originalname;
+      cb(null, `productImages/${filename}`);
+    },
+    // acl: 'public-read',
+  }),
+  limits:{
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+   fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("Only image files are allowed."), false);
     }
-  })
+    cb(null, true);
+  },
+
 });
 
 console.log("S3 Bucket is on Live 🚀");

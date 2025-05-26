@@ -14,8 +14,29 @@ const s3 = new S3Client({
 });
 
 // Function to delete old images
+// exports.deleteOldImages = async (keys) => {
+//   if (!keys || keys.length === 0) return;
+
+//   const deleteParams = {
+//     Bucket: process.env.application_bucket_name,
+//     Delete: {
+//       Objects: keys.map((key) => ({ Key: key })),
+//       Quiet: false,
+//     },
+//   };
+
+//   try {
+//     const command = new DeleteObjectsCommand(deleteParams);
+//     const response = await s3.send(command);
+//     console.log('Delete response:', response);
+//   } catch (error) {
+//     console.error('Error deleting objects:', error);
+//     throw error;
+//   }
+// };
+
 exports.deleteOldImages = async (keys) => {
-  if (!keys || keys.length === 0) return;
+  if (!Array.isArray(keys) || keys.length === 0) return;
 
   const deleteParams = {
     Bucket: process.env.application_bucket_name,
@@ -28,7 +49,11 @@ exports.deleteOldImages = async (keys) => {
   try {
     const command = new DeleteObjectsCommand(deleteParams);
     const response = await s3.send(command);
-    console.log('Delete response:', response);
+    console.log('Deleted objects:', response.Deleted);
+    if (response.Errors && response.Errors.length > 0) {
+      console.warn('Some objects failed to delete:', response.Errors);
+    }
+    return response;
   } catch (error) {
     console.error('Error deleting objects:', error);
     throw error;
@@ -40,17 +65,30 @@ exports.uploadNewImages = async (files) => {
   const uploadedImageUrls = [];
 
   for (const file of files) {
+     const fileName = Date.now().toString() + '-' + file.originalname;
+     const Key = `productImages/${fileName}`;
+     const fileSizeInBytes = file.size || file.buffer?.length || 0;
+    const readableSize = (fileSizeInBytes / (1024 * 1024)).toFixed(2) + ' MB';
+
+    console.log(`🖼️ Uploading file: ${file.originalname} (${readableSize})`);
+
     const uploadParams = {
       Bucket: process.env.application_bucket_name,
-      Key: Date.now().toString() + '-' + file.originalname,
       Body: file.buffer,
+      Key,
       ContentType: file.mimetype,
+      // ContentType: 'image/jpeg',
+      ContentDisposition: 'inline',
+      CacheControl: 'public, max-age=31536000',
+      //  ContentLength: file.buffer.length,
+      // ACL: 'public-read',
     };
 
     try {
       const command = new PutObjectCommand(uploadParams);
       await s3.send(command);
       const imageUrl = `https://${process.env.application_bucket_name}.s3.${process.env.cloud_aws_region_static}.amazonaws.com/${uploadParams.Key}`;
+      // const imageUrl = `https://.s3.${process.env.cloud_aws_region_static}.amazonaws.com/${uploadParams.Key}`;
       uploadedImageUrls.push(imageUrl);
     } catch (error) {
       console.error('Error uploading image:', error);

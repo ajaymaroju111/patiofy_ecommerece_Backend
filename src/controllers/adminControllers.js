@@ -319,14 +319,13 @@ exports.removeDiscountOnProduct = async (req, res) => {
 //*********************  Orders Management:  ********************//
 
 //view all inprogess orders :
-exports.viewAllInProgressOrders = async (req, res) => {
+exports.viewAllRecentOrders = async (req, res) => {
   try {
     const allorders = await orders
-      .find({
-        status: { $in: ["conformed", "out_of_delivery"] },
-      })
-      .populate("userId", "firstname, lastname")
-      .populate("productId", "name, price, size, discountPrice")
+      .find()
+      .populate("userId", "firstname lastname")
+      .populate("productId", "name price size discountPrice")
+      .sort({_id:-1})
       .exec();
     if (allorders.length === 0) {
       return res.status(404).json({
@@ -336,9 +335,8 @@ exports.viewAllInProgressOrders = async (req, res) => {
     }
     res.status(200).json({
       success: true,
-      page: page,
       totla_items: allorders.length,
-      message: "in progress orders are retrieved ",
+      message: "recent orders are retrieved ",
       data: allorders,
     });
   } catch (error) {
@@ -383,19 +381,13 @@ exports.viewAllRefundedOrders = async (req, res) => {
 };
 
 //view all cancelled orders:
-exports.viewAllCancelledOrders = async (req, res) => {
+exports.viewAllUsersOrders = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = 10;
-    const skip = (page - 1) * limit;
+    
     const allorders = await orders
-      .find({
-        status: { $in: ["cancelled"] },
-      })
+      .find()
       .populate("userId", "firstname, lastname")
       .populate("productId", "name, price, size, discountPrice")
-      .skip(skip)
-      .limit(limit)
       .exec();
     if (allorders.length === 0) {
       return res.status(404).json({
@@ -405,7 +397,6 @@ exports.viewAllCancelledOrders = async (req, res) => {
     }
     res.status(200).json({
       success: true,
-      page: page,
       totla_items: allorders.length,
       message: "cancelled orders are retrieved ",
       data: allorders,

@@ -62,9 +62,9 @@ const productschema = new mongoose.Schema(
       default: 'instock',
     },
     viewIn : {
-      type: String,
-      enum: ['new_collection', 'best_seller', 'new_best','trending','new_trnd', 'best_trend','all', 'none'],
-      default: 'none',
+      type: [{type: String}],
+      enum: ['new_collection', 'best_seller','trending','all', ''],
+      default: '',
     },
     savedPrice: {
       type: Number,

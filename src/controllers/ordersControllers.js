@@ -389,7 +389,7 @@ exports.makeOrder = async (req, res) => {
       });
     }
 
-    const totalPay = Number(total_pay)
+    const totalPay = Number(total_pay);
     // let total_cost = Math.ceil(total_pay * 100) / 100;
 
     if (isNaN(totalPay)) {
@@ -460,17 +460,17 @@ exports.makeOrder = async (req, res) => {
         receipt: `receipt#${Date.now()}`,
         payment_capture: 1,
       });
-      if(isNaN(Number(quantity))){
-          return res.status(401).json({
-            message: "not a number quntity"
-          })
-        }
-      const finalCost = Number((product.discountPrice) * (quantity));
-      if(isNaN(finalCost)){
-          return res.status(401).json({
-            message: "not a "
-          })
-        }
+      if (isNaN(Number(quantity))) {
+        return res.status(401).json({
+          message: "not a number quntity",
+        });
+      }
+      const finalCost = Number(product.discountPrice * quantity);
+      if (isNaN(finalCost)) {
+        return res.status(401).json({
+          message: "not a ",
+        });
+      }
       const newOrder = await orders.create({
         userId: req.user._id,
         productId: product._id,
@@ -499,12 +499,16 @@ exports.makeOrder = async (req, res) => {
         )
       ).populate("productId", "discountedPrice");
 
-      if(!saveNextTime){
-        await userAddresses.deleteMany({userId: req.user._id});
+      if (!saveNextTime) {
+        await userAddresses.deleteMany({ userId: req.user._id });
       }
       await userAddresses.findByIdAndDelete(billAddress?._id);
-      await userAddresses.deleteMany({_id: { $ne: lastAddress._id}});
-      
+      // await userAddresses.deleteMany({ _id: { $ne: newAddress?._id } });
+      await userAddresses.deleteMany({
+        userId: req.user._id, // assuming you store user reference
+        _id: { $ne: newAddress._id },
+      });
+
       return res.status(200).json({
         success: true,
         message: `Your product order was placed successfully`,
@@ -531,20 +535,20 @@ exports.makeOrder = async (req, res) => {
           return res.status(404).json({
             success: false,
             message: "cart does not exst ",
-            error: "Not Found"
-          })
-        };
-        const quantity = Number(cart.quantity)
-        const finalCost = Number((cart.discountedPrice)* quantity);
-        if(isNaN(finalCost)){
+            error: "Not Found",
+          });
+        }
+        const quantity = Number(cart.quantity);
+        const finalCost = Number(cart.discountedPrice * quantity);
+        if (isNaN(finalCost)) {
           return res.status(401).json({
-            message: "not a number"
-          })
+            message: "not a number",
+          });
         }
         const newOrder = await orders.create({
           userId: req.user._id,
           productId: cart.productId,
-          shipping_addressId: newAddress?._id, 
+          shipping_addressId: newAddress?._id,
           billing_addressId: billAddress?._id,
           phone,
           email,
@@ -571,11 +575,14 @@ exports.makeOrder = async (req, res) => {
 
         allOrders.push(populatedOrder);
       }
-      if(!saveNextTime){
-        await userAddresses.deleteMany({userId: req.user._id});
+      if (!saveNextTime) {
+        await userAddresses.deleteMany({ userId: req.user._id });
       }
       await userAddresses.findByIdAndDelete(billAddress?._id);
-      await userAddresses.deleteMany({_id: { $ne: lastAddress._id}});
+      await userAddresses.deleteMany({
+        userId: req.user._id, // assuming you store user reference
+        _id: { $ne: newAddress._id },
+      });
 
       return res.status(200).json({
         success: true,

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const upload = require('../middlewares/multer.js');
-const productmages = upload.array('images', 6);
+const productmages = upload.array('images', 10);
 const {
   setDiscountOnProduct,
   setUserInactive,
@@ -10,9 +10,9 @@ const {
   publishProduct,
   unPublishProduct,
 
-  viewAllInProgressOrders,
+  viewAllRecentOrders,
   viewAllRefundedOrders,
-  viewAllCancelledOrders,
+  viewAllUsersOrders,
   viewAllCompletedOrders,
   viewAllSuccessPaymentOrders,
   viewAllUnSuccessPaymentOrders,
@@ -66,9 +66,9 @@ router.put('/product/discount/:id', authenticate, isAdmin, setDiscountOnProduct)
 router.put('/product/undiscount/:id', authenticate, isAdmin, removeDiscountOnProduct);
 
 //orders Management: 
-router.get('/orders/inprogress', authenticate, isAdmin, viewAllInProgressOrders );
+router.get('/orders/recent', authenticate, isAdmin, viewAllRecentOrders);
 router.get('/orders/refund', authenticate, isAdmin, viewAllRefundedOrders);
-router.get('/orders/cancelled', authenticate, isAdmin, viewAllCancelledOrders);
+router.get('/orders/all', authenticate, isAdmin, viewAllUsersOrders);
 router.get('/orders/success', authenticate, isAdmin, viewAllCompletedOrders);
 router.get('/orders/pending', authenticate, isAdmin, viewAllPendingOrders);
 

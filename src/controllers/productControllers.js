@@ -44,21 +44,35 @@ exports.createProduct = async (req, res) => {
         error: "Bad Request",
       });
     }
+    let parsedViewIn = viewIn;
+
+    if (typeof viewIn === "string") {
+      try {
+        parsedViewIn = JSON.parse(viewIn);
+      } catch (err) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid JSON format in viewIn",
+          error: err.message,
+        });
+      }
+    }
+
     const allowedViews = [
       "new_collection",
       "best_seller",
-      "new_best",
       "trending",
-      "new_trnd",
-      "best_trend",
       "all",
-      "none",
+      "",
     ];
 
-    if (!allowedViews.includes(viewIn)) {
+    if (
+      !Array.isArray(parsedViewIn) ||
+      parsedViewIn.some((v) => !allowedViews.includes(v))
+    ) {
       return res.status(401).json({
         success: false,
-        message: "Invalid viewIn value",
+        message: "Invalid viewIn value(s)",
         error: "Bad Request",
       });
     }
@@ -101,6 +115,7 @@ exports.createProduct = async (req, res) => {
       tags,
       rating,
       discount,
+      viewIn: parsedViewIn,
       ProductStatus,
     });
 
@@ -212,6 +227,13 @@ exports.updateProduct = async (req, res) => {
       "ProductStatus",
       "stock",
     ];
+    const allowedViews = [
+      "new_collection",
+      "best_seller",
+      "trending",
+      "all",
+      "",
+    ];
 
     const newData = {};
     allowedFields.forEach((field) => {
@@ -238,6 +260,7 @@ exports.updateProduct = async (req, res) => {
       data: updatedproduct,
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -256,7 +279,8 @@ exports.updateImages = async (req, res) => {
         error: "Bad Request",
       });
     }
-    if (!req.files && req.files.length === 0) {
+
+    if (!req.files || req.files.length === 0) {
       return res.status(401).json({
         success: false,
         message: "files should not be empty",
@@ -271,18 +295,22 @@ exports.updateImages = async (req, res) => {
         error: "Not Found",
       });
     }
-    console.log("before")
-    const oldImageKeys = (product.imagesUrl).map((url) => {
-      const urlParts = url.split("/");
-      return urlParts.slice(3).join("/");
+    const oldImageKeys = product.imagesUrl.map((url) => {
+      return decodeURIComponent(new URL(url).pathname).substring(1); // remove leading '/'
     });
-    await deleteOldImages(oldImageKeys);
 
-    console.log("after")
-    const newImageUrls = await uploadNewImages(req.files);
+    // const oldImageKeys = product.imagesUrl.map((url) => {
+    //   const urlParts = url.split("/");
+    //   return urlParts.slice(3).join("/");
+    // });
+    await deleteOldImages(oldImageKeys);
+    // const newImageUrls = await uploadNewImages(req.files);
+    const newImageUrls = req.files.map(file => file.location);
     product.imagesUrl = newImageUrls;
     await product.save();
-    console.log(product.imagesUrl)
+    // product.imagesUrl = newImageUrls;
+    // await product.save();
+    console.log(product.imagesUrl);
     return res.status(200).json({
       success: true,
       message: "product images updated successfully",
@@ -392,7 +420,7 @@ exports.getAllProducts = async (req, res) => {
         messsage: "products not found",
       });
     }
-    const total = await products.countDocuments({ProductStatus: "published"});
+    const total = await products.countDocuments({ ProductStatus: "published" });
     // try {
     //   await redis.set(cacheKey, JSON.stringify(allproducts), 'EX', 3600);
     // } catch (redisError) {
@@ -425,12 +453,12 @@ exports.deleteProduct = async (req, res) => {
       });
     }
     const product = await products.findById(id);
-    if(!product){
+    if (!product) {
       return res.status(404).json({
         success: false,
         message: "product not available",
-        errror: "Not Found"
-      })
+        errror: "Not Found",
+      });
     }
     const oldImageKeys = (product.imagesUrl || []).map((url) => {
       const urlParts = url.split("/");
@@ -715,12 +743,7 @@ exports.viewProductsStock = async (req, res) => {
 exports.newCollections = async (req, res) => {
   try {
     const newCollections = await products.find({
-      $or: [
-        { viewIn: "new_collection" },
-        { viewIn: "new_best" },
-        { viewIn: "new_trnd" },
-        { viewIn: "all" },
-      ],
+      viewIn: { $in: ["new_collection", "all"] },
     });
     if (!newCollections || newCollections.length === 0) {
       return res.status(404).json({
@@ -746,12 +769,7 @@ exports.newCollections = async (req, res) => {
 exports.trendingCollections = async (req, res) => {
   try {
     const trendingCollections = await products.find({
-      $or: [
-        { viewIn: "trending" },
-        { viewIn: "new_trnd" },
-        { viewIn: "best_trend" },
-        { viewIn: "all" },
-      ],
+      viewIn: { $in: ["trending", "all"] },
     });
     if (!trendingCollections || trendingCollections.length === 0) {
       return res.status(404).json({
@@ -778,12 +796,7 @@ exports.trendingCollections = async (req, res) => {
 exports.findBestSellerProducts = async (req, res) => {
   try {
     const bestsellers = await products.find({
-      $or: [
-        { viewIn: "best_seller" },
-        { viewIn: "new_best" },
-        { viewIn: "best_trend" },
-        { viewIn: "all" },
-      ],
+      viewIn: { $in: ["best_seller", "all"] },
     });
     if (!bestsellers || bestsellers.length === 0) {
       return res.status(404).json({

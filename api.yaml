@@ -2530,10 +2530,17 @@ paths:
                   description: discount of the product
                   example: 20
                 viewIn:
-                  type: string
-                  enum: ["new_collection","best_seller","new_best","trending","new_trnd","best_trend","all","none",]
-                  description: viewIn a product as
-                  example: 'all'
+                  type: array
+                  items:
+                    type: string
+                    example: ['new_collection', best_seller]
+                    # enum:
+                    #   - new_collection
+                    #   - best_seller
+                    #   - trending
+                    #   - all
+                    #   - ""
+
                 images:
                   type: array
                   items:
@@ -2704,8 +2711,10 @@ paths:
                   type: number
                   example: 30
                 viewIn:
-                  type: string
-                  example: all
+                  type: array
+                  items:
+                    type: string
+                  example: ['new_collection', 'best_seller']
                 ProductStatus:
                   type: string
                   example: unpublished
@@ -3746,7 +3755,7 @@ paths:
                     type: string
                     example: An error message
 
-  /patiofy/auth/admin/orders/inprogress:
+  /patiofy/auth/admin/orders/recent:
     get:
       summary: Retrieve active orders (conformed, out_of_delivery)
       description: Retrieves orders that are currently active (conformed or out of delivery) and includes populated user and product details.
@@ -3833,7 +3842,7 @@ paths:
                     type: string
                     example: An error message
 
-  /patiofy/auth/admin/orders/cancelled:
+  /patiofy/auth/admin/orders/all:
     get:
       summary: Retrieve cancelled orders with pagination
       description: Retrieves cancelled orders with pagination (using `page` query parameter) and includes populated user and product details.
