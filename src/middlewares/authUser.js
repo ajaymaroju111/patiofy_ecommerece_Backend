@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const users = require("../models/userschema.js");
 
-//genenrate a cookie when a user is aurhtenticated :
+//generate a JsonWebToken for the user for the authentiction : 
 exports.generateUserToken = (user) => {
   const data = {
     id: user._id,
@@ -15,7 +15,7 @@ exports.generateUserToken = (user) => {
   return token;
 };
 
-//authenticate user before every route :
+//authenticate user before every route  :
 exports.authenticate = async (req, res, next) => {
   try {
     const bearerKey = req.headers["authorization"];
@@ -40,14 +40,23 @@ exports.authenticate = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    return res.status(500).json({
+    if (error.name === 'TokenExpiredError') {
+    return res.status(401).json({
       success: false,
-      message: "Internal Server Error",
-      error: error,
+      message: 'Token has expired. Please login again.',
+      expiredAt: error.expiredAt,
     });
+  }
+
+  return res.status(401).json({
+    success: false,
+    message: 'Invalid token.',
+    error: error.message,
+  });
   }
 };
 
+//optional authentication if neede in the for the contact US : 
 exports.authenticateifNeeded = async (req, res, next) => {
   try {
     const bearerKey = req.headers["authorization"];
@@ -71,7 +80,7 @@ exports.authenticateifNeeded = async (req, res, next) => {
   }
 };
 
-//get token middleware for the google authentication :
+//generate token for the user for the google authentication :
 exports.generateToken = (user) => {
   return jwt.sign(
     { id: user.id, email: user.emails[0].value },
@@ -105,12 +114,11 @@ exports.isAdmin = async (req, res, next) => {
         error: "Unauthorized"
       });
     }
-    // req.user = req.user
     next();
   } catch (error) {
-    return res.status(500).json({
+    return res.status(401).json({
       success: false,
-      message: "Internal Server Error",
+      message: "Authentication failed",
       error: error,
     })
   }

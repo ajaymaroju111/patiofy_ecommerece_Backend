@@ -171,7 +171,7 @@ const upload = multer({
       const filename = Date.now().toString() + '-' + file.originalname;
       cb(null, `productImages/${filename}`);
     },
-    // acl: 'public-read',
+    // acl: 'public-read',    // this is not permitted in aws console
   }),
   limits:{
     fileSize: 10 * 1024 * 1024, // 10MB

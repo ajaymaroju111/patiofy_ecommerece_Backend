@@ -32,9 +32,6 @@ const addressSchaema = new mongoose.Schema(
       type: String,
       required: [true, "state is required"],
     },
-    phone: {
-      type: Number
-    }
   },
   { timestamps: true }
 );

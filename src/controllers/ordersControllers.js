@@ -400,9 +400,6 @@ exports.makeOrder = async (req, res) => {
       });
     }
 
-    const lastAddress = await userAddresses
-      .findOne({ userId: req.user._id })
-      .sort({ _id: -1 });
     let newAddress;
     if (country && firstname && lastname && address && city && state) {
       newAddress = await userAddresses.create({
@@ -415,28 +412,6 @@ exports.makeOrder = async (req, res) => {
         state,
       });
       await newAddress.save();
-    }
-
-    let billAddress;
-    if (
-      Bcountry &&
-      Bfirstname &&
-      Blastname &&
-      Baddress &&
-      Bcity &&
-      Bstate &&
-      Bphone
-    ) {
-      billAddress = await userAddresses.create({
-        userId: req.user._id,
-        country: Bcountry,
-        firstname: Bfirstname,
-        lastname: Blastname,
-        address: Baddress,
-        city: Bcity,
-        state: Bstate,
-        phone: Bphone,
-      });
     }
 
     const isSingleProduct =
@@ -474,9 +449,25 @@ exports.makeOrder = async (req, res) => {
       const newOrder = await orders.create({
         userId: req.user._id,
         productId: product._id,
-        shipping_addressId: newAddress?._id,
-        billing_addressId: billAddress?._id,
-        phone,
+        shipping_address: {
+          firstname: firstname,
+          lastname: lastname,
+          country: country,
+          address: address,
+          city: city,
+          state: state,
+          phone: phone,
+        },
+        billing_address:{
+          firstname: Bfirstname,
+          lastname: Blastname,
+          country: Bcountry,
+          address: Baddress,
+          city: Bcity,
+          state: Bstate,
+          phone: Bphone,
+        },
+        actual_price: product.discountPrice,
         email,
         quantity: quantity,
         payment_mode: payment_mode,
@@ -487,23 +478,12 @@ exports.makeOrder = async (req, res) => {
         },
       });
 
-      const populatedOrder = await (
-        await (
-          await newOrder.populate(
-            "shipping_addressId",
-            "country firstname lastname address city state"
-          )
-        ).populate(
-          "billing_addressId",
-          "country firstname lastname address city state phone"
-        )
-      ).populate("productId", "discountedPrice");
+      const populatedOrder = 
+          await newOrder.populate("productId", "discountedPrice");
 
       if (!saveNextTime) {
         await userAddresses.deleteMany({ userId: req.user._id });
       }
-      await userAddresses.findByIdAndDelete(billAddress?._id);
-      // await userAddresses.deleteMany({ _id: { $ne: newAddress?._id } });
       await userAddresses.deleteMany({
         userId: req.user._id, // assuming you store user reference
         _id: { $ne: newAddress._id },
@@ -548,10 +528,26 @@ exports.makeOrder = async (req, res) => {
         const newOrder = await orders.create({
           userId: req.user._id,
           productId: cart.productId,
-          shipping_addressId: newAddress?._id,
-          billing_addressId: billAddress?._id,
-          phone,
+          shipping_address: {
+          firstname: firstname,
+          lastname: lastname,
+          country: country,
+          address: address,
+          city: city,
+          state: state,
+          phone: phone,
+        },
+        billing_address:{
+          firstname: Bfirstname,
+          lastname: Blastname,
+          country: Bcountry,
+          address: Baddress,
+          city: Bcity,
+          state: Bstate,
+          phone: Bphone,
+        },
           email,
+          actual_price: cart.discountedPrice,
           quantity: cart.quantity,
           payment_mode: payment_mode,
           final_cost: finalCost,
@@ -561,24 +557,13 @@ exports.makeOrder = async (req, res) => {
           },
         });
         await carts.deleteOne({ _id: cart._id });
-        const populatedOrder = await (
-          await (
-            await newOrder.populate(
-              "shipping_addressId",
-              "country firstname lastname address city state"
-            )
-          ).populate(
-            "billing_addressId",
-            "country firstname lastname address city state phone"
-          )
-        ).populate("productId", " discountedPrice");
+        const populatedOrder = await newOrder.populate("productId", " discountedPrice");
 
         allOrders.push(populatedOrder);
       }
       if (!saveNextTime) {
         await userAddresses.deleteMany({ userId: req.user._id });
       }
-      await userAddresses.findByIdAndDelete(billAddress?._id);
       await userAddresses.deleteMany({
         userId: req.user._id, // assuming you store user reference
         _id: { $ne: newAddress._id },
@@ -911,7 +896,7 @@ exports.viewAllOrders = async (req, res) => {
     return res.status(200).json({
       success: true,
       cached: false,
-      data: await allorders,
+      data: allorders,
     });
   } catch (error) {
     return res.status(500).json({
@@ -1049,6 +1034,7 @@ exports.verifyPayment = async (req, res) => {
       modifiedCount: updatedResult.modifiedCount,
     });
   } catch (error) {
+    clg(error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",

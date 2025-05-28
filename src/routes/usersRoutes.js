@@ -58,17 +58,20 @@ router.get(
     //   return
     // }
     // return res.redirect("/patiofy/auth/user/home");
-    return res.status(200).json({
-      success: true,
-      message: "User authenticated successfully",
-      token: token,
-      user: {
-        id: user._id,
-        email: user.email,
-        firstname: user.firstname,
-        lastname: user.lastname,
-      },
-    });
+    // return res.status(200).json({
+    //   success: true,
+    //   message: "User authenticated successfully",
+    //   token: token,
+    //   user: {
+    //     id: user._id,
+    //     email: user.email,
+    //     firstname: user.firstname,
+    //     lastname: user.lastname,
+    //   },
+    // });
+
+    res.redirect(`https://patiofy.smartaihr.com/patiofy/auth/user/authentication?token=${token}&firstname=${newUser.firstname}&lastname=${newUser.lastname}&role=${newUser.accountType}&userId=${newUser._id}`);
+
   }
 );
 

@@ -16,29 +16,65 @@ const orderSchema = new mongoose.Schema({
     type : String,
     match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
   },
-  phone : {
-    type : String,
-    required : [true , "phone number is required"],
-    ref : 'users',
-  },
   status: {
     type: String,
-    enum: ['pending', 'conformed', 'delivered', 'completed', 'cancelled', 'returned', 'failed', 'refunded' ],
+    enum: ['pending', 'conformed', 'delivered', 'completed', 'cancelled', 'returned', 'refunded' ],
     default: 'pending',
   },
   final_cost: {
     type: Number,
   },
+  actual_price : {
+    type: Number,
+  },
   quantity:{
     type: Number,
   },
-  shipping_addressId:{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'userAddresses'
+  shipping_address:{
+    firstname: {
+      type: String,
+    },
+    lastname: {
+      type: String,
+    },
+    country: {
+      type: String,
+    },
+    address: {
+      type: String,
+    },
+    city: {
+      type: String
+    },
+    state: {
+      type: String,
+    },
+    phone : {
+    type : Number,
   },
-  billing_addressId:{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'userAddresses'
+  },
+  billing_address:{
+    firstname: {
+      type: String,
+    },
+    lastname: {
+      type: String,
+    },
+    country: {
+      type: String,
+    },
+    address: {
+      type: String,
+    },
+    city: {
+      type: String
+    },
+    state: {
+      type: String,
+    },
+    phone : {
+    type : String,
+  },
   },
   payment_mode: {
     type: String,
@@ -78,10 +114,6 @@ orderSchema.pre("save", function (next) {
   if (!this.billing_addressId) {
     this.billing_addressId = this.shipping_addressId;
   }
-
-  // if (!this.final_cost && this.shipping_cost) {
-  //   this.final_cost = this.shipping_cost; // fallback default if not calculated
-  // }
 
   next();
 });

@@ -164,12 +164,6 @@ exports.verify = async (req, res) => {
     User.status = "active";
     User.jwtExpiry = undefined;
     await User.save();
-    // return res.status(200).json({
-    //   // redirect: "http://147.97.93.20:3000/patiofy/auth/user/signin",
-    //   // success: true,
-    //   // message: "Account verified successfully",
-      
-    // });
     res.status(200).send(getSuccessMark());
   } catch (error) {
     return res.status(500).json({
@@ -179,8 +173,6 @@ exports.verify = async (req, res) => {
     });
   }
 };
-
-//istermsAndConditions acceptrf
 
 //user sign in
 exports.signIn = async (req, res) => {
@@ -589,6 +581,7 @@ exports.updateAddress = async (req, res) => {
       "city",
       "state",
       "country",
+      "phone",
     ];
     const shippingUpdate = { ...current._doc }; // existing values
 

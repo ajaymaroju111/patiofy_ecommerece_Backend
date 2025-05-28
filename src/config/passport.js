@@ -8,7 +8,6 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_SECRET_KEY,
-      // callbackURL: process.env.NODE_ENV === "production"? process.env.PRODUCTION_CALLBACK_URL :process.env.CALLBACK_URL,
       callbackURL:process.env.CALLBACK_URL,
       proxy: true,
     },
@@ -47,11 +46,17 @@ passport.use(
 );
 
 passport.serializeUser((user, done) => {
-  done(null, user);
+  done(null, user._id); 
 });
 
-passport.deserializeUser((obj, done) => {
-  done(null, obj);
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await users.findById(id);
+    done(null, user);
+  } catch (err) {
+    done(err);
+  }
 });
+
 
 module.exports = passport;

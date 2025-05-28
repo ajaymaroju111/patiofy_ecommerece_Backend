@@ -1,16 +1,7 @@
 const mongoose = require('mongoose');
 
 const cartSchema = new mongoose.Schema({
-  cartImages :[
-    {
-      name : String,
-      img : {
-        data : Buffer,
-        contentType : String,
-        hash : String,
-      }
-    }
-  ],
+  cartImages :[{ type: String, required: true}],
   userId:{
     type : mongoose.Schema.Types.ObjectId,
     ref : 'users'

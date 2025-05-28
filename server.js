@@ -42,7 +42,7 @@ app.use(cookieParser());
 //usage od limiter :
 const limiter = Limiter({
   windowMs: 15 * 60 * 1000, 
-  max: 500, 
+  max: 5000, 
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true, 
   legacyHeaders: false,
