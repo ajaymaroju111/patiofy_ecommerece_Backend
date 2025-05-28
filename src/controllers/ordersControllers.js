@@ -478,9 +478,6 @@ exports.makeOrder = async (req, res) => {
         },
       });
 
-      const populatedOrder = 
-          await newOrder.populate("productId", "discountedPrice");
-
       if (!saveNextTime) {
         await userAddresses.deleteMany({ userId: req.user._id });
       }
@@ -494,7 +491,7 @@ exports.makeOrder = async (req, res) => {
         message: `Your product order was placed successfully`,
         order_id: newOrder._id,
         razorpay_orderId: razorpayOrder.id,
-        data: populatedOrder,
+        data: newOrder,
       });
     } else {
       // Multiple cart IDs
@@ -557,9 +554,8 @@ exports.makeOrder = async (req, res) => {
           },
         });
         await carts.deleteOne({ _id: cart._id });
-        const populatedOrder = await newOrder.populate("productId", " discountedPrice");
 
-        allOrders.push(populatedOrder);
+        allOrders.push(newOrder);
       }
       if (!saveNextTime) {
         await userAddresses.deleteMany({ userId: req.user._id });
