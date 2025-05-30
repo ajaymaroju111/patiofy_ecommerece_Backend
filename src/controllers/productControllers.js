@@ -1,5 +1,6 @@
 const carts = require("../models/cartschema.js");
 const bcrypt = require("bcrypt");
+const users = require("../models/userschema.js");
 const { default: mongoose } = require("mongoose");
 const reviews = require("../models/reviewschema.js");
 const products = require("../models/productschema.js");
@@ -25,6 +26,7 @@ exports.createProduct = async (req, res) => {
       rating,
       discount,
       viewIn,
+      stock,
       ProductStatus,
     } = req.body;
 
@@ -44,8 +46,17 @@ exports.createProduct = async (req, res) => {
         error: "Bad Request",
       });
     }
+    const allowedViews = new Set([
+      "new_collection",
+      "best_seller",
+      "trending",
+      "all",
+      "none",
+    ]);
+
     let parsedViewIn = viewIn;
 
+    // If it's a string (e.g., passed as a JSON string from client), parse it
     if (typeof viewIn === "string") {
       try {
         parsedViewIn = JSON.parse(viewIn);
@@ -58,24 +69,19 @@ exports.createProduct = async (req, res) => {
       }
     }
 
-    const allowedViews = [
-      "new_collection",
-      "best_seller",
-      "trending",
-      "all",
-      "",
-    ];
-
+    // Ensure it's an array of valid values
     if (
       !Array.isArray(parsedViewIn) ||
-      parsedViewIn.some((v) => !allowedViews.includes(v))
+      parsedViewIn.some((v) => typeof v !== "string" || !allowedViews.has(v))
     ) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Invalid viewIn value(s)",
-        error: "Bad Request",
+        error: "Allowed values: " + Array.from(allowedViews).join(", "),
       });
     }
+    //splitting tags and storing in an array :
+    const tagArray = tags.split(",").map((tag) => tag.trim().toLowerCase());
 
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
@@ -112,9 +118,10 @@ exports.createProduct = async (req, res) => {
       size,
       fabric,
       category,
-      tags,
+      tags: tagArray,
       rating,
       discount,
+      stock,
       viewIn: parsedViewIn,
       ProductStatus,
     });
@@ -232,13 +239,19 @@ exports.updateProduct = async (req, res) => {
       "best_seller",
       "trending",
       "all",
-      "",
+      "none",
     ];
 
     const newData = {};
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) {
-        newData[field] = req.body[field];
+        if (field === "tags" && typeof req.body.tags === "string") {
+          newData.tags = req.body.tags
+            .split(",")
+            .map((tag) => tag.trim().toLowerCase());
+        } else {
+          newData[field] = req.body[field];
+        }
       }
     });
 
@@ -305,7 +318,7 @@ exports.updateImages = async (req, res) => {
     // });
     await deleteOldImages(oldImageKeys);
     // const newImageUrls = await uploadNewImages(req.files);
-    const newImageUrls = req.files.map(file => file.location);
+    const newImageUrls = req.files.map((file) => file.location);
     product.imagesUrl = newImageUrls;
     await product.save();
     // product.imagesUrl = newImageUrls;
@@ -349,6 +362,7 @@ exports.getProductById = async (req, res) => {
     // } catch (redisError) {
     //   console.error(redisError);
     // }
+
     const product = await products
       .findById(id)
       .select(
@@ -873,6 +887,12 @@ exports.viewAllCarts = async (req, res) => {
       .find({ userId: req.user._id })
       .populate("productId", "name")
       .exec();
+
+    const uniqueCartIds = await carts.find({userId: req.user._id}).distinct("_id");
+    const totalUniqueCarts = uniqueCartIds.length;
+
+    // const totalItems = await carts
+    // .find({ userId: req.user._id }).countDocuments();
     // if (!allCarts || allCarts.length === 0) {
     //   return res.status(404).json({
     //     success: false,
@@ -889,7 +909,7 @@ exports.viewAllCarts = async (req, res) => {
       succcess: true,
       cached: false,
       data: allCarts,
-      count: allCarts.length,
+      count: totalUniqueCarts,
     });
   } catch (error) {
     return res.status(500).json({
@@ -912,19 +932,27 @@ exports.addToCart = async (req, res) => {
         error: "Bad Request",
       });
     }
-     const product = await products.findById(id);
-      if (!product) {
-        return res.status(404).json({
-          success: false,
-          message: "product not found",
-          error: "Not Found",
-        });
-      }
+    const product = await products.findById(id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "product not found",
+        error: "Not Found",
+      });
+    }
+
     const isCartExist = await carts
-      .findOne({ productId: id })
+      .findOne({ $and: [{ productId: id }, { userId: req.user._id }] })
       .populate("productId", "name")
       .exec();
     if (!isCartExist) {
+      if (!req.user._id) {
+        return res.status(401).json({
+          success: false,
+          message: "session expired , please login",
+          error: "Bad Request",
+        });
+      }
       await carts.create({
         cartImages: product.imagesUrl,
         quantity: quantity,
@@ -938,15 +966,42 @@ exports.addToCart = async (req, res) => {
         message: "product added to cart successfully",
       });
     }
-    isCartExist.quantity += quantity;
-    await isCartExist.save();
-    isCartExist.final_price =
-      isCartExist.quantity * product.discountPrice;
-    await isCartExist.save();
+    if (req.user._id.toString() !== isCartExist.userId.toString()) {
+      return res.status(401).json({
+        success: false,
+        message: "you are not authorized",
+        error: "Bad Request",
+      });
+    }
+    const final_quantity = (isCartExist.quantity += quantity);
+    const price = isCartExist.quantity * product.discountPrice;
+    // isCartExist.final_price = isCartExist.quantity * product.discountPrice;
+    const cartUpdate = await carts.findByIdAndUpdate(
+      isCartExist._id,
+      {
+        $set: {
+          quantity: final_quantity,
+          final_price: price,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+    if (!cartUpdate) {
+      return res.status(401).json({
+        success: false,
+        message: "Error in Cart updation",
+        error: "Not Found",
+      });
+    }
+    // await isCartExist.save();
+    // await isCartExist.save();
+    const data = await cartUpdate.populate("userId", "firstname");
     return res.status(200).json({
       success: true,
       message: " cart quantity updated successfully",
-      data: isCartExist,
+      data: data,
     });
   } catch (error) {
     return res.status(500).json({
@@ -1027,7 +1082,7 @@ exports.updateCart = async (req, res) => {
     }
     const { quantity } = req.body;
     const update = await carts
-      .findById(id)
+      .findOne({ $or: [{ _id: id }, { userId: req.user._id }] })
       .populate("productId", "name")
       .exec();
     if (!update) {
@@ -1035,13 +1090,6 @@ exports.updateCart = async (req, res) => {
         success: false,
         message: "cart not found",
         error: "Not Found",
-      });
-    }
-    if (update.userId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "You are not Authorized",
-        error: "UnAuthorized",
       });
     }
     update.quantity = quantity;
@@ -1073,7 +1121,9 @@ exports.deleteCart = async (req, res) => {
         error: "Bad Request",
       });
     }
-    const isUser = await carts.findById(id);
+    const isUser = await carts.findOne({
+      $or: [{ _id: id }, { userId: req.user._id }],
+    });
     if (isUser.userId.toString() !== req.user.id.toString()) {
       return res.status(403).json({
         success: false,
@@ -1081,12 +1131,19 @@ exports.deleteCart = async (req, res) => {
         error: "UnAuthorized",
       });
     }
-    const deleted = await carts.findByIdAndDelete(id);
-    if (!deleted) {
+    if (!isUser) {
       return res.status(404).json({
         success: false,
         message: "cart not found",
         error: "Not Found",
+      });
+    }
+    const deleted = await carts.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "cart not deleted",
+        error: "Bad Request",
       });
     }
     return res.status(200).json({

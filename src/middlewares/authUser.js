@@ -10,7 +10,8 @@ exports.generateUserToken = (user) => {
     status: user.status,
   };
   const key = process.env.JWT_SECRET;
-  const expiryOptions = { expiresIn: "1d" };
+  // const expiryOptions = { expiresIn: "1d" };
+  const expiryOptions = { expiresIn: "5m" };
   const token = jwt.sign(data, key, expiryOptions);
   return token;
 };
@@ -110,7 +111,7 @@ exports.isAdmin = async (req, res, next) => {
     if (!(req.user.accountType === "admin")) {
       return res.status(401).json({
         success: false,
-        message: " you are not authorized ",
+        message: "you are not Authorized",
         error: "Unauthorized"
       });
     }

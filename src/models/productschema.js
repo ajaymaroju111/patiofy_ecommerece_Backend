@@ -63,8 +63,8 @@ const productschema = new mongoose.Schema(
     },
     viewIn : {
       type: [{type: String}],
-      enum: ['new_collection', 'best_seller','trending','all', ''],
-      default: '',
+      enum: ['new_collection', 'best_seller','trending','all', 'none'],
+      default: 'none',
     },
     savedPrice: {
       type: Number,

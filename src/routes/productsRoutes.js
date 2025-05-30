@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { 
   authenticate,
+  authenticateifNeeded,
 } = require('../middlewares/authUser.js');
 
 const {
@@ -31,7 +32,7 @@ router.get("/stock", viewProductsStock);
 router.get('/bestsellers', findBestSellerProducts);       
 router.get('/trending', trendingCollections);       
 router.get('/latest', newCollections);
-router.get('/', getAllProducts);       
+router.get('/', authenticateifNeeded, getAllProducts);       
 router.get('/:id', getProductById);
 
 // Cart Routes : 

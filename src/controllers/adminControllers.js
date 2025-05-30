@@ -113,6 +113,116 @@ exports.viewUser = async (req, res) => {
 
 //********************* Products Management *******************/
 
+//get all products fro the admin : 
+exports.getAllProductsForAdmim = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // const cacheKey = `products:all`
+    // try {
+    //   const cacheProducts = await redis.get(cacheKey);
+    //   if(cacheProducts){
+    //     const total = cacheProducts.length;
+    //     return res.status(200).json({
+    //       page,
+    //       success:true,
+    //       cached: true,
+    //       data: cacheProducts,
+    //     })
+    //   }
+    // } catch (redisError) {
+    //   console.error(redisError);
+    // }
+    const allproducts = await products
+      .find()
+      .skip(skip)
+      .limit(limit)
+      .exec();
+    if (allproducts.length === 0 || !allproducts) {
+      return res.status(404).json({
+        success: false,
+        messsage: "products not found",
+      });
+    }
+    const total = await products.countDocuments();
+    // try {
+    //   await redis.set(cacheKey, JSON.stringify(allproducts), 'EX', 3600);
+    // } catch (redisError) {
+    //   console.error(redisError);
+    // }
+    return res.status(200).json({
+      success: true,
+      page,
+      cached: false,
+      data: allproducts,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    });
+  }
+};
+
+//get the product by the id : 
+exports.getProductByIdForAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product ID format",
+      });
+    }
+    // const cacheKey = `product:${id}`;
+
+    // try {
+    //   const cacheProduct = await redis.get(cacheKey);
+    // if(cacheProduct){
+    //   return res.status(200).json({
+    //     success: true,
+    //     cached: true,
+    //     data : cacheProduct
+    //   })
+    // }
+    // } catch (redisError) {
+    //   console.error(redisError);
+    // }
+    
+    const product = await products.findById(id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "product not found",
+        error: "Not Found",
+      });
+    }
+
+    // try {
+    // await redis.set(cacheKey, JSON.stringify(product), 'EX', 3600) //cache expiery time is 1 hour
+
+    // } catch (redisError) {
+    //   console.error(redisError);
+    // }
+
+    return res.status(200).json({
+      success: true,
+      cached: false,
+      data: product,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    });
+  }
+};
+
 //unpublish product :
 exports.unPublishProduct = async (req, res) => {
   try {

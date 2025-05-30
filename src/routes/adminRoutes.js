@@ -9,7 +9,6 @@ const {
   viewUser,
   publishProduct,
   unPublishProduct,
-
   viewAllRecentOrders,
   viewAllRefundedOrders,
   viewAllUsersOrders,
@@ -19,6 +18,8 @@ const {
   removeDiscountOnProduct,
   viewAllPendingOrders,
   setViewinProduct,
+  getAllProductsForAdmim,
+  getProductByIdForAdmin,
 } = require('../controllers/adminControllers.js')
 const {
   authenticate,
@@ -31,8 +32,6 @@ const {
 } = require('../controllers/userControllers.js');
 const {
   createProduct,
-  getProductById,
-  getAllProducts,
   updateProduct,
   deleteProduct,
   filterProducts,
@@ -50,9 +49,9 @@ router.get('/user/:id',authenticate, isAdmin, viewUser);
 //products Management :  
 router.post('/product', authenticate, isAdmin, productmages, createProduct);
 router.put('/product/viewin/:id', authenticate, isAdmin, setViewinProduct);
-router.get('/allproducts', authenticate, isAdmin, getAllProducts);
+router.get('/allproducts', authenticate, isAdmin, getAllProductsForAdmim);
 router.get('/products/filter', authenticate, isAdmin, filterProducts);
-router.get('/product/:id', authenticate, isAdmin, getProductById);
+router.get('/product/:id', authenticate, isAdmin, getProductByIdForAdmin);
 router.patch('/product/:id', authenticate, isAdmin, updateProduct);
 router.put('/product/:id', authenticate, isAdmin, productmages, updateImages);
 router.delete('/product/:id', authenticate, isAdmin, deleteProduct);

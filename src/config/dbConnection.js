@@ -9,7 +9,7 @@ const dbConnnection = async () => {
         : process.env.MONGODB_LOCAL;
 
     await mongoose.connect(mongoURI, {
-      maxPoolSize: 500,
+      maxPoolSize: 10,
       
     });
     console.log('✅ MongoDB Connected Successfully');

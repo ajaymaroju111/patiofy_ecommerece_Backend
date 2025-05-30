@@ -381,6 +381,25 @@ exports.makeOrder = async (req, res) => {
         error: "Bad Request",
       });
     }
+
+    // if (!/^\+?\d{10,15}$/.test(phone) || !/^\+?\d{10,15}$/.test(Bphone) ) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Invalid phone number format",
+    //     error: "Phone must be 10–15 digits, optionally starting with +",
+    //   });
+    // }
+    const  Shphone = Number(phone.slice(-10));
+    const  Biphone = Number(Bphone.slice(-10));
+
+    // if (!/^\d{10}$/.test(Shphone) || !/^\d{10}$/.test(Biphone)) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Invalid phone number format",
+    //     error: "Phone number must be exactly 10 digits and numeric only",
+    //   });
+    // }
+
     if (!total_pay) {
       return res.status(400).json({
         success: false,
@@ -456,16 +475,16 @@ exports.makeOrder = async (req, res) => {
           address: address,
           city: city,
           state: state,
-          phone: phone,
+          phone: Shphone,
         },
-        billing_address:{
+        billing_address: {
           firstname: Bfirstname,
           lastname: Blastname,
           country: Bcountry,
           address: Baddress,
           city: Bcity,
           state: Bstate,
-          phone: Bphone,
+          phone: Biphone,
         },
         actual_price: product.discountPrice,
         email,
@@ -526,23 +545,23 @@ exports.makeOrder = async (req, res) => {
           userId: req.user._id,
           productId: cart.productId,
           shipping_address: {
-          firstname: firstname,
-          lastname: lastname,
-          country: country,
-          address: address,
-          city: city,
-          state: state,
-          phone: phone,
-        },
-        billing_address:{
-          firstname: Bfirstname,
-          lastname: Blastname,
-          country: Bcountry,
-          address: Baddress,
-          city: Bcity,
-          state: Bstate,
-          phone: Bphone,
-        },
+            firstname: firstname,
+            lastname: lastname,
+            country: country,
+            address: address,
+            city: city,
+            state: state,
+            phone: Shphone,
+          },
+          billing_address: {
+            firstname: Bfirstname,
+            lastname: Blastname,
+            country: Bcountry,
+            address: Baddress,
+            city: Bcity,
+            state: Bstate,
+            phone: Biphone,
+          },
           email,
           actual_price: cart.discountedPrice,
           quantity: cart.quantity,
@@ -864,6 +883,7 @@ exports.viewAllOrders = async (req, res) => {
     // }
     const allorders = await orders
       .find({ userId: req.user._id })
+      .sort({_id: -1})
       .populate("productId", "discountPrice");
     // const allorders = await orders
     //   .find({ userId: req.user._id })

@@ -1,3 +1,74 @@
+// const passport = require("passport");
+// const GoogleStrategy = require("passport-google-oauth20").Strategy;
+// const jwt = require("jsonwebtoken");
+// const users = require("../models/userschema.js");
+
+// passport.use(
+//   new GoogleStrategy(
+//     {
+//       clientID: process.env.GOOGLE_CLIENT_ID,
+//       clientSecret: process.env.GOOGLE_SECRET_KEY,
+//       callbackURL:process.env.CALLBACK_URL,
+//       proxy: true,
+//     },
+//     async (accessToken, refreshToken, profile, done) => {
+//       try {
+//         let user = await users.findOne({$or: [{googleId: profile.id}, {email: profile.emails[0].value}] }); // Use let to reassign if needed
+
+//         if (!user) {
+//           const nameParts = profile.displayName.split(" ");
+//           const firstName = nameParts[0];
+//           const lastName = nameParts.slice(1).join(" ");
+
+//           user = await users.create({
+//             googleId: profile.id,
+//             email: profile.emails[0].value,
+//             firstname: firstName,
+//             lastname: lastName,
+//             status: "active",
+//           });
+//         }
+
+//         // Generate a JWT token
+//         const token = jwt.sign(
+//           { id: user._id, email: user.email, status: user.status },
+//           process.env.JWT_SECRET,
+//           { expiresIn: "1d" }
+//         );
+
+//         return done(null, { user, token });
+//       } catch (error) {
+//         console.log("OAuth Error", error);
+//         return done(error, null);
+//       }
+//     }
+//   )
+// );
+
+// // serialize
+// passport.serializeUser((user, done) => {
+//   console.log("Serializing user:", user);
+//   if (!user || !user._id) return done(new Error("User not valid"));
+//   done(null, user._id);
+// });
+
+// // deserialize
+// passport.deserializeUser(async (id, done) => {
+//   try {
+//     const user = await users.findById(id);
+//     done(null, user);
+//   } catch (err) {
+//     done(err);
+//   }
+// });
+
+
+
+// module.exports = passport;
+
+
+
+
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const jwt = require("jsonwebtoken");
@@ -8,12 +79,17 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_SECRET_KEY,
-      callbackURL:process.env.CALLBACK_URL,
+      callbackURL: process.env.CALLBACK_URL,
       proxy: true,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        let user = await users.findOne({$or: [{googleId: profile.id}, {email: profile.emails[0].value}] }); // Use let to reassign if needed
+        let user = await users.findOne({
+          $or: [
+            { googleId: profile.id },
+            { email: profile.emails[0].value },
+          ],
+        });
 
         if (!user) {
           const nameParts = profile.displayName.split(" ");
@@ -26,17 +102,18 @@ passport.use(
             firstname: firstName,
             lastname: lastName,
             status: "active",
+            isTermsAndConditions: true,
           });
         }
 
-        // Generate a JWT token
+        // You can save the token in the session, or send it manually in a custom callback
         const token = jwt.sign(
           { id: user._id, email: user.email, status: user.status },
           process.env.JWT_SECRET,
-          { expiresIn: "1d" }
+          { expiresIn: "5m" }
         );
 
-        return done(null, { user, token });
+        return done(null, {user, token}); //pass token with the user 
       } catch (error) {
         console.log("OAuth Error", error);
         return done(error, null);
@@ -45,14 +122,24 @@ passport.use(
   )
 );
 
-passport.serializeUser((user, done) => {
-  done(null, user._id); 
+passport.serializeUser((obj, done) => {
+  // store both user._id and token
+  if (!obj || !obj.user || !obj.user._id || !obj.token) {
+    return done(new Error("User or token missing"));
+  }
+
+  // You could store just the user._id if using DB, but to keep token, we include both
+  done(null, { id: obj.user._id, token: obj.token });
 });
 
-passport.deserializeUser(async (id, done) => {
+passport.deserializeUser(async (obj, done) => {
   try {
-    const user = await users.findById(id);
-    done(null, user);
+    const user = await users.findById(obj.id);
+    if (!user) return done(new Error("User not found"));
+
+    // Attach token back to the user object if needed
+    const token = obj.token;
+    done(null, {user, token});
   } catch (err) {
     done(err);
   }

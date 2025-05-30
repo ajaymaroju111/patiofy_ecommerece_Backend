@@ -174,7 +174,7 @@ const upload = multer({
     // acl: 'public-read',    // this is not permitted in aws console
   }),
   limits:{
-    fileSize: 10 * 1024 * 1024, // 10MB
+    fileSize: 20 * 1024 * 1024, // 20MB
   },
    fileFilter: (req, file, cb) => {
     if (!file.mimetype.startsWith("image/")) {
