@@ -82,7 +82,7 @@ router.get(
     // });
 
     res.redirect(
-      `http://192.168.1.40:5173/?token=${token}&firstname=${newUser.firstname}&lastname=${newUser.lastname}&role=${newUser.accountType}&userId=${newUser._id}`
+      `https://patiofy.comfortbikes.in/?token=${token}&firstname=${newUser.firstname}&lastname=${newUser.lastname}&role=${newUser.accountType}&userId=${newUser._id}`
     );
   }
 );
@@ -121,7 +121,7 @@ router.put("/update", authenticate, update);
 router.get("/me/:id", authenticate, getById);
 router.post("/password/forget", forgetPassword);
 router.post("/password/change", authenticate, changePassword);
-router.put("/password/setNew", setPassword);
+router.put("/password/setnew", setPassword);
 router.delete("/delete", authenticate, deleteUser);
 router.put("/logout", authenticate, signOut);
 

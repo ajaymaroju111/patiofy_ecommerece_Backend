@@ -1082,7 +1082,7 @@ exports.updateCart = async (req, res) => {
     }
     const { quantity } = req.body;
     const update = await carts
-      .findOne({ $or: [{ _id: id }, { userId: req.user._id }] })
+      .findOne({ $and : [{ _id: id },{ userId: req.user._id }] })
       .populate("productId", "name")
       .exec();
     if (!update) {
@@ -1092,13 +1092,32 @@ exports.updateCart = async (req, res) => {
         error: "Not Found",
       });
     }
-    update.quantity = quantity;
-    update.final_price = quantity * update.discountedPrice;
-    await update.save();
+    // update.quantity = quantity;
+    const price = quantity * update.discountedPrice;
+    // update.final_price = quantity * update.discountedPrice;
+    const updateCart = await carts.findByIdAndUpdate(
+      id,
+      {
+        $set : {
+          quantity: quantity,
+          final_price: price
+        },
+      },
+      {
+        new: true
+      }
+    ).populate('productId', 'name')
+    if(!updateCart){
+      return res.status(404).json({
+        success: false,
+        message: "Cart not updated",
+        error: "update action failed"
+      })
+    }
     return res.status(200).json({
       success: true,
       message: "cart updated successfully",
-      data: update,
+      data: updateCart,
     });
   } catch (error) {
     console.log(error);
@@ -1122,7 +1141,7 @@ exports.deleteCart = async (req, res) => {
       });
     }
     const isUser = await carts.findOne({
-      $or: [{ _id: id }, { userId: req.user._id }],
+      $and: [{ _id: id }, { userId: req.user._id }],
     });
     if (isUser.userId.toString() !== req.user.id.toString()) {
       return res.status(403).json({

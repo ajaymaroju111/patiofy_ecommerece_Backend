@@ -57,10 +57,7 @@ exports.setNewPassword = async (req, res) => {
 exports.signUp = async (req, res) => {
   try {
     const { firstname, lastname, email, password , istermsandConditions} = req.body;
-    const existed = await users.findOne({
-      $or: [{ email: email }],
-    });
-
+    const existed = await users.findOne({ email: email});
     if (existed) {
       return res.status(401).json({
         success: false,
@@ -195,6 +192,13 @@ exports.signIn = async (req, res) => {
         error: "Bad Request",
       });
     }
+    if(user.password === undefined || !user.password){
+      return res.status(401).json({
+        success: false,
+        message: "password not set",
+        error: "Bad Request"
+      })
+    }
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
       return res.status(401).json({
@@ -202,6 +206,14 @@ exports.signIn = async (req, res) => {
         message: "password doesn't match",
         error: "Bad Request"
       });
+    }
+
+    if(user.status === 'inactive'){
+      return res.status(402).json({
+        success: false,
+        message: "Account is Inactive please verify",
+        error: "Bad Request"
+      })
     }
     const token = generateUserToken(user);
     user.jwtExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
@@ -278,12 +290,13 @@ exports.forgetPassword = async (req, res) => {
       });
     }
     const fullname = user.firstname + " " + user.lastname;
+    const encodedEmail = user.email;
     await sendEmail({
       to: email,
       subject: "forget password link",
-      text: forgetPassword(fullname),
+      text: forgetPassword(fullname, user.email),
     });
-    return res.status(204).json({
+    return res.status(200).json({
       success: true,
       message: "reset password link sent to the email",
     });
@@ -307,7 +320,7 @@ exports.setPassword = async (req, res) => {
         error: "Bad Request",
       });
     }
-    const user = await users.findOne({ email }).select("password _id");
+    const user = await users.findOne({ email }).select("password, _id");
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -315,16 +328,9 @@ exports.setPassword = async (req, res) => {
         error: "Not Found",
       });
     }
-    if(user._id.toString() !== req.user._id.toString()){
-      return res.status(403).json({
-        success: false,
-        message: "You are not authorized",
-        error: "UnAuthorized"
-      })
-    }
     user.password = newpassword;
     await user.save();
-    return res.status(204).json({
+    return res.status(200).json({
       success: true,
       message: "new password updated , please login",
     });
@@ -336,6 +342,8 @@ exports.setPassword = async (req, res) => {
     });
   }
 };
+
+
 
 // reset the password using old password :
 exports.changePassword = async (req, res) => {
