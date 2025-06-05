@@ -57,7 +57,7 @@ exports.viewAllUsers = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const allusers = await users.find().skip(skip).limit(limit).exec();
+    const allusers = await users.find({ accountType : { $ne : 'admin'}}).skip(skip).limit(limit).exec();
     if (!allusers || allusers.length === 0) {
       return res.status(404).json({
         success: false,
@@ -593,6 +593,80 @@ exports.viewAllPendingOrders = async (req, res) => {
     });
   }
 };
+
+//users : - orders : 
+exports.getUserOrderById = async (req, res) => {
+  try {
+    const id = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(401).json({
+        success: false,
+        message: "Invalid Object ID",
+        error: "Not Found"
+      })
+    }
+    const userOrder = await orders.findById(id).populate('userId').populate('productId');
+    if(!userOrder){
+      return res.status(404).json({
+        success: false,
+        message: "Order not Found",
+        error: "Not Found"
+      })
+    }
+    return res.status(200).json({
+      success: true,
+      message: "order retrieved successfully",
+      data: userOrder,
+    })
+  } catch (error) {
+    return res.status(500).json({
+      succcess: false,
+      message: "Internal Server",
+      error: 'error',
+    })
+  }
+}
+
+
+exports.updateUserOrderById = async (req, res) => {
+  try {
+    const id = req.params;
+    const {  quantity, status} = req.body
+    
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(401).json({
+        success: false,
+        message: "Invalid Object ID",
+        error: "Not Found"
+      })
+    }
+    const userOrder = await orders.findById(id).populate('userId').populate('productId');
+    if(!userOrder){
+      return res.status(404).json({
+        success: false,
+        message: "Order not Found",
+        error: "Not Found"
+      })
+    }
+    if(quantity){
+      const beforePrice = userOrder.final_cost;
+      userOrder.quantity = quantity;
+      userOrder.final_cost = quantity * userOrder.actual_price;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "order retrieved successfully",
+      data: userOrder,
+    })
+  } catch (error) {
+    return res.status(500).json({
+      succcess: false,
+      message: "Internal Server",
+      error: 'error',
+    })
+  }
+}
 
 //**********  Payment Status:   *******************/
 //view all payment completed orders:

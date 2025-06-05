@@ -8,9 +8,6 @@ const {
   deleteOldImages,
   uploadNewImages,
 } = require("../middlewares/S3_bucket.js");
-// const { categoriesNames, sizeNames, fabricNames } = require("../utils/data.js");
-// const {getFileBaseUrl} = require('../middlewares/multer.js')
-// const redis = require('../utils/redisConfig.js');
 
 //create a product Product :
 exports.createProduct = async (req, res) => {
@@ -23,11 +20,11 @@ exports.createProduct = async (req, res) => {
       fabric,
       category,
       tags,
-      rating,
-      discount,
+      discountPrice,
       viewIn,
       stock,
       ProductStatus,
+      stock_quantity
     } = req.body;
 
     if (
@@ -37,8 +34,7 @@ exports.createProduct = async (req, res) => {
       !size ||
       !fabric ||
       !category ||
-      !tags ||
-      !rating
+      !tags
     ) {
       return res.status(400).json({
         success: false,
@@ -94,20 +90,6 @@ exports.createProduct = async (req, res) => {
     // const postFiles = req.files; // Assuming an array of files
     const imageUrls = req.files.map((file) => file.location);
 
-    // const postImages = await Promise.all(
-    //   postFiles.map(async (file) => {
-    //     const base64Data = file.buffer.toString("base64");
-    //     const hashedData = await bcrypt.hash(base64Data, 10); // 10 salt rounds
-    //     // const hashedData = base64Data;
-    //     return {
-    //       name: file.originalname,
-    //       img: {
-    //         data: hashedData || file.buffer,
-    //         contentType: file.mimetype,
-    //       },
-    //     };
-    //   })
-    // );
 
     await products.create({
       userId: req.user._id,
@@ -119,11 +101,11 @@ exports.createProduct = async (req, res) => {
       fabric,
       category,
       tags: tagArray,
-      rating,
-      discount,
+      discountPrice,
       stock,
       viewIn: parsedViewIn,
       ProductStatus,
+      stock_quantity
     });
 
     return res.status(200).json({
@@ -229,7 +211,7 @@ exports.updateProduct = async (req, res) => {
       "category",
       "rating",
       "tags",
-      "discount",
+      "discountPrice",
       "viewIn",
       "ProductStatus",
       "stock",
@@ -885,10 +867,11 @@ exports.viewAllCarts = async (req, res) => {
     // }
     const allCarts = await carts
       .find({ userId: req.user._id })
-      .populate("productId", "name")
+      .populate("productId", "name stock_qunatity")
+      .populate("userId", "firstname lastname")
       .exec();
 
-    const uniqueCartIds = await carts.find({userId: req.user._id}).distinct("_id");
+    const uniqueCartIds = await carts.find({userId: req.user._id});
     const totalUniqueCarts = uniqueCartIds.length;
 
     // const totalItems = await carts
@@ -953,6 +936,21 @@ exports.addToCart = async (req, res) => {
           error: "Bad Request",
         });
       }
+      if(product.stock_qunatity === 0 || !product.stock_qunatity ){
+        return res.status(404).json({
+          success: false,
+          messsage: "Product out of stock",
+          error: "Not Found"
+        })
+      }
+
+      if(quantity > product.stock_qunatity || !product.stock_qunatity){
+        return res.status(404).json({
+          success: false,
+          message: `product limit exceeded!! only ${product.stock_qunatity} items left`,
+          error: "product stock exceeded"
+        })
+      }
       await carts.create({
         cartImages: product.imagesUrl,
         quantity: quantity,
@@ -974,6 +972,12 @@ exports.addToCart = async (req, res) => {
       });
     }
     const final_quantity = (isCartExist.quantity += quantity);
+    if(final_quantity > product.stock_qunatity || !product.stock_qunatity){
+      return res.status(404).json({
+        successs: false,
+        message: `product stock limit exceeded!!  only ${product.stock_qunatity} items left `
+      })
+    }
     const price = isCartExist.quantity * product.discountPrice;
     // isCartExist.final_price = isCartExist.quantity * product.discountPrice;
     const cartUpdate = await carts.findByIdAndUpdate(
@@ -997,7 +1001,7 @@ exports.addToCart = async (req, res) => {
     }
     // await isCartExist.save();
     // await isCartExist.save();
-    const data = await cartUpdate.populate("userId", "firstname");
+    const data = (await cartUpdate.populate("userId", "firstname")).populate('productId', "stock_quantity", "name");
     return res.status(200).json({
       success: true,
       message: " cart quantity updated successfully",
@@ -1083,7 +1087,7 @@ exports.updateCart = async (req, res) => {
     const { quantity } = req.body;
     const update = await carts
       .findOne({ $and : [{ _id: id },{ userId: req.user._id }] })
-      .populate("productId", "name")
+      .populate("productId", "name", "stock_qunatity")
       .exec();
     if (!update) {
       return res.status(404).json({
@@ -1091,6 +1095,22 @@ exports.updateCart = async (req, res) => {
         message: "cart not found",
         error: "Not Found",
       });
+    }
+    const product = await products.findById(update.productId);
+    if(!product){
+      return res.status(404).json({
+        success: false,
+        message: "product not Found",
+        error: "Not Found"
+      })
+    }
+
+    if(quantity > product.stock_qunatity || !product.stock_qunatity){
+      return res.status(402).json({
+        success: false,
+        message: `product limit exceeded!! only ${product.stock_qunatity} items left`,
+        error: "Stock limit exceeded"
+      })
     }
     // update.quantity = quantity;
     const price = quantity * update.discountedPrice;

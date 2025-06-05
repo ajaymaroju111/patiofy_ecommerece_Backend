@@ -41,7 +41,7 @@ const {
 
 
 //Users Management : 
-router.post('/users',authenticate, isAdmin, viewAllUsers);
+router.get('/users',authenticate, isAdmin, viewAllUsers);
 router.put('/user/:id',authenticate, isAdmin, setUserInactive);
 router.get('/user/:id',authenticate, isAdmin, viewUser);
 

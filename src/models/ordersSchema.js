@@ -18,7 +18,7 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'conformed', 'delivered', 'completed', 'cancelled', 'returned', 'refunded' ],
+    enum: ['pending', 'conformed','cancelled', 'returned', 'refunded' ],
     default: 'pending',
   },
   final_cost: {
@@ -83,7 +83,7 @@ const orderSchema = new mongoose.Schema({
   },
   payment_status: {
     type: String,
-    enum: ['unpaid', 'paid', 'refunded'],
+    enum: ['unpaid', 'paid', 'refunded', 'cancelled'],
     default: 'unpaid',
   },
   paymentInfo: {
@@ -95,6 +95,10 @@ const orderSchema = new mongoose.Schema({
     type: Date,
     default: Date.now(),
   },
+  cancel_request : {
+    type: String,
+    enum: ['none', 'requested', 'conformed']
+  }
 },
 { timestamps: true }
 );

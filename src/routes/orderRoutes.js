@@ -10,6 +10,7 @@ const {
   viewAllOrders,
   verifyPayment,
   getLastAddress,
+  getOrderById,
 } = require('../controllers/ordersControllers.js');
 
 //add cart to the orders : 
@@ -24,6 +25,7 @@ router.put('/shipaddress/:id', authenticate, addShippingAddress);
 router.put('/billaddress/:id', authenticate, addbillingAddress);
 router.get('/lastaddress', authenticate, getLastAddress);
 router.post('/:id', authenticate, makeOrder);
+router.get('/:id', authenticate, getOrderById);
 
 
 // payment routes : 

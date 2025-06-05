@@ -1,6 +1,8 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const users = require("../models/userschema.js");
+const crypto = require('crypto')
+
 
 //generate a JsonWebToken for the user for the authentiction : 
 exports.generateUserToken = (user) => {
@@ -10,8 +12,8 @@ exports.generateUserToken = (user) => {
     status: user.status,
   };
   const key = process.env.JWT_SECRET;
-  // const expiryOptions = { expiresIn: "1d" };
-  const expiryOptions = { expiresIn: "5m" };
+  const expiryOptions = { expiresIn: "1d" };
+  // const expiryOptions = { expiresIn: "5m" };
   const token = jwt.sign(data, key, expiryOptions);
   return token;
 };
@@ -123,4 +125,23 @@ exports.isAdmin = async (req, res, next) => {
       error: error,
     })
   }
+};
+
+
+const key1 = Buffer.from(process.env.KEY1, 'utf8');
+const iv1 = Buffer.from(process.env.IV1, 'utf8');
+const key2 = Buffer.from(process.env.KEY2, 'utf8');
+const iv2 = Buffer.from(process.env.IV2, 'utf8');
+
+function encryptLayer(text, key, iv) {
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+  let encrypted = cipher.update(text, 'utf8', 'base64');
+  encrypted += cipher.final('base64');
+  return encrypted;
+}
+
+exports.doubleEncrypt = async (plainText) => {
+  const firstLayer = encryptLayer(plainText, key1, iv1);
+  const secondLayer = encryptLayer(firstLayer, key2, iv2);
+  return secondLayer;
 };

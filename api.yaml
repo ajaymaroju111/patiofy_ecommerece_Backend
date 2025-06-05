@@ -4543,7 +4543,103 @@ paths:
                     example: Internal Server Error
                   error:
                     type: string
-  
+    get:
+      summary: Get an order by ID
+      description: Retrieves a specific order by ID if it belongs to the authenticated user.
+      operationId: getOrderById
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: MongoDB Order ID
+          required: true
+          schema:
+            type: string
+            example: 665f4a1848f00a4db8a325df
+      responses:
+        '200':
+          description: Order retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Order retrieved successfully
+                  data:
+                    $ref: '#/components/schemas/Order'
+        '401':
+          description: Invalid Order ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: invalid order ID
+                  error:
+                    type: string
+                    example: UnAuthorized
+        '403':
+          description: User not authorized to access this order
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: you are not authorized
+                  error:
+                    type: string
+                    example: UnAuthorized
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Order not Found
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Some server error message
+
   /patiofy/auth/user/order/lastaddress:
     get:
       summary: Get the latest saved addresses of the authenticated user

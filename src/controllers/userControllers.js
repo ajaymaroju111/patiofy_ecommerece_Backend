@@ -3,7 +3,7 @@ const products = require("../models/productschema.js");
 const userAddresses = require("../models/addressschema.js");
 const queryForm = require("../models/contactschema.js");
 const { sendEmail } = require("../utils/sendEmail.js");
-const { generateUserToken } = require("../middlewares/authUser.js");
+const { generateUserToken, doubleEncrypt } = require("../middlewares/authUser.js");
 const { conformSignup, forgetPassword, getSuccessMark, sessionExpired, userNotFound } = require("../utils/emailTemplates.js");
 const { default: mongoose } = require("mongoose");
 const carts = require("../models/cartschema.js");
@@ -152,7 +152,11 @@ exports.verify = async (req, res) => {
     }
     const User = await users.findById(decodedId);
     if (!User) {
-      return res.send(userNotFound());
+      return res.status(404).json({
+        suceess: false,
+        message: "User not Found",
+        error: "Not Found"
+      });
     }
     //timer for the account activation
     if (Date.now() > User.jwtExpiry || User.jwtExpiry === undefined) {
@@ -161,7 +165,11 @@ exports.verify = async (req, res) => {
     User.status = "active";
     User.jwtExpiry = undefined;
     await User.save();
-    res.status(200).send(getSuccessMark());
+    res.status(200).json({
+      success: true,
+      message: "Mail verified successfully",
+
+    })
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -290,7 +298,7 @@ exports.forgetPassword = async (req, res) => {
       });
     }
     const fullname = user.firstname + " " + user.lastname;
-    const encodedEmail = user.email;
+    // const securedEmail = await doubleEncrypt(user.email);
     await sendEmail({
       to: email,
       subject: "forget password link",
@@ -301,6 +309,7 @@ exports.forgetPassword = async (req, res) => {
       message: "reset password link sent to the email",
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -342,7 +351,6 @@ exports.setPassword = async (req, res) => {
     });
   }
 };
-
 
 
 // reset the password using old password :

@@ -110,7 +110,7 @@ passport.use(
         const token = jwt.sign(
           { id: user._id, email: user.email, status: user.status },
           process.env.JWT_SECRET,
-          { expiresIn: "5m" }
+          { expiresIn: "1d" }
         );
 
         return done(null, {user, token}); //pass token with the user 

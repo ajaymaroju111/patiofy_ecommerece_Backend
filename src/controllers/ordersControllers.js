@@ -448,6 +448,13 @@ exports.makeOrder = async (req, res) => {
         });
       }
 
+      if(quantity > product.stock_qunatity || !product.stock_qunatity){
+        return res.status(404).json({
+          success: false,
+          message: `Product out of stock only ${product.stock_qunatity} left!!`,
+          error: "insuffiecient stock quantity"
+        })
+      }
       const razorpayOrder = await razorpay.orders.create({
         amount: totalPay,
         currency: "INR",
@@ -534,6 +541,14 @@ exports.makeOrder = async (req, res) => {
             error: "Not Found",
           });
         }
+        const product = await products.findById(cart.productId);
+        if(!product){
+          return res.status(404).json({
+            success: false,
+            message: "product does not exist",
+            error: "Not Found"
+          })
+        }
         const quantity = Number(cart.quantity);
         const finalCost = Number(cart.discountedPrice * quantity);
         if (isNaN(finalCost)) {
@@ -612,6 +627,12 @@ exports.cancelOrder = async (req, res) => {
       });
     }
     const order = await orders.findById(id);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "order not found",
+      });
+    }
     if (order.userId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -619,17 +640,11 @@ exports.cancelOrder = async (req, res) => {
         error: "UnAuthorized",
       });
     }
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "order not found",
-      });
-    }
-    order.status = "cancelled";
+    order.cancel_request = "requested";
     await order.save();
     return res.status(200).json({
       success: true,
-      message: "order cancelled successfullly",
+      message: "Order cancellation has been requested successfully.",
     });
   } catch (error) {
     return res.status(500).json({
@@ -883,24 +898,16 @@ exports.viewAllOrders = async (req, res) => {
     // }
     const allorders = await orders
       .find({ userId: req.user._id })
+      .populate('productId', "imagesUrl description size fabric rating discountPrice")
       .sort({_id: -1})
-      .populate("productId", "discountPrice");
+      .exec();
     // const allorders = await orders
     //   .find({ userId: req.user._id })
-    //   .select("-userId, -productId");
-    for (const order of allorders) {
-      if (order.userId.toString() !== req.user._id.toString()) {
-        return res.status(403).json({
-          success: false,
-          message: "You are not authorized to access this order.",
-          error: "Unauthorized",
-        });
-      }
-    }
+    //   .select("-userId -productId");
     if (!allorders || allorders.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "order are empty",
+        message: "No orders found",
         error: "Not Found",
       });
     }
@@ -922,6 +929,48 @@ exports.viewAllOrders = async (req, res) => {
     });
   }
 };
+
+//get a single order by id: 
+exports.getOrderById = async(req, res) => {
+  try {
+    const id = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(401).json({
+        success: false,
+        message: "invalid order ID",
+        error: "UnAuthorized"
+      })
+    }
+    const myOrder = await orders.findById(id);
+    if(!myOrder){
+      return res.status(404).json({
+        success: true,
+        message: "Order not Found",
+        error: "Not Found",
+      })
+    }
+
+    if (myOrder.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "you are not authorized",
+        error: "UnAuthorized",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Order retrieved successfully",
+      data: myOrder
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error
+    })
+  }
+}
 
 //////////////**********************   Payment Gateways      *************************************/
 
@@ -1029,6 +1078,7 @@ exports.verifyPayment = async (req, res) => {
       { "paymentInfo.razorpay_order_id": razorpay_order_id },
       {
         $set: {
+          status: 'conformed',
           payment_status: "paid",
           "paymentInfo.razorpay_payment_id": razorpay_payment_id,
           "paymentInfo.razorpay_signature": razorpay_signature,
@@ -1050,7 +1100,13 @@ exports.verifyPayment = async (req, res) => {
       modifiedCount: updatedResult.modifiedCount,
     });
   } catch (error) {
-    clg(error);
+    const allorders = await orders.find({
+      "paymentInfo.razorpay_order_id": razorpay_order_id,
+    });
+    for (const order of allorders) {
+      order.status = 'cancelled';
+      order.payment_status = 'cancelled';
+    }
     return res.status(500).json({
       success: false,
       message: "Internal server error",
