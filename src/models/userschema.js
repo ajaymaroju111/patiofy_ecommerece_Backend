@@ -8,6 +8,9 @@ const userschema = new mongoose.Schema(
     googleId: {
       type: String,
     },
+    profileUrl: { 
+      type: String, 
+    },
     firstname: {
       type: String,
       required: [true, "firstname is Mandatory"],

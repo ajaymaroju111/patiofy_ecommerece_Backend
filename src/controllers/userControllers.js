@@ -8,8 +8,6 @@ const { conformSignup, forgetPassword, getSuccessMark, sessionExpired, userNotFo
 const { default: mongoose } = require("mongoose");
 const carts = require("../models/cartschema.js");
 const orders = require("../models/ordersschema.js");
-// const path = require('path')
-// const redis = require("../utils/redisConfig.js");
 
 //set password after google oauth signup :
 exports.setNewPassword = async (req, res) => {
@@ -48,7 +46,7 @@ exports.setNewPassword = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -91,7 +89,7 @@ exports.signUp = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -132,7 +130,7 @@ exports.resend = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -174,7 +172,7 @@ exports.verify = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -239,7 +237,7 @@ exports.signIn = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -273,7 +271,7 @@ exports.getById = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -313,7 +311,7 @@ exports.forgetPassword = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -347,7 +345,7 @@ exports.setPassword = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -386,7 +384,7 @@ exports.changePassword = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -423,10 +421,42 @@ exports.update = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
+
+exports.uploadUserProfilePic = async(req, res) => {
+  try {
+    if(!req.file){
+      return res.status(401).json({
+        success: false,
+        message: "profile image is required",
+        error: "Bad Request"
+      })
+    }
+    const profilePic = req.file.location
+    const user = await users.findById(req.user._id);
+    if(!user){
+      return res.status(404).json({
+        success: false,
+        message: "User not Found",
+        error: 'Not Found'
+      })
+    }
+    if(user.profileUrl){
+      
+    }
+    user.profileUrl = profilePic;
+    await user.save();
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message
+    })
+  }
+}
 
 //list all products of a user :
 exports.myProducts = async (req, res) => {
@@ -471,7 +501,7 @@ exports.myProducts = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -487,7 +517,7 @@ exports.signOut = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -556,7 +586,7 @@ exports.addAddress = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -666,7 +696,7 @@ exports.getAddress = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -697,7 +727,7 @@ exports.deleteAddress = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -724,7 +754,7 @@ exports.viewAllAddresses = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -767,7 +797,7 @@ exports.contactUs = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };

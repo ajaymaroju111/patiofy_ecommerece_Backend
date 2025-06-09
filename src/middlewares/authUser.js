@@ -122,7 +122,7 @@ exports.isAdmin = async (req, res, next) => {
     return res.status(401).json({
       success: false,
       message: "Authentication failed",
-      error: error,
+      error: error.message,
     })
   }
 };

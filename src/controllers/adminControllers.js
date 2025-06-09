@@ -46,7 +46,7 @@ exports.setUserInactive = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -55,16 +55,23 @@ exports.setUserInactive = async (req, res) => {
 exports.viewAllUsers = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 2;
     const skip = (page - 1) * limit;
-    const allusers = await users.find({ accountType : { $ne : 'admin'}}).skip(skip).limit(limit).exec();
+    const allusers = await users
+      .find({ accountType: { $ne: "admin" } })
+      .skip(skip)
+      .limit(limit)
+      .exec();
     if (!allusers || allusers.length === 0) {
       return res.status(404).json({
         success: false,
         message: "products not found",
       });
     }
+    const total =  allusers.length
     return res.status(200).json({
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
       success: true,
       message: "users retrieved successfully",
       data: allusers,
@@ -73,7 +80,7 @@ exports.viewAllUsers = async (req, res) => {
     return res.status(500).json({
       success: fase,
       message: "Intenal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -106,40 +113,22 @@ exports.viewUser = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
 
 //********************* Products Management *******************/
 
-//get all products fro the admin : 
+//get all products fro the admin :
 exports.getAllProductsForAdmim = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // const cacheKey = `products:all`
-    // try {
-    //   const cacheProducts = await redis.get(cacheKey);
-    //   if(cacheProducts){
-    //     const total = cacheProducts.length;
-    //     return res.status(200).json({
-    //       page,
-    //       success:true,
-    //       cached: true,
-    //       data: cacheProducts,
-    //     })
-    //   }
-    // } catch (redisError) {
-    //   console.error(redisError);
-    // }
-    const allproducts = await products
-      .find()
-      .skip(skip)
-      .limit(limit)
-      .exec();
+    
+    const allproducts = await products.find().skip(skip).limit(limit).exec();
     if (allproducts.length === 0 || !allproducts) {
       return res.status(404).json({
         success: false,
@@ -147,11 +136,6 @@ exports.getAllProductsForAdmim = async (req, res) => {
       });
     }
     const total = await products.countDocuments();
-    // try {
-    //   await redis.set(cacheKey, JSON.stringify(allproducts), 'EX', 3600);
-    // } catch (redisError) {
-    //   console.error(redisError);
-    // }
     return res.status(200).json({
       success: true,
       page,
@@ -163,12 +147,12 @@ exports.getAllProductsForAdmim = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
 
-//get the product by the id : 
+//get the product by the id :
 exports.getProductByIdForAdmin = async (req, res) => {
   try {
     const { id } = req.params;
@@ -192,7 +176,7 @@ exports.getProductByIdForAdmin = async (req, res) => {
     // } catch (redisError) {
     //   console.error(redisError);
     // }
-    
+
     const product = await products.findById(id);
     if (!product) {
       return res.status(404).json({
@@ -218,7 +202,7 @@ exports.getProductByIdForAdmin = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -259,7 +243,7 @@ exports.unPublishProduct = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -300,7 +284,7 @@ exports.publishProduct = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -327,28 +311,27 @@ exports.setViewinProduct = async (req, res) => {
         error: "Bad Request",
       });
     }
-    const item = await products.findById(id).select('name, viewIn');
-    if(!item){
+    const item = await products.findById(id).select("name, viewIn");
+    if (!item) {
       return res.status(404).json({
         success: false,
         message: "Product not found",
-        error: "Not Found"
-      })
+        error: "Not Found",
+      });
     }
     item.viewIn = viewin;
     await item.save();
     return res.status(200).json({
       success: true,
-      message : "product viewas field updated successfully",
-      data : item
-    })
-
+      message: "product viewas field updated successfully",
+      data: item,
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error
-    })
+      error: error.message,
+    });
   }
 };
 
@@ -385,10 +368,10 @@ exports.setDiscountOnProduct = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
-};
+}; 
 
 //remove discount for a product:
 exports.removeDiscountOnProduct = async (req, res) => {
@@ -421,7 +404,7 @@ exports.removeDiscountOnProduct = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -431,11 +414,19 @@ exports.removeDiscountOnProduct = async (req, res) => {
 //view all inprogess orders :
 exports.viewAllRecentOrders = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const allorders = await orders
-      .find()
+      .find({createdAt: { $gte: thirtyDaysAgo }})
       .populate("userId", "firstname lastname")
       .populate("productId", "name price size discountPrice")
-      .sort({_id:-1})
+      .limit(limit)
+      .skip(skip)
+      .sort({ _id: -1 })
       .exec();
     if (allorders.length === 0) {
       return res.status(404).json({
@@ -453,7 +444,7 @@ exports.viewAllRecentOrders = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -485,50 +476,56 @@ exports.viewAllRefundedOrders = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
 
-//view all cancelled orders:
+//view all users orders : 
 exports.viewAllUsersOrders = async (req, res) => {
   try {
-    
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 2;
+    const skip = (page - 1) * limit;
+
     const allorders = await orders
       .find()
       .populate("userId", "firstname, lastname")
       .populate("productId", "name, price, size, discountPrice")
+      .limit(limit)
+      .skip(skip)
       .exec();
     if (allorders.length === 0) {
       return res.status(404).json({
         success: true,
-        message: "No cancelled active orders",
+        message: "No  active orders found",
       });
     }
     res.status(200).json({
       success: true,
-      totla_items: allorders.length,
-      message: "cancelled orders are retrieved ",
+      page: page,
+      totalPages: Math.ceil(allorders.length / limit),
+      message: "all users orders retrieved successfully",
       data: allorders,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
 
-//view all completed orders:
-exports.viewAllCompletedOrders = async (req, res) => {
+//view all cancel request :
+exports.viewAllCancelRequestedOrders = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = 10;
     const skip = (page - 1) * limit;
     const allorders = await orders
       .find({
-        status: { $in: ["completed"] },
+        cancel_request: { $in: ["requested"] },
       })
       .populate("userId", "firstname, lastname")
       .populate("productId", "name, price, size, discountPrice")
@@ -538,21 +535,21 @@ exports.viewAllCompletedOrders = async (req, res) => {
     if (allorders.length === 0) {
       return res.status(404).json({
         success: true,
-        message: "No completed  orders",
+        message: "cancel requests Not found",
       });
     }
     res.status(200).json({
       success: true,
       page: page,
       totlal_pages: Math.ceil(allorders.length / 10),
-      message: "completed orders are retrieved ",
+      message: "cancel requests orders are retrieved ",
       data: allorders,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -589,66 +586,71 @@ exports.viewAllPendingOrders = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
 
-//users : - orders : 
+//users : - orders :
 exports.getUserOrderById = async (req, res) => {
   try {
     const id = req.params;
-    if(!mongoose.Types.ObjectId.isValid(id)){
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(401).json({
         success: false,
         message: "Invalid Object ID",
-        error: "Not Found"
-      })
+        error: "Not Found",
+      });
     }
-    const userOrder = await orders.findById(id).populate('userId').populate('productId');
-    if(!userOrder){
+    const userOrder = await orders
+      .findById(id)
+      .populate("userId")
+      .populate("productId");
+    if (!userOrder) {
       return res.status(404).json({
         success: false,
         message: "Order not Found",
-        error: "Not Found"
-      })
+        error: "Not Found",
+      });
     }
     return res.status(200).json({
       success: true,
       message: "order retrieved successfully",
       data: userOrder,
-    })
+    });
   } catch (error) {
     return res.status(500).json({
       succcess: false,
       message: "Internal Server",
-      error: 'error',
-    })
+      error: "error",
+    });
   }
-}
-
+};
 
 exports.updateUserOrderById = async (req, res) => {
   try {
     const id = req.params;
-    const {  quantity, status} = req.body
-    
-    if(!mongoose.Types.ObjectId.isValid(id)){
+    const { quantity, status } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(401).json({
         success: false,
         message: "Invalid Object ID",
-        error: "Not Found"
-      })
+        error: "Not Found",
+      });
     }
-    const userOrder = await orders.findById(id).populate('userId').populate('productId');
-    if(!userOrder){
+    const userOrder = await orders
+      .findById(id)
+      .populate("userId")
+      .populate("productId");
+    if (!userOrder) {
       return res.status(404).json({
         success: false,
         message: "Order not Found",
-        error: "Not Found"
-      })
+        error: "Not Found",
+      });
     }
-    if(quantity){
+    if (quantity) {
       const beforePrice = userOrder.final_cost;
       userOrder.quantity = quantity;
       userOrder.final_cost = quantity * userOrder.actual_price;
@@ -658,15 +660,15 @@ exports.updateUserOrderById = async (req, res) => {
       success: true,
       message: "order retrieved successfully",
       data: userOrder,
-    })
+    });
   } catch (error) {
     return res.status(500).json({
       succcess: false,
       message: "Internal Server",
-      error: 'error',
-    })
+      error: "error",
+    });
   }
-}
+};
 
 //**********  Payment Status:   *******************/
 //view all payment completed orders:
@@ -701,7 +703,7 @@ exports.viewAllSuccessPaymentOrders = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -738,7 +740,7 @@ exports.viewAllUnSuccessPaymentOrders = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };

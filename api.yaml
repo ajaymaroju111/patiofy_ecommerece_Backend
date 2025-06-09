@@ -1286,7 +1286,7 @@ paths:
                     type: string
                     example: "Internal Server Error"
 
-#product routes YAML  :
+#product routes YAML :
 
   /patiofy/auth/products/:
   # get all list of products : 
@@ -2478,78 +2478,108 @@ paths:
 
   /patiofy/auth/admin/product:
     post:
-      summary: Create a new Product
-      description: Adds a new product post with images.
       tags:
         - Admin - products
       security:
         - BearerAuth: []
-      operationId: createPost
+      summary: Create a new product
+      description: Adds a new product with stock and pricing info for sizes S, M, L, XL.
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
+              required:
+                - name
+                - description
+                - S_stockAmount
+                - M_stockAmount
+                - L_stockAmount
+                - XL_stockAmount
+                - S_costPrice
+                - S_sellingPrice
+                - M_costPrice
+                - M_sellingPrice
+                - L_costPrice
+                - L_sellingPrice
+                - XL_costPrice
+                - XL_sellingPrice
+                - fabric
+                - category
+                - tags
+                - viewIn
+                - stock
+                - images
               properties:
                 name:
                   type: string
-                  description: Name of the product
-                  example: "Cool T-Shirt"
+                  example: Cotton Shirt
                 description:
                   type: string
-                  description: Description of the product
-                  example: "A cool t-shirt made from organic cotton."
-                price:
+                  example: A premium quality cotton shirt
+                S_stockAmount:
                   type: number
-                  format: float
-                  description: Price of the product
-                  example: 19.99
-                size:
-                  type: string
-                  description: Size of the product
-                  example: "M"
+                  example: 20
+                M_stockAmount:
+                  type: number
+                  example: 15
+                L_stockAmount:
+                  type: number
+                  example: 10
+                XL_stockAmount:
+                  type: number
+                  example: 5
+                S_costPrice:
+                  type: number
+                  example: 300
+                S_sellingPrice:
+                  type: number
+                  example: 500
+                M_costPrice:
+                  type: number
+                  example: 320
+                M_sellingPrice:
+                  type: number
+                  example: 520
+                L_costPrice:
+                  type: number
+                  example: 350
+                L_sellingPrice:
+                  type: number
+                  example: 550
+                XL_costPrice:
+                  type: number
+                  example: 370
+                XL_sellingPrice:
+                  type: number
+                  example: 570
                 fabric:
                   type: string
-                  description: Fabric type of the product
-                  example: "Cotton"
+                  example: Cotton
                 category:
                   type: string
-                  description: category of the product
-                  example: "Baby Swing"
+                  example: Men Shirts
                 tags:
                   type: string
-                  description: tags of the product
-                  example: "Baby cradle, baby jhula"
-                rating:
-                  type: number
-                  description: rating of the product
-                  example: 4.5
-                discount:
-                  type: number
-                  description: discount of the product
-                  example: 20
+                  example: summer,cotton,new
                 viewIn:
-                  type: array
-                  items:
-                    type: string
-                    example: ['new_collection', best_seller]
-                    # enum:
-                    #   - new_collection
-                    #   - best_seller
-                    #   - trending
-                    #   - all
-                    #   - ""
-
+                  type: string
+                  example: '["new_collection","trending"]'
+                stock:
+                  type: number
+                  example: 50
+                ProductStatus:
+                  type: string
+                  example: Active
                 images:
                   type: array
                   items:
                     type: string
                     format: binary
-                  description: Product images (required)
       responses:
-        "200":
-          description: Product added successfully
+        200:
+          description: Product created successfully
           content:
             application/json:
               schema:
@@ -2560,27 +2590,13 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Product added successfully"
-        "401":
-          description: Product images are required
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Product pics are required"
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Internal Server Error" 
+                    example: Product created successfully
+        400:
+          description: Bad request (missing fields, invalid data)
+        401:
+          description: Unauthorized or invalid stock/pricing
+        500:
+          description: Internal server error
 
   /patiofy/auth/admin/allproducts:                 
   # get all products which are in published
@@ -4031,7 +4047,7 @@ paths:
                     type: string
                     example: An error message
 
-  /patiofy/auth/admin/orders/success:
+  /patiofy/auth/admin/orders/requested/cancel:
     get:
       summary: Retrieve completed orders with pagination
       description: Fetches completed orders with pagination. Includes populated user and product details.
@@ -4426,7 +4442,7 @@ paths:
                     type: string
                     example: Error message
     
-#order calls :
+#order calls : 
 
   /patiofy/auth/user/order/{id}:
     post:
@@ -5220,6 +5236,8 @@ paths:
                   error:
                     type: string
                     example: Signature generation failed
+
+
 
 
 

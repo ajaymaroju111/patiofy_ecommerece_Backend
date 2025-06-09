@@ -12,7 +12,7 @@ const {
   viewAllRecentOrders,
   viewAllRefundedOrders,
   viewAllUsersOrders,
-  viewAllCompletedOrders,
+  viewAllCancelRequestedOrders,
   viewAllSuccessPaymentOrders,
   viewAllUnSuccessPaymentOrders,
   removeDiscountOnProduct,
@@ -68,7 +68,7 @@ router.put('/product/undiscount/:id', authenticate, isAdmin, removeDiscountOnPro
 router.get('/orders/recent', authenticate, isAdmin, viewAllRecentOrders);
 router.get('/orders/refund', authenticate, isAdmin, viewAllRefundedOrders);
 router.get('/orders/all', authenticate, isAdmin, viewAllUsersOrders);
-router.get('/orders/success', authenticate, isAdmin, viewAllCompletedOrders);
+router.get('/orders/requested/cancel', authenticate, isAdmin, viewAllCancelRequestedOrders);
 router.get('/orders/pending', authenticate, isAdmin, viewAllPendingOrders);
 
 //Payment Management : 

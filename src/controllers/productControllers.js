@@ -1,13 +1,14 @@
 const carts = require("../models/cartschema.js");
-const bcrypt = require("bcrypt");
-const users = require("../models/userschema.js");
+const ProductMatrix = require("../models/productmatrixschema.js");
+const fabrics = require("../models/fabricschema.js");
 const { default: mongoose } = require("mongoose");
 const reviews = require("../models/reviewschema.js");
 const products = require("../models/productschema.js");
-const {
-  deleteOldImages,
-  uploadNewImages,
-} = require("../middlewares/S3_bucket.js");
+const categories = require("../models/catogeriesschema.js");
+const { deleteOldImages } = require("../middlewares/S3_bucket.js");
+
+
+// ✅✅✅✅✅✅✅✅✅✅✅  Products  ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
 //create a product Product :
 exports.createProduct = async (req, res) => {
@@ -15,27 +16,16 @@ exports.createProduct = async (req, res) => {
     const {
       name,
       description,
-      price,
-      size,
       fabric,
       category,
       tags,
-      discountPrice,
       viewIn,
       stock,
       ProductStatus,
-      stock_quantity
     } = req.body;
 
-    if (
-      !name ||
-      !description ||
-      !price ||
-      !size ||
-      !fabric ||
-      !category ||
-      !tags
-    ) {
+    //checking for the body data :
+    if (!name || !description || !viewIn || !ProductStatus || !tags || !stock) {
       return res.status(400).json({
         success: false,
         message: "all fields are required",
@@ -87,107 +77,34 @@ exports.createProduct = async (req, res) => {
       });
     }
 
-    // const postFiles = req.files; // Assuming an array of files
+    //product images :
     const imageUrls = req.files.map((file) => file.location);
 
-
-    await products.create({
+    const product = await products.create({
       userId: req.user._id,
       imagesUrl: imageUrls,
       name,
       description,
-      price,
-      size,
+      tags: tagArray,
       fabric,
       category,
-      tags: tagArray,
-      discountPrice,
       stock,
       viewIn: parsedViewIn,
       ProductStatus,
-      stock_quantity
     });
-
     return res.status(200).json({
       success: true,
       message: "Product created successfully",
+      data: product,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
-
-// exports.createProduct = async (req, res) => {
-//   try {
-//     const { name, description, price, size, fabric, category, tags } = req.body;
-
-//     // Validate all required fields
-//     if (!name || !description || !price || !size || !fabric || !category || !tags) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "All fields are required",
-//         error: "Bad Request",
-//       });
-//     }
-
-//     // Ensure files are present
-//     if (!req.files || req.files.length === 0) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Product images are required",
-//         error: "Bad Request",
-//       });
-//     }
-
-//     const postFiles = req.files; // Assuming files are in the 'files' field
-
-//     // Get the base URL depending on the environment
-//     const baseUrl = getFileBaseUrl();
-
-//     // Map through the uploaded files and prepare image data with the full URL
-//     const postImages = postFiles.map((file) => {
-//       // Construct the full URL for the uploaded image
-//       const fileUrl = `${baseUrl}/${file.filename}`; // Concatenate base URL and the file path
-
-//       return {
-//         name: file.originalname,  // Original file name
-//         img: {
-//           data: fileUrl, // Store the URL instead of the image buffer
-//           contentType: file.mimetype, // MIME type (e.g., image/png)
-//         },
-//       };
-//     });
-
-//     // Create a new product in the database with the full image data
-//     await products.create({
-//       userId: req.user._id, // Assuming `req.user` contains user info from JWT or session
-//       postImages,  // Store image URLs along with content type and name
-//       name,
-//       description,
-//       price,
-//       size,
-//       fabric,
-//       category,
-//       tags,
-//     });
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Product created successfully",
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//       error: error.message, // Provide more specific error message
-//     });
-//   }
-// };
 
 //update product Product  :
 exports.updateProduct = async (req, res) => {
@@ -205,16 +122,12 @@ exports.updateProduct = async (req, res) => {
     const allowedFields = [
       "name",
       "description",
-      "price",
-      "size",
+      "tags",
+      "viewIn",
       "fabric",
       "category",
-      "rating",
-      "tags",
-      "discountPrice",
-      "viewIn",
-      "ProductStatus",
       "stock",
+      "ProductStatus",
     ];
     const allowedViews = [
       "new_collection",
@@ -303,8 +216,6 @@ exports.updateImages = async (req, res) => {
     const newImageUrls = req.files.map((file) => file.location);
     product.imagesUrl = newImageUrls;
     await product.save();
-    // product.imagesUrl = newImageUrls;
-    // await product.save();
     console.log(product.imagesUrl);
     return res.status(200).json({
       success: true,
@@ -315,7 +226,7 @@ exports.updateImages = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -330,26 +241,9 @@ exports.getProductById = async (req, res) => {
         message: "Invalid product ID format",
       });
     }
-    // const cacheKey = `product:${id}`;
-
-    // try {
-    //   const cacheProduct = await redis.get(cacheKey);
-    // if(cacheProduct){
-    //   return res.status(200).json({
-    //     success: true,
-    //     cached: true,
-    //     data : cacheProduct
-    //   })
-    // }
-    // } catch (redisError) {
-    //   console.error(redisError);
-    // }
-
     const product = await products
       .findById(id)
-      .select(
-        "-userId, -ProductStatus, -createdAt, -updatedAt -number_of_sales"
-      )
+      .select("-userId, -ProductStatus, -createdAt, -updatedAt")
       .populate("rating", "finfinalRating");
     if (!product) {
       return res.status(404).json({
@@ -358,13 +252,6 @@ exports.getProductById = async (req, res) => {
         error: "Not Found",
       });
     }
-
-    // try {
-    // await redis.set(cacheKey, JSON.stringify(product), 'EX', 3600) //cache expiery time is 1 hour
-
-    // } catch (redisError) {
-    //   console.error(redisError);
-    // }
 
     return res.status(200).json({
       success: true,
@@ -375,7 +262,7 @@ exports.getProductById = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -387,26 +274,9 @@ exports.getAllProducts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // const cacheKey = `products:all`
-    // try {
-    //   const cacheProducts = await redis.get(cacheKey);
-    //   if(cacheProducts){
-    //     const total = cacheProducts.length;
-    //     return res.status(200).json({
-    //       page,
-    //       success:true,
-    //       cached: true,
-    //       data: cacheProducts,
-    //     })
-    //   }
-    // } catch (redisError) {
-    //   console.error(redisError);
-    // }
     const allproducts = await products
       .find({ ProductStatus: "published" })
-      .select(
-        "-createdAt, -updatedAt, -ProductStatus, -userId -number_of_sales"
-      )
+      .select("-createdAt, -updatedAt, -ProductStatus, -userId ")
       .skip(skip)
       .limit(limit)
       .exec();
@@ -417,11 +287,6 @@ exports.getAllProducts = async (req, res) => {
       });
     }
     const total = await products.countDocuments({ ProductStatus: "published" });
-    // try {
-    //   await redis.set(cacheKey, JSON.stringify(allproducts), 'EX', 3600);
-    // } catch (redisError) {
-    //   console.error(redisError);
-    // }
     return res.status(200).json({
       success: true,
       page,
@@ -433,7 +298,7 @@ exports.getAllProducts = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -448,8 +313,8 @@ exports.deleteProduct = async (req, res) => {
         message: "invalid ID",
       });
     }
-    const product = await products.findById(id);
-    if (!product) {
+    const isproduct = await products.findById(id);
+    if (!isproduct) {
       return res.status(404).json({
         success: false,
         message: "product not available",
@@ -461,15 +326,31 @@ exports.deleteProduct = async (req, res) => {
       return urlParts.slice(3).join("/");
     });
     await deleteOldImages(oldImageKeys);
-    const deleted = await products.findByIdAndDelete(id);
-    if (!deleted) {
+    const product = await products.findByIdAndDelete(id);
+    if (!product) {
       return res.status(404).json({
         success: false,
         message: "product not found",
         error: "Not Found",
       });
     }
-    // const review = await reviews.deleteOne({ productId: id });
+
+    //delete the meta data of that product :
+    await ProductMatrix.deleteMany({ productId: id });
+
+    const isSingleCategory = await categories.find({
+      categery_name: product.category,
+    });
+    const isSingleFabric = await fabrics.find({
+      categery_name: product.fabric,
+    });
+    if (isSingleCategory.length === 1) {
+      await categories.deleteOne({ categery_name: product.category });
+    }
+    if (isSingleFabric.length === 1) {
+      await fabrics.deleteOne({ fabric_name: product.fabric });
+    }
+    await reviews.deleteOne({ productId: id });
     return res.status(200).json({
       success: true,
       message: "Product deleted successfully",
@@ -478,10 +359,12 @@ exports.deleteProduct = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
+
+// ❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌ 
 
 //get catogeries, size and fabric :
 exports.getFilterNames = async (req, res) => {
@@ -520,7 +403,7 @@ exports.getFilterNames = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -532,20 +415,7 @@ exports.filterProducts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    // const cacheKey = `products:filtered:page=${page}&limit=${limit}&categories=${categories || ''}&price=${price || ''}&size=${size || ''}&fabric=${fabric || ''}&discount=${Discount || ''}`;
-    // try {
-    //   const cacheData = await redis.get(cacheKey);
-    //   if(cacheData){
-    //     return res.status(200).json({
-    //       success: true,
-    //       page: page,
-    //       cached: true,
-    //       data : JSON.parse(cacheData)
-    //     })
-    //   }
-    // } catch (redisError) {
-    //   console.error(redisError)
-    // }
+
     let filter = {};
     //initializing the filter condition :
     if (categories) {
@@ -671,11 +541,7 @@ exports.filterProducts = async (req, res) => {
         message: "Products not found",
       });
     }
-    // try {
-    //   await redis.set(cacheKey, JSON.stringify(filterproduct), 'EX', 1800);
-    // } catch (redisError) {
-    //   console.error(redisError);
-    // }
+
     return res.status(200).json({
       success: true,
       page: page,
@@ -688,7 +554,7 @@ exports.filterProducts = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -731,7 +597,7 @@ exports.viewProductsStock = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -757,7 +623,7 @@ exports.newCollections = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -783,7 +649,7 @@ exports.trendingCollections = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -810,7 +676,7 @@ exports.findBestSellerProducts = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -843,51 +709,32 @@ exports.searchProducts = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
 //*****************         PRODUCT CART ROUTES               ***********************/
 
+// ✅✅✅✅✅✅✅✅✅✅  carts  ✅✅✅✅✅✅✅✅✅✅✅✅
+
 //view all carts :
 exports.viewAllCarts = async (req, res) => {
   try {
-    // const cacheKey = `carts:all`
-    // try {
-    //   const cacheCarts = await redis.get(cacheKey);
-    //   if(cacheCarts){
-    //     return res.status(200).json({
-    //       success: false,
-    //       cached: true,
-    //       data: cacheCarts
-    //     })
-    //   }
-    // } catch (redisError) {
-    //   console.error(redisError)
-    // }
     const allCarts = await carts
       .find({ userId: req.user._id })
-      .populate("productId", "name stock_qunatity")
-      .populate("userId", "firstname lastname")
+      .populate({
+        path: "items.productId", // 1st level: cart -> product
+        populate: {
+          path: "product_Matrix", // 2nd level: product -> matrix
+          model: "ProductMatrix", // MUST match what you used in mongoose.model()
+        },
+      })
+      .populate("userId")
       .exec();
 
-    const uniqueCartIds = await carts.find({userId: req.user._id});
+    const uniqueCartIds = await carts.find({ userId: req.user._id });
     const totalUniqueCarts = uniqueCartIds.length;
 
-    // const totalItems = await carts
-    // .find({ userId: req.user._id }).countDocuments();
-    // if (!allCarts || allCarts.length === 0) {
-    //   return res.status(404).json({
-    //     success: false,
-    //     message: "cats are empty",
-    //     error: "Not Found",
-    //   });
-    // }
-    // try {
-    //   await redis.set(cacheKey, JSON.stringify(allCarts), 'EX', 43200);
-    // } catch (redisError) {
-    //   console.error(redisError);
-    // }
     return res.status(200).json({
       succcess: true,
       cached: false,
@@ -898,7 +745,7 @@ exports.viewAllCarts = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Intenal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -907,7 +754,7 @@ exports.viewAllCarts = async (req, res) => {
 exports.addToCart = async (req, res) => {
   try {
     const { id } = req.params;
-    const { quantity } = req.body;
+    const { quantity, size } = req.body;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -924,68 +771,63 @@ exports.addToCart = async (req, res) => {
       });
     }
 
+    const productMatrix = await ProductMatrix.findOne(
+      { productId: id },
+      { size: size }
+    );
+    if (!productMatrix) {
+      return res.status(404).json({
+        success: false,
+        message: "product matrix not found",
+        error: "Not Found",
+      });
+    }
+
     const isCartExist = await carts
-      .findOne({ $and: [{ productId: id }, { userId: req.user._id }] })
-      .populate("productId", "name")
+      .findOne({
+        $and: [{ productId: id }, { userId: req.user._id }, { size: size }],
+      })
+      .populate({
+        path: "items.productId", // 1st level: cart -> product
+        populate: {
+          path: "product_Matrix", // 2nd level: product -> matrix
+          model: "ProductMatrix", // MUST match what you used in mongoose.model()
+        },
+      })
       .exec();
     if (!isCartExist) {
-      if (!req.user._id) {
+      if (quantity > productMatrix.stock || !productMatrix.stock) {
         return res.status(401).json({
           success: false,
-          message: "session expired , please login",
+          message: `product out of stock!! only ${productMatrix.stock} items left in ${size} size`,
           error: "Bad Request",
         });
-      }
-      if(product.stock_qunatity === 0 || !product.stock_qunatity ){
-        return res.status(404).json({
-          success: false,
-          messsage: "Product out of stock",
-          error: "Not Found"
-        })
-      }
-
-      if(quantity > product.stock_qunatity || !product.stock_qunatity){
-        return res.status(404).json({
-          success: false,
-          message: `product limit exceeded!! only ${product.stock_qunatity} items left`,
-          error: "product stock exceeded"
-        })
       }
       await carts.create({
         cartImages: product.imagesUrl,
         quantity: quantity,
+        size: size,
         userId: req.user._id,
         productId: product._id,
-        discountedPrice: product.discountPrice,
-        final_price: product.discountPrice * quantity,
       });
       return res.status(200).json({
         success: true,
         message: "product added to cart successfully",
       });
     }
-    if (req.user._id.toString() !== isCartExist.userId.toString()) {
+    const final_quantity = (isCartExist.quantity += quantity);
+    if (final_quantity > productMatrix.stock || !productMatrix.stock) {
       return res.status(401).json({
         success: false,
-        message: "you are not authorized",
+        message: `product out of stock !! only ${productMatrix.stock} items left in ${size} size`,
         error: "Bad Request",
       });
     }
-    const final_quantity = (isCartExist.quantity += quantity);
-    if(final_quantity > product.stock_qunatity || !product.stock_qunatity){
-      return res.status(404).json({
-        successs: false,
-        message: `product stock limit exceeded!!  only ${product.stock_qunatity} items left `
-      })
-    }
-    const price = isCartExist.quantity * product.discountPrice;
-    // isCartExist.final_price = isCartExist.quantity * product.discountPrice;
     const cartUpdate = await carts.findByIdAndUpdate(
       isCartExist._id,
       {
         $set: {
           quantity: final_quantity,
-          final_price: price,
         },
       },
       {
@@ -993,15 +835,23 @@ exports.addToCart = async (req, res) => {
       }
     );
     if (!cartUpdate) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
-        message: "Error in Cart updation",
-        error: "Not Found",
+        message: "Product update failed due to a bad request.",
+        error: "Invalid input or missing data.",
       });
     }
-    // await isCartExist.save();
-    // await isCartExist.save();
-    const data = (await cartUpdate.populate("userId", "firstname")).populate('productId', "stock_quantity", "name");
+
+    const data = await (
+      await cartUpdate.populate("userId", "firstname")
+    ).populate({
+      path: "items.productId", // 1st level: cart -> product
+      populate: {
+        path: "product_Matrix", // 2nd level: product -> matrix
+        model: "ProductMatrix", // MUST match what you used in mongoose.model()
+      },
+    });
+
     return res.status(200).json({
       success: true,
       message: " cart quantity updated successfully",
@@ -1011,7 +861,7 @@ exports.addToCart = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -1026,20 +876,17 @@ exports.getCartById = async (req, res) => {
         message: "Invalid cart ID format",
       });
     }
-    // const cacheKey = `cart:${id}`;
-    // try {
-    //   const cacheCart = await redis.get(cacheKey);
-    //   if(cacheCart){
-    //     return res.status(200).json({
-    //       success: false,
-    //       cached: true,
-    //       data: cacheCart
-    //     })
-    //   }
-    // } catch (redisError) {
-    //   console.error(redisError)
-    // }
-    const cart = await carts.findById(id).populate("productId", "name").exec();
+
+    const cart = await carts
+      .findById(id)
+      .populate({
+        path: "items.productId", // 1st level: cart -> product
+        populate: {
+          path: "product_Matrix", // 2nd level: product -> matrix
+          model: "ProductMatrix", // MUST match what you used in mongoose.model()
+        },
+      })
+      .exec();
     if (cart.userId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -1053,12 +900,6 @@ exports.getCartById = async (req, res) => {
         message: "Cart not found",
       });
     }
-
-    // try {
-    //   await redis.set(cacheKey, JSON.stringify(cart), 'EX', 3600);
-    // } catch (redisError) {
-    //   console.error(redisError);
-    // }
     return res.status(200).json({
       success: true,
       cached: false,
@@ -1077,6 +918,7 @@ exports.getCartById = async (req, res) => {
 exports.updateCart = async (req, res) => {
   try {
     const { id } = req.params;
+    const { quantity, size } = req.body;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -1084,55 +926,67 @@ exports.updateCart = async (req, res) => {
         error: "Bad Request",
       });
     }
-    const { quantity } = req.body;
-    const update = await carts
-      .findOne({ $and : [{ _id: id },{ userId: req.user._id }] })
-      .populate("productId", "name", "stock_qunatity")
+    const isCart = await carts
+      .findOne({
+        $and: [{ _id: id }, { userId: req.user._id }, { size: size }],
+      })
+      .populate({
+        path: "items.productId", // 1st level: cart -> product
+        populate: {
+          path: "product_Matrix", // 2nd level: product -> matrix
+          model: "ProductMatrix", // MUST match what you used in mongoose.model()
+        },
+      })
       .exec();
-    if (!update) {
+    if (!isCart) {
       return res.status(404).json({
         success: false,
-        message: "cart not found",
+        message: "cart not fount",
         error: "Not Found",
       });
     }
-    const product = await products.findById(update.productId);
-    if(!product){
+    const product = await products.findOne({ _id: isCart.productId });
+    if (!product) {
       return res.status(404).json({
         success: false,
         message: "product not Found",
-        error: "Not Found"
-      })
+        error: "Not Found",
+      });
     }
-
-    if(quantity > product.stock_qunatity || !product.stock_qunatity){
+    const productMatrix = await ProductMatrix.findOne({productId: product._id}, {size: size})
+    if (quantity > productMatrix.stock || !productMatrix.stock) {
       return res.status(402).json({
-        success: false,
-        message: `product limit exceeded!! only ${product.stock_qunatity} items left`,
-        error: "Stock limit exceeded"
-      })
+        success: false, 
+        message: `product limit exceeded!! only ${productMatrix.stock} items left in ${size} size`,
+        error: "Stock limit exceeded",
+      });
     }
-    // update.quantity = quantity;
-    const price = quantity * update.discountedPrice;
-    // update.final_price = quantity * update.discountedPrice;
-    const updateCart = await carts.findByIdAndUpdate(
-      id,
-      {
-        $set : {
-          quantity: quantity,
-          final_price: price
+    const updateCart = await carts
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            quantity: quantity,
+          },
         },
-      },
-      {
-        new: true
-      }
-    ).populate('productId', 'name')
-    if(!updateCart){
+        {
+          new: true,
+        }
+      )
+      .populate({
+        path: "items.productId", // 1st level: cart -> product
+        populate: {
+          path: "product_Matrix", // 2nd level: product -> matrix
+          model: "ProductMatrix", // MUST match what you used in mongoose.model()
+        },
+      }).exec();
+
+    if (!updateCart) {
       return res.status(404).json({
         success: false,
         message: "Cart not updated",
-        error: "update action failed"
-      })
+        error: "update action failed",
+      });
     }
     return res.status(200).json({
       success: true,
@@ -1140,11 +994,10 @@ exports.updateCart = async (req, res) => {
       data: updateCart,
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -1163,13 +1016,7 @@ exports.deleteCart = async (req, res) => {
     const isUser = await carts.findOne({
       $and: [{ _id: id }, { userId: req.user._id }],
     });
-    if (isUser.userId.toString() !== req.user.id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "You are not authorized",
-        error: "UnAuthorized",
-      });
-    }
+
     if (!isUser) {
       return res.status(404).json({
         success: false,
@@ -1177,6 +1024,15 @@ exports.deleteCart = async (req, res) => {
         error: "Not Found",
       });
     }
+
+    if (isUser.userId.toString() !== req.user.id.toString()) {
+      return res.status(401).json({
+        success: false,
+        message: "You are not Authorized",
+        error: "UnAuthorized",
+      });
+    }
+    
     const deleted = await carts.findByIdAndDelete(id);
     if (!deleted) {
       return res.status(404).json({
@@ -1193,12 +1049,238 @@ exports.deleteCart = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: " Internal Server Error ",
-      error: error,
+      error: error.message,
     });
   }
 };
 
-///////////////////// review //////////////////
+// ✅✅✅✅✅✅✅✅✅✅✅  Product matrix  ✅✅✅✅✅✅✅✅✅✅✅
+
+//create a product matrix : 
+exports.createProductMatrix = async(req, res) => {
+  try {
+    const id = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(401).json({
+        success: false,
+        message: "invalid id",
+        error: "UnAuthorized"
+      })
+    }
+    const { original_price, selling_price, size, stock} = req.body;
+
+    if(!original_price || !selling_price || !size || !stock){
+      return res.status(401).json({
+        success: false,
+        message: "All fields are required",
+        error: "Bad Request"
+      })
+    }
+    const product = await products.findById(id);
+    if(!product){
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+        error: "Not Found"
+      })
+    }
+    if(original_price < selling_price){
+      return res.status(401).json({
+        success: false,
+        message: "selling price can not be grater than original price",
+        error: "UnAuthorized",
+      })
+    }
+    const isAlreadyMatrix = await ProductMatrix.find({productId: id}, {size: size});
+    if(isAlreadyMatrix){
+      return res.status(401).json({
+        success: false,
+        message: "product matrix already exist",
+        error: "Already exist"
+      })
+    }
+    const matrix = await ProductMatrix.create({
+      productId: id,
+      original_price,
+      selling_price,
+      size,
+      stock,
+    })
+    product.product_Matrix = matrix._id;
+    await product.save();
+    return res.status(200).json({
+      success: true,
+      message: "product matrix created successfully",
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message : "Internal Server Error",
+      error: error.message,
+    })
+  }
+}
+
+//update product_matrix : 
+exports.updateProductMatrix = async(req, res) => {
+  try {
+    const id = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(401).json({
+        success: false,
+        message: "invalid id",
+        error: "UnAuthorized"
+      })
+    }
+    const Matrix = await ProductMatrix.findById(id);
+    if(!Matrix){
+      return res.status(404).json({
+        success: false,
+        message: "product matrix not found",
+      })
+    }
+
+    const product = await products.findById(Matrix.productId);
+    if(!product){
+      return res.status(404).json({
+        success: false,
+        message: "product not found",
+        error: "Not Found"
+      })
+    }
+
+    const allowedFields = [
+      "original_price",
+      "selling_price",
+      "stock"
+    ]
+    const updateData = {};
+    allowedFields.forEach((field) => {
+      if(req.body[field] !== undefined){
+        if(req.body[original_price] < req.body[selling_price] ){
+          return res.status(400).json({
+            success: false,
+            messsage: "selling price can not be greater than original price",
+            error: "unauthorized"
+          })
+        }
+        updateData[field] = req.body[field];
+      }
+    })
+
+    const updateMatrix = await ProductMatrix.findByIdAndUpdate(
+      id,
+      updateData,
+      {
+        new : true,
+        runValidators: true
+      }
+    )
+    if(!updateMatrix){
+      return res.status(400).json({
+        success: false,
+        message: "some thing went wrong , not updated",
+        error: "unAuthorized"
+      })
+    }
+    return res.status(200).json({
+      success: false,
+      message: "product matrix updated successfully"
+    })
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message
+    })
+  }
+}
+
+//read product_matrix : 
+exports.getProductMatrixById = async(req, res) => {
+  try {
+    const id = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(400).json({
+        success: false,
+        message: "Invaid ID",
+        error: "Bad Request"
+      })
+    }
+    const matrix = await ProductMatrix.findById(id);
+    if(!matrix){
+      return res.status(404).json({
+        success: false,
+        message: "Product matrix not found",
+        error: "Not Found"
+      })
+    }
+    const product = await products.findById(matrix._id);
+    if(!product){
+      return res.status(404).json({
+        success: true,
+        message: "Product not found",
+        error: "Not Found"
+      })
+    }
+    return res.status(200).json({
+      success: true,
+      message: "product matrix retrieved successfully",
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: trwu,
+      message: "Interna; Server Error",
+      error: error.message
+    })
+  }
+}
+
+//delete pproduct_matrix :
+exports.deleteProductMatrix = async(req, res) => {
+  try {
+    const id  = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(401).json({
+        success: true,
+        message: "Invalid ID",
+        error: "Not Found"
+      })
+    }
+    const matrix = await ProductMatrix.findById(id);
+    if(!matrix){
+      return res.status(404).json({
+        success : true,
+        message: "product matrix not found",
+        error: "Bad Request",
+      })
+    }
+    const product = await products.findById(matrix.productId);
+    if(!product){
+      return res.status(404).json({
+        success: true,
+        message: 'product not found',
+        error: "Not Found"
+      })
+    }
+
+    await ProductMatrix.findByIdAndDelete(id);
+    return res.status(400).json({
+      success: true,
+      message: "product matrix deleted successfully"
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message
+    })
+  }
+}
+
+// ❌❌❌❌❌❌❌❌❌❌  ❌❌❌❌❌❌❌❌❌❌
+
 
 //get rating of a product id :
 exports.getRatingById = async (req, res) => {
@@ -1227,7 +1309,7 @@ exports.getRatingById = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Intenal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };

@@ -100,7 +100,7 @@ const razorpay = new Razorpay({
 //     return res.status(500).json({
 //       success: false,
 //       message: "Internal Server Error",
-//       error: error,
+//       error: error.message,
 //     });
 //   }
 // };
@@ -127,7 +127,7 @@ exports.getLatestSavedAddress = async (req, res) => {
     return res.status(500).json({
       success: true,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -314,7 +314,7 @@ exports.getLatestSavedAddress = async (req, res) => {
 //     return res.status(500).json({
 //       success: false,
 //       message: "Internal Server Error",
-//       error: error,
+//       error: error.message,
 //     });
 //   }
 // };
@@ -341,7 +341,7 @@ exports.getLastAddress = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Interna Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -650,7 +650,7 @@ exports.cancelOrder = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -693,7 +693,7 @@ exports.cancelOrder = async (req, res) => {
 //     return res.status(500).json({
 //       success: false,
 //       message: "Internal Server Error",
-//       error: error,
+//       error: error.message,
 //     })
 //   }
 // };
@@ -760,7 +760,7 @@ exports.addShippingAddress = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -817,7 +817,7 @@ exports.addbillingAddress = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -875,7 +875,7 @@ exports.getOrderById = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -883,27 +883,12 @@ exports.getOrderById = async (req, res) => {
 //get all orders:
 exports.viewAllOrders = async (req, res) => {
   try {
-    // const cacheKey = `orders:all`;
-    // try {
-    //   const cacheOrders = await redis.get(cacheKey);
-    //   if (cacheOrders) {
-    //     return res.status(200).json({
-    //       success: true,
-    //       cached: true,
-    //       data: cacheOrders,
-    //     });
-    //   }
-    // } catch (cacheError) {
-    //   console.error(cacheError);
-    // }
     const allorders = await orders
       .find({ userId: req.user._id })
-      .populate('productId', "imagesUrl description size fabric rating discountPrice")
+      .populate('productId', "imagesUrl description")
       .sort({_id: -1})
       .exec();
-    // const allorders = await orders
-    //   .find({ userId: req.user._id })
-    //   .select("-userId -productId");
+    
     if (!allorders || allorders.length === 0) {
       return res.status(404).json({
         success: false,
@@ -911,11 +896,6 @@ exports.viewAllOrders = async (req, res) => {
         error: "Not Found",
       });
     }
-    // try {
-    //   await redis.set(cacheKey, JSON.stringify(allorders), "EX", 3600);
-    // } catch (redisError) {
-    //   console.error(redisError);
-    // }
     return res.status(200).json({
       success: true,
       cached: false,
@@ -925,7 +905,7 @@ exports.viewAllOrders = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -967,7 +947,7 @@ exports.getOrderById = async(req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error
+      error: error.message
     })
   }
 }
