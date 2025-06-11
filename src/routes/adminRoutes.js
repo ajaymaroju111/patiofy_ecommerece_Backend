@@ -22,6 +22,8 @@ const {
   getProductByIdForAdmin,
   adminProfileUpdate,
   changePassword,
+  adminLogin,
+  adminSignup,
 } = require('../controllers/adminControllers.js')
 const {
   authenticate,
@@ -64,8 +66,8 @@ router.delete('/product/:id', authenticate, isAdmin, deleteProduct);
 
 // ✅✅✅✅✅✅✅✅✅✅ Product matrix ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
+router.patch('/matrix/update', authenticate, isAdmin, updateProductMatrix);
 router.post('/matrix/:id', authenticate, isAdmin, createProductMatrix);
-router.patch('/matrix/:id', authenticate, isAdmin, updateProductMatrix);
 router.delete('/matrix/:id', authenticate, isAdmin, getProductMatrixById);
 router.get('/matrix/:id', authenticate, isAdmin, deleteProductMatrix);
 
@@ -94,8 +96,8 @@ router.get('/payment/pending', authenticate, isAdmin, viewAllUnSuccessPaymentOrd
 //✅✅✅✅✅✅✅✅✅✅✅✅ Admin useres ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
 router.get('/myProducts',authenticate, isAdmin, myProducts);
-router.get('/signup',  authenticate, isAdmin, getById);
-router.get('/login',  authenticate, isAdmin, getById);
+router.get('/signup',  authenticate, isAdmin, adminSignup);
+router.get('/login',  authenticate, isAdmin, adminLogin);
 router.patch('/update',  authenticate, isAdmin, adminProfileUpdate);
 router.put('/password/update',  authenticate, isAdmin, changePassword);
 router.get('/view',  authenticate, isAdmin, getById);

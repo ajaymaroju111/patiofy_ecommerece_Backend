@@ -5088,76 +5088,8 @@ paths:
           description: Product not found
         '500':
           description: Internal Server Error
-    patch:
-      tags:
-        -  Admin Product Matrix
-      security:
-        - BearerAuth: []
-      summary: Update a product matrix
-      description: Updates original price, selling price, or stock of an existing product matrix.
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-          description: Matrix ID (MongoDB ObjectId)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                original_price:
-                  type: number
-                  example: 999
-                selling_price:
-                  type: number
-                  example: 799
-                stock:
-                  type: integer
-                  example: 20
-              example:
-                original_price: 999
-                selling_price: 799
-                stock: 20
-      responses:
-        '200':
-          description: Product matrix updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: product matrix updated successfully
-        '400':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
-                    type: string
-                  error:
-                    type: string
-        '401':
-          description: Unauthorized or Invalid ID
-        '404':
-          description: Product or Matrix not found
-        '500':
-          description: Internal Server Error
     get:
-      ttags:
+      tags:
         -  Admin Product Matrix
       security:
         - BearerAuth: []
@@ -5248,6 +5180,75 @@ paths:
         '500':
           description: Internal Server Error
 
+  /patiofy/auth/admin/matrix/update:
+    patch:
+      tags:
+        -  Admin Product Matrix
+      security:
+        - BearerAuth: []
+      summary: Update a product matrix
+      description: Updates original price, selling price, or stock of an existing product matrix.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Matrix ID (MongoDB ObjectId)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                original_price:
+                  type: number
+                  example: 999
+                selling_price:
+                  type: number
+                  example: 799
+                stock:
+                  type: integer
+                  example: 20
+              example:
+                original_price: 999
+                selling_price: 799
+                stock: 20
+      responses:
+        '200':
+          description: Product matrix updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: product matrix updated successfully
+        '400':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                  error:
+                    type: string
+        '401':
+          description: Unauthorized or Invalid ID
+        '404':
+          description: Product or Matrix not found
+        '500':
+          description: Internal Server Error
 #✅✅✅✅✅✅✅✅✅✅✅ Admin Calls ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
   patiofy/auth/admin/login:
@@ -5454,8 +5455,6 @@ paths:
         - BearerAuth: []
       summary: Change Admin Password
       description: Allows an authenticated admin to change their password.
-      security:
-        - bearerAuth: []  # Requires JWT token
       requestBody:
         required: true
         content:
@@ -5600,8 +5599,6 @@ paths:
                   error:
                     type: string
                     example: "Internal Server Error"
-
-
 
 
 

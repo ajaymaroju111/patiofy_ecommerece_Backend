@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const users = require("../models/userschema.js");
+const admins = require('../models/adminSchema.js')
 const crypto = require('crypto')
 
 
@@ -34,6 +35,46 @@ exports.authenticate = async (req, res, next) => {
     }
     // Fetch user from DB
     const user = await users.findById(decode.id);
+     // Check account status :
+    if (user.status !== "active") {
+      return res
+        .status(403)
+        .json({ error: "Account is inactive. Please verify." });
+    }
+    req.user = user;
+    next();
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+    return res.status(401).json({
+      success: false,
+      message: 'Token has expired. Please login again.',
+      expiredAt: error.expiredAt,
+    });
+  }
+
+  return res.status(401).json({
+    success: false,
+    message: 'Invalid token.',
+    error: error.message,
+  });
+  }
+}
+
+exports.adminAuthenticate = async (req, res, next) => {
+  try {
+    const bearerKey = req.headers["authorization"];
+
+    if (!bearerKey) {
+      return res.status(401).json({ error: "please login" });
+    }
+    // Verify the token
+    const token = bearerKey.split(" ")[1];
+    const decode = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decode) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+    // Fetch user from DB
+    const user = await admins.findById(decode.id);
      // Check account status :
     if (user.status !== "active") {
       return res

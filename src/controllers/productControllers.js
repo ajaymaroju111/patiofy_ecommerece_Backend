@@ -1242,62 +1242,140 @@ exports.createProductMatrix = async (req, res) => {
 };
 
 //update product_matrix :
+// exports.updateProductMatrix = async (req, res) => {
+//   try {
+//     const id = req.params;
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "invalid id",
+//         error: "UnAuthorized",
+//       });
+//     }
+//     const Matrix = await ProductMatrix.findById(id);
+//     if (!Matrix) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "product matrix not found",
+//       });
+//     }
+
+//     const product = await products.findById(Matrix.productId);
+//     if (!product) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "product not found",
+//         error: "Not Found",
+//       });
+//     }
+
+//     const allowedFields = ["original_price", "selling_price", "stock"];
+//     const updateData = {};
+//     allowedFields.forEach((field) => {
+//       if (req.body[field] !== undefined) {
+//         if (req.body[original_price] < req.body[selling_price]) {
+//           return res.status(400).json({
+//             success: false,
+//             messsage: "selling price can not be greater than original price",
+//             error: "unauthorized",
+//           });
+//         }
+//         updateData[field] = req.body[field];
+//       }
+//     });
+
+//     const updateMatrix = await ProductMatrix.findByIdAndUpdate(id, updateData, {
+//       new: true,
+//       runValidators: true,
+//     });
+//     if (!updateMatrix) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "some thing went wrong , not updated",
+//         error: "unAuthorized",
+//       });
+//     }
+//     return res.status(200).json({
+//       success: false,
+//       message: "product matrix updated successfully",
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//       error: error.message,
+//     });
+//   }
+// };
+
 exports.updateProductMatrix = async (req, res) => {
   try {
-    const id = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(401).json({
+    const { updates } = req.body;
+    if (!Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({
         success: false,
-        message: "invalid id",
-        error: "UnAuthorized",
-      });
-    }
-    const Matrix = await ProductMatrix.findById(id);
-    if (!Matrix) {
-      return res.status(404).json({
-        success: false,
-        message: "product matrix not found",
-      });
-    }
-
-    const product = await products.findById(Matrix.productId);
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "product not found",
-        error: "Not Found",
+        message: "Invalid or empty updates array",
       });
     }
 
     const allowedFields = ["original_price", "selling_price", "stock"];
-    const updateData = {};
-    allowedFields.forEach((field) => {
-      if (req.body[field] !== undefined) {
-        if (req.body[original_price] < req.body[selling_price]) {
-          return res.status(400).json({
-            success: false,
-            messsage: "selling price can not be greater than original price",
-            error: "unauthorized",
-          });
-        }
-        updateData[field] = req.body[field];
-      }
-    });
+    const results = [];
 
-    const updateMatrix = await ProductMatrix.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    });
-    if (!updateMatrix) {
-      return res.status(400).json({
-        success: false,
-        message: "some thing went wrong , not updated",
-        error: "unAuthorized",
+    for (const updateItem of updates) {
+      const { id, ...data } = updateItem;
+
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        results.push({ id, success: false, message: "Invalid ID" });
+        continue;
+      }
+
+      const matrix = await ProductMatrix.findById(id);
+      if (!matrix) {
+        results.push({ id, success: false, message: "Product matrix not found" });
+        continue;
+      }
+
+      const product = await products.findById(matrix.productId);
+      if (!product) {
+        results.push({ id, success: false, message: "Product not found" });
+        continue;
+      }
+
+      const updateData = {};
+      let valid = true;
+
+      allowedFields.forEach((field) => {
+        if (data[field] !== undefined) {
+          updateData[field] = data[field];
+        }
+      });
+
+      if (
+        updateData.original_price !== undefined &&
+        updateData.selling_price !== undefined &&
+        updateData.selling_price > updateData.original_price
+      ) {
+        results.push({ id, success: false, message: "Selling price cannot be greater than original price" });
+        continue;
+      }
+
+      const updatedMatrix = await ProductMatrix.findByIdAndUpdate(id, updateData, {
+        new: true,
+        runValidators: true,
+      });
+
+      results.push({
+        id,
+        success: true,
+        message: "Product matrix updated",
+        updated: updatedMatrix,
       });
     }
+
     return res.status(200).json({
-      success: false,
-      message: "product matrix updated successfully",
+      success: true,
+      message: "Bulk update processed",
+      results,
     });
   } catch (error) {
     return res.status(500).json({
@@ -1307,6 +1385,7 @@ exports.updateProductMatrix = async (req, res) => {
     });
   }
 };
+
 
 //read product_matrix :
 exports.getProductMatrixById = async (req, res) => {
@@ -1319,14 +1398,6 @@ exports.getProductMatrixById = async (req, res) => {
         error: "Bad Request",
       });
     }
-    const matrix = await ProductMatrix.find({ productId: id });
-    if (!matrix || matrix.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Product matrix not found",
-        error: "Not Found",
-      });
-    }
     const product = await products.findById(id);
     if (!product) {
       return res.status(404).json({
@@ -1335,6 +1406,15 @@ exports.getProductMatrixById = async (req, res) => {
         error: "Not Found",
       });
     }
+    const matrix = await ProductMatrix.find({ productId: id });
+    if (!matrix || matrix.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Product matrix not found",
+        error: "Not Found",
+      });
+    }
+    
     return res.status(200).json({
       success: true,
       message: "product matrix retrieved successfully",
