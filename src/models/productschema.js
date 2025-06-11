@@ -43,10 +43,11 @@ const productschema = new mongoose.Schema(
       enum: ["unpublished", "published"],
       default: "unpublished",
     },
-    product_Matrix : {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Product_matrix"
-    },
+    product_Matrix : 
+       [{
+        type: mongoose.Schema.Types.ObjectId,
+         ref: "ProductMatrix"
+       }],
     rating: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "reviews"

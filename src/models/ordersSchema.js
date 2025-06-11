@@ -18,13 +18,10 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'conformed','cancelled', 'returned', 'refunded' ],
+    enum: ['pending', 'conformed','cancelled', 'requested for cancel', 'returned'],
     default: 'pending',
   },
   final_cost: {
-    type: Number,
-  },
-  actual_price : {
     type: Number,
   },
   quantity:{
@@ -95,10 +92,6 @@ const orderSchema = new mongoose.Schema({
     type: Date,
     default: Date.now(),
   },
-  cancel_request : {
-    type: String,
-    enum: ['none', 'requested', 'conformed']
-  }
 },
 { timestamps: true }
 );

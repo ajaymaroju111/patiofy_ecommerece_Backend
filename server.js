@@ -77,7 +77,7 @@ app.use(
 app.use("/patiofy/auth/user", authroutes);
 app.use("/patiofy/auth/products", postroutes);
 app.use("/patiofy/auth/admin", adminroutes);
-app.use('/patiofy/auth/user/order', orderroutes)
+app.use('/patiofy/auth/user/order', orderroutes);
 
 
 //usage of swagger eith yaml code :

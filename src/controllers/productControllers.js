@@ -7,7 +7,6 @@ const products = require("../models/productschema.js");
 const categories = require("../models/catogeriesschema.js");
 const { deleteOldImages } = require("../middlewares/S3_bucket.js");
 
-
 // ✅✅✅✅✅✅✅✅✅✅✅  Products  ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
 //create a product Product :
@@ -137,6 +136,16 @@ exports.updateProduct = async (req, res) => {
       "none",
     ];
 
+    if (!allowedViews.includes(viewin)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid view type. Allowed values are: ${allowedViews.join(
+          ", "
+        )}`,
+        error: "Bad Request",
+      });
+    }
+
     const newData = {};
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) {
@@ -216,7 +225,6 @@ exports.updateImages = async (req, res) => {
     const newImageUrls = req.files.map((file) => file.location);
     product.imagesUrl = newImageUrls;
     await product.save();
-    console.log(product.imagesUrl);
     return res.status(200).json({
       success: true,
       message: "product images updated successfully",
@@ -277,6 +285,10 @@ exports.getAllProducts = async (req, res) => {
     const allproducts = await products
       .find({ ProductStatus: "published" })
       .select("-createdAt, -updatedAt, -ProductStatus, -userId ")
+      .populate({
+        path: "product_Matrix",
+      })
+      // .populate('rating')
       .skip(skip)
       .limit(limit)
       .exec();
@@ -321,11 +333,26 @@ exports.deleteProduct = async (req, res) => {
         errror: "Not Found",
       });
     }
-    const oldImageKeys = (product.imagesUrl || []).map((url) => {
+    const oldImageKeys = (isproduct.imagesUrl || []).map((url) => {
       const urlParts = url.split("/");
       return urlParts.slice(3).join("/");
     });
     await deleteOldImages(oldImageKeys);
+    //delete the meta data of that product :
+    await ProductMatrix.deleteMany({ productId: id });
+    const isSingleCategory = await categories.find({
+      categery_name: isproduct.category,
+    });
+    const isSingleFabric = await fabrics.find({
+      categery_name: isproduct.fabric,
+    });
+    if (isSingleCategory.length === 1) {
+      await categories.deleteOne({ categery_name: isproduct.category });
+    }
+    if (isSingleFabric.length === 1) {
+      await fabrics.deleteOne({ fabric_name: isproduct.fabric });
+    }
+    await reviews.deleteOne({ productId: id });
     const product = await products.findByIdAndDelete(id);
     if (!product) {
       return res.status(404).json({
@@ -334,28 +361,12 @@ exports.deleteProduct = async (req, res) => {
         error: "Not Found",
       });
     }
-
-    //delete the meta data of that product :
-    await ProductMatrix.deleteMany({ productId: id });
-
-    const isSingleCategory = await categories.find({
-      categery_name: product.category,
-    });
-    const isSingleFabric = await fabrics.find({
-      categery_name: product.fabric,
-    });
-    if (isSingleCategory.length === 1) {
-      await categories.deleteOne({ categery_name: product.category });
-    }
-    if (isSingleFabric.length === 1) {
-      await fabrics.deleteOne({ fabric_name: product.fabric });
-    }
-    await reviews.deleteOne({ productId: id });
     return res.status(200).json({
       success: true,
       message: "Product deleted successfully",
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -364,7 +375,7 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-// ❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌ 
+// ❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌
 
 //get catogeries, size and fabric :
 exports.getFilterNames = async (req, res) => {
@@ -953,10 +964,13 @@ exports.updateCart = async (req, res) => {
         error: "Not Found",
       });
     }
-    const productMatrix = await ProductMatrix.findOne({productId: product._id}, {size: size})
+    const productMatrix = await ProductMatrix.findOne(
+      { productId: product._id },
+      { size: size }
+    );
     if (quantity > productMatrix.stock || !productMatrix.stock) {
       return res.status(402).json({
-        success: false, 
+        success: false,
         message: `product limit exceeded!! only ${productMatrix.stock} items left in ${size} size`,
         error: "Stock limit exceeded",
       });
@@ -979,7 +993,8 @@ exports.updateCart = async (req, res) => {
           path: "product_Matrix", // 2nd level: product -> matrix
           model: "ProductMatrix", // MUST match what you used in mongoose.model()
         },
-      }).exec();
+      })
+      .exec();
 
     if (!updateCart) {
       return res.status(404).json({
@@ -1032,7 +1047,7 @@ exports.deleteCart = async (req, res) => {
         error: "UnAuthorized",
       });
     }
-    
+
     const deleted = await carts.findByIdAndDelete(id);
     if (!deleted) {
       return res.status(404).json({
@@ -1056,231 +1071,327 @@ exports.deleteCart = async (req, res) => {
 
 // ✅✅✅✅✅✅✅✅✅✅✅  Product matrix  ✅✅✅✅✅✅✅✅✅✅✅
 
-//create a product matrix : 
-exports.createProductMatrix = async(req, res) => {
-  try {
-    const id = req.params;
-    if(!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(401).json({
-        success: false,
-        message: "invalid id",
-        error: "UnAuthorized"
-      })
-    }
-    const { original_price, selling_price, size, stock} = req.body;
+//create a product matrix :
+// exports.createProductMatrix = async (req, res) => {
+//   try {
+//     const {id} = req.params;
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "invalid id",
+//         error: "UnAuthorized",
+//       });
+//     }
+//     const { original_price, selling_price, size, stock } = req.body;
 
-    if(!original_price || !selling_price || !size || !stock){
+//     if (!original_price || !selling_price || !size || !stock) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "All fields are required",
+//         error: "Bad Request",
+//       });
+//     }
+
+//     const product = await products.findById(id);
+//     if (!product) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Product not found",
+//         error: "Not Found",
+//       });
+//     }
+
+//     if (original_price < selling_price || original_price === undefined || selling_price === undefined) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "selling price can not be grater than original price",
+//         error: "UnAuthorized",
+//       });
+//     }
+
+//     const isAlreadyMatrix = await ProductMatrix.findOne({
+//     $and: [{ productId: id },{ size: size }]
+//   });
+//     if (isAlreadyMatrix) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "product matrix already exist",
+//         error: "Already exist",
+//       });
+//     }
+
+//     const matrix = await ProductMatrix.create({
+//       productId: id,
+//       original_price,
+//       selling_price,
+//       size,
+//       stock,
+//     });
+//     product.product_Matrix = matrix._id;
+//     await product.save();
+//     return res.status(200).json({
+//       success: true,
+//       message: "product matrix created successfully",
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//       error: error.message,
+//     });
+//   }
+// };
+
+exports.createProductMatrix = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(401).json({
         success: false,
-        message: "All fields are required",
-        error: "Bad Request"
-      })
+        message: "Invalid ID",
+        error: "Unauthorized",
+      });
     }
+
     const product = await products.findById(id);
-    if(!product){
+    if (!product) {
       return res.status(404).json({
         success: false,
         message: "Product not found",
-        error: "Not Found"
-      })
-    }
-    if(original_price < selling_price){
-      return res.status(401).json({
-        success: false,
-        message: "selling price can not be grater than original price",
-        error: "UnAuthorized",
-      })
-    }
-    const isAlreadyMatrix = await ProductMatrix.find({productId: id}, {size: size});
-    if(isAlreadyMatrix){
-      return res.status(401).json({
-        success: false,
-        message: "product matrix already exist",
-        error: "Already exist"
-      })
-    }
-    const matrix = await ProductMatrix.create({
-      productId: id,
-      original_price,
-      selling_price,
-      size,
-      stock,
-    })
-    product.product_Matrix = matrix._id;
-    await product.save();
-    return res.status(200).json({
-      success: true,
-      message: "product matrix created successfully",
-    })
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message : "Internal Server Error",
-      error: error.message,
-    })
-  }
-}
-
-//update product_matrix : 
-exports.updateProductMatrix = async(req, res) => {
-  try {
-    const id = req.params;
-    if(!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(401).json({
-        success: false,
-        message: "invalid id",
-        error: "UnAuthorized"
-      })
-    }
-    const Matrix = await ProductMatrix.findById(id);
-    if(!Matrix){
-      return res.status(404).json({
-        success: false,
-        message: "product matrix not found",
-      })
+        error: "Not Found",
+      });
     }
 
-    const product = await products.findById(Matrix.productId);
-    if(!product){
-      return res.status(404).json({
-        success: false,
-        message: "product not found",
-        error: "Not Found"
-      })
-    }
+    const matrices = req.body;
 
-    const allowedFields = [
-      "original_price",
-      "selling_price",
-      "stock"
-    ]
-    const updateData = {};
-    allowedFields.forEach((field) => {
-      if(req.body[field] !== undefined){
-        if(req.body[original_price] < req.body[selling_price] ){
-          return res.status(400).json({
-            success: false,
-            messsage: "selling price can not be greater than original price",
-            error: "unauthorized"
-          })
-        }
-        updateData[field] = req.body[field];
-      }
-    })
-
-    const updateMatrix = await ProductMatrix.findByIdAndUpdate(
-      id,
-      updateData,
-      {
-        new : true,
-        runValidators: true
-      }
-    )
-    if(!updateMatrix){
+    if (!Array.isArray(matrices) || matrices.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "some thing went wrong , not updated",
-        error: "unAuthorized"
-      })
+        message: "Request body must be a non-empty array",
+        error: "Bad Request",
+      });
     }
-    return res.status(200).json({
-      success: false,
-      message: "product matrix updated successfully"
-    })
 
+    const createdMatrices = [];
+
+    for (const matrix of matrices) {
+      const { original_price, selling_price, size, stock } = matrix;
+
+      if (
+        original_price === undefined ||
+        selling_price === undefined ||
+        !size ||
+        stock === undefined
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "All fields are required in each matrix",
+          error: "Bad Request",
+        });
+      }
+
+      if (original_price < selling_price) {
+        return res.status(400).json({
+          success: false,
+          message: "Selling price cannot be greater than original price",
+          error: "Bad Request",
+        });
+      }
+
+      const isAlreadyMatrix = await ProductMatrix.findOne({
+        productId: id,
+        size: size,
+      });
+
+      if (isAlreadyMatrix) {
+        return res.status(409).json({
+          success: false,
+          message: `Product matrix already exists for size "${size}"`,
+          error: "Conflict",
+        });
+      }
+
+      const newMatrix = await ProductMatrix.create({
+        productId: id,
+        original_price: Number(original_price),
+        selling_price: Number(selling_price),
+        size,
+        stock: Number(stock),
+      });
+
+      createdMatrices.push(newMatrix._id);
+    }
+
+    // product.product_Matrix = createdMatrices;
+    product.product_Matrix.push(...createdMatrices);
+    await product.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Product matrices created successfully",
+      createdMatrices,
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error.message
-    })
+      error: error.message,
+    });
   }
-}
+};
 
-//read product_matrix : 
-exports.getProductMatrixById = async(req, res) => {
+//update product_matrix :
+exports.updateProductMatrix = async (req, res) => {
   try {
     const id = req.params;
-    if(!mongoose.Types.ObjectId.isValid(id)){
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(401).json({
+        success: false,
+        message: "invalid id",
+        error: "UnAuthorized",
+      });
+    }
+    const Matrix = await ProductMatrix.findById(id);
+    if (!Matrix) {
+      return res.status(404).json({
+        success: false,
+        message: "product matrix not found",
+      });
+    }
+
+    const product = await products.findById(Matrix.productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "product not found",
+        error: "Not Found",
+      });
+    }
+
+    const allowedFields = ["original_price", "selling_price", "stock"];
+    const updateData = {};
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        if (req.body[original_price] < req.body[selling_price]) {
+          return res.status(400).json({
+            success: false,
+            messsage: "selling price can not be greater than original price",
+            error: "unauthorized",
+          });
+        }
+        updateData[field] = req.body[field];
+      }
+    });
+
+    const updateMatrix = await ProductMatrix.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    });
+    if (!updateMatrix) {
+      return res.status(400).json({
+        success: false,
+        message: "some thing went wrong , not updated",
+        error: "unAuthorized",
+      });
+    }
+    return res.status(200).json({
+      success: false,
+      message: "product matrix updated successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+//read product_matrix :
+exports.getProductMatrixById = async (req, res) => {
+  try {
+    const id = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: "Invaid ID",
-        error: "Bad Request"
-      })
+        error: "Bad Request",
+      });
     }
-    const matrix = await ProductMatrix.findById(id);
-    if(!matrix){
+    const matrix = await ProductMatrix.find({ productId: id });
+    if (!matrix || matrix.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Product matrix not found",
-        error: "Not Found"
-      })
+        error: "Not Found",
+      });
     }
-    const product = await products.findById(matrix._id);
-    if(!product){
+    const product = await products.findById(id);
+    if (!product) {
       return res.status(404).json({
         success: true,
         message: "Product not found",
-        error: "Not Found"
-      })
+        error: "Not Found",
+      });
     }
     return res.status(200).json({
       success: true,
       message: "product matrix retrieved successfully",
-    })
+      matrix,
+    });
   } catch (error) {
     return res.status(500).json({
-      success: trwu,
-      message: "Interna; Server Error",
-      error: error.message
-    })
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
-}
+};
 
 //delete pproduct_matrix :
-exports.deleteProductMatrix = async(req, res) => {
+exports.deleteProductMatrix = async (req, res) => {
   try {
-    const id  = req.params;
-    if(!mongoose.Types.ObjectId.isValid(id)){
+    const id = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(401).json({
         success: true,
         message: "Invalid ID",
-        error: "Not Found"
-      })
+        error: "Not Found",
+      });
     }
     const matrix = await ProductMatrix.findById(id);
-    if(!matrix){
-      return res.status(404).json({
-        success : true,
-        message: "product matrix not found",
-        error: "Bad Request",
-      })
-    }
-    const product = await products.findById(matrix.productId);
-    if(!product){
+    if (!matrix) {
       return res.status(404).json({
         success: true,
-        message: 'product not found',
-        error: "Not Found"
-      })
+        message: "product matrix not found",
+        error: "Bad Request",
+      });
+    }
+    const product = await products.findById(matrix.productId);
+    if (!product) {
+      return res.status(404).json({
+        success: true,
+        message: "product not found",
+        error: "Not Found",
+      });
     }
 
     await ProductMatrix.findByIdAndDelete(id);
     return res.status(400).json({
       success: true,
-      message: "product matrix deleted successfully"
-    })
+      message: "product matrix deleted successfully",
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error.message
-    })
+      error: error.message,
+    });
   }
-}
+};
 
 // ❌❌❌❌❌❌❌❌❌❌  ❌❌❌❌❌❌❌❌❌❌
-
 
 //get rating of a product id :
 exports.getRatingById = async (req, res) => {

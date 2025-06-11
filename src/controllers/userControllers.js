@@ -445,7 +445,8 @@ exports.uploadUserProfilePic = async(req, res) => {
       })
     }
     if(user.profileUrl){
-      
+      const key = decodeURIComponent(new URL(url).pathname).substring(1);
+      await deleteOldImages(key);
     }
     user.profileUrl = profilePic;
     await user.save();

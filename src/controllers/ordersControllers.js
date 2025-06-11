@@ -2,10 +2,12 @@ const { default: mongoose } = require("mongoose");
 const orders = require("../models/ordersschema.js");
 const products = require("../models/productschema.js");
 const userAddresses = require("../models/addressschema.js");
+const ProductMatrix = require("../models/productmatrixschema.js");
 const carts = require("../models/cartschema.js");
 const crypto = require("crypto");
 require("dotenv").config();
 const Razorpay = require("razorpay");
+const { error } = require("console");
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_SECRET,
@@ -370,6 +372,7 @@ exports.makeOrder = async (req, res) => {
       Bphone,
       quantity,
       total_pay,
+      size, //new
       payment_mode,
       saveNextTime,
     } = req.body;
@@ -381,24 +384,8 @@ exports.makeOrder = async (req, res) => {
         error: "Bad Request",
       });
     }
-
-    // if (!/^\+?\d{10,15}$/.test(phone) || !/^\+?\d{10,15}$/.test(Bphone) ) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Invalid phone number format",
-    //     error: "Phone must be 10–15 digits, optionally starting with +",
-    //   });
-    // }
-    const  Shphone = Number(phone.slice(-10));
-    const  Biphone = Number(Bphone.slice(-10));
-
-    // if (!/^\d{10}$/.test(Shphone) || !/^\d{10}$/.test(Biphone)) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Invalid phone number format",
-    //     error: "Phone number must be exactly 10 digits and numeric only",
-    //   });
-    // }
+    const Shphone = Number(phone.slice(-10));
+    const Biphone = Number(Bphone.slice(-10));
 
     if (!total_pay) {
       return res.status(400).json({
@@ -448,19 +435,33 @@ exports.makeOrder = async (req, res) => {
         });
       }
 
-      if(quantity > product.stock_qunatity || !product.stock_qunatity){
+      const matrix = await ProductMatrix.findOne(
+        { productId: product._id },
+        { size: size }
+      );
+      if (!matrix) {
         return res.status(404).json({
           success: false,
-          message: `Product out of stock only ${product.stock_qunatity} left!!`,
-          error: "insuffiecient stock quantity"
-        })
+          message: "product matrix details not found",
+          error: "Not Found",
+        });
       }
+
+      if (quantity > matrix.stock || !matrix.stock) {
+        return res.status(404).json({
+          success: false,
+          message: `Product out of stock only ${matrix.stock} left in ${size} size`,
+          error: "insuffiecient stock quantity",
+        });
+      }
+
       const razorpayOrder = await razorpay.orders.create({
         amount: totalPay,
         currency: "INR",
         receipt: `receipt#${Date.now()}`,
         payment_capture: 1,
       });
+
       if (isNaN(Number(quantity))) {
         return res.status(401).json({
           message: "not a number quntity",
@@ -469,7 +470,7 @@ exports.makeOrder = async (req, res) => {
       const finalCost = Number(product.discountPrice * quantity);
       if (isNaN(finalCost)) {
         return res.status(401).json({
-          message: "not a ",
+          message: "final cost should be a number",
         });
       }
       const newOrder = await orders.create({
@@ -493,7 +494,6 @@ exports.makeOrder = async (req, res) => {
           state: Bstate,
           phone: Biphone,
         },
-        actual_price: product.discountPrice,
         email,
         quantity: quantity,
         payment_mode: payment_mode,
@@ -520,8 +520,96 @@ exports.makeOrder = async (req, res) => {
         data: newOrder,
       });
     } else {
-      // Multiple cart IDs
+      // // Multiple cart IDs
+      // const allOrders = [];
+
+      // const razorpayOrder = await razorpay.orders.create({
+      //   amount: totalPay,
+      //   currency: "INR",
+      //   receipt: `receipt#${Date.now()}`,
+      //   payment_capture: 1,
+      // });
+
+      // for (let cartId of ids) {
+      //   if (!mongoose.Types.ObjectId.isValid(cartId)) continue;
+
+      //   const cart = await carts.findById(cartId);
+      //   if (!cart) {
+      //     return res.status(404).json({
+      //       success: false,
+      //       message: "cart does not exst ",
+      //       error: "Not Found",
+      //     });
+      //   }
+      //   const product = await products.findById(cart.productId);
+      //   if(!product){
+      //     return res.status(404).json({
+      //       success: false,
+      //       message: "product does not exist",
+      //       error: "Not Found"
+      //     })
+      //   }
+
+      //   const matrix = await ProductMatrix
+
+      //   const quantity = Number(cart.quantity);
+      //   const finalCost = Number(cart.discountedPrice * quantity);
+      //   if (isNaN(finalCost)) {
+      //     return res.status(401).json({
+      //       message: "not a number",
+      //     });
+      //   }
+      //   const newOrder = await orders.create({
+      //     userId: req.user._id,
+      //     productId: cart.productId,
+      //     shipping_address: {
+      //       firstname: firstname,
+      //       lastname: lastname,
+      //       country: country,
+      //       address: address,
+      //       city: city,
+      //       state: state,
+      //       phone: Shphone,
+      //     },
+      //     billing_address: {
+      //       firstname: Bfirstname,
+      //       lastname: Blastname,
+      //       country: Bcountry,
+      //       address: Baddress,
+      //       city: Bcity,
+      //       state: Bstate,
+      //       phone: Biphone,
+      //     },
+      //     email,
+      //     actual_price: cart.discountedPrice,
+      //     quantity: cart.quantity,
+      //     payment_mode: payment_mode,
+      //     final_cost: finalCost,
+      //     paymentInfo: {
+      //       razorpay_order_id:
+      //         payment_mode === "online" ? razorpayOrder.id : undefined,
+      //     },
+      //   });
+      //   await carts.deleteOne({ _id: cart._id });
+
+      //   allOrders.push(newOrder);
+      // }
+      // if (!saveNextTime) {
+      //   await userAddresses.deleteMany({ userId: req.user._id });
+      // }
+      // await userAddresses.deleteMany({
+      //   userId: req.user._id, // assuming you store user reference
+      //   _id: { $ne: newAddress._id },
+      // });
+
+      // return res.status(200).json({
+      //   success: true,
+      //   message: "Your cart orders were placed successfully",
+      //   razorpay_orderId: razorpayOrder.id,
+      //   orders: allOrders,
+      // });
       const allOrders = [];
+      const failedItems = [];
 
       const razorpayOrder = await razorpay.orders.create({
         amount: totalPay,
@@ -535,37 +623,60 @@ exports.makeOrder = async (req, res) => {
 
         const cart = await carts.findById(cartId);
         if (!cart) {
-          return res.status(404).json({
-            success: false,
-            message: "cart does not exst ",
-            error: "Not Found",
-          });
+          failedItems.push({ cartId, reason: "Cart not found" });
+          continue;
         }
+
         const product = await products.findById(cart.productId);
-        if(!product){
-          return res.status(404).json({
-            success: false,
-            message: "product does not exist",
-            error: "Not Found"
-          })
+        if (!product) {
+          failedItems.push({ cartId, reason: "Product not found" });
+          continue;
         }
+
+        const matrix = await ProductMatrix.findOne({
+          productId: cart.productId,
+          size: cart.size, 
+        });
+
+        if (!matrix || !matrix.size || !matrix.stock) {
+          failedItems.push({
+            cartId,
+            reason: `Size ${cart.size} not found or no stock data`,
+          });
+          continue;
+        }
+
+        const stock = matrix.stock;
+
+        if (stock < cart.quantity) {
+          failedItems.push({
+            cartId,
+            reason: `Only ${stock} in stock for size ${cart.size}`,
+          });
+          continue;
+        }
+
         const quantity = Number(cart.quantity);
         const finalCost = Number(cart.discountedPrice * quantity);
         if (isNaN(finalCost)) {
-          return res.status(401).json({
-            message: "not a number",
-          });
+          failedItems.push({ cartId, reason: "Final cost invalid" });
+          continue;
         }
+
+        // Deduct stock (optional - or do it later in bulk)
+        matrix.stock -= quantity;
+        await matrix.save();
+
         const newOrder = await orders.create({
           userId: req.user._id,
           productId: cart.productId,
           shipping_address: {
-            firstname: firstname,
-            lastname: lastname,
-            country: country,
-            address: address,
-            city: city,
-            state: state,
+            firstname,
+            lastname,
+            country,
+            address,
+            city,
+            state,
             phone: Shphone,
           },
           billing_address: {
@@ -578,32 +689,34 @@ exports.makeOrder = async (req, res) => {
             phone: Biphone,
           },
           email,
-          actual_price: cart.discountedPrice,
-          quantity: cart.quantity,
-          payment_mode: payment_mode,
+          quantity,
+          payment_mode,
           final_cost: finalCost,
           paymentInfo: {
             razorpay_order_id:
               payment_mode === "online" ? razorpayOrder.id : undefined,
           },
         });
-        await carts.deleteOne({ _id: cart._id });
 
+        await carts.deleteOne({ _id: cart._id });
         allOrders.push(newOrder);
       }
+
       if (!saveNextTime) {
         await userAddresses.deleteMany({ userId: req.user._id });
       }
+
       await userAddresses.deleteMany({
-        userId: req.user._id, // assuming you store user reference
-        _id: { $ne: newAddress._id },
+        userId: req.user._id,
+        _id: { $ne: newAddress?._id },
       });
 
       return res.status(200).json({
         success: true,
-        message: "Your cart orders were placed successfully",
+        message: "Order process completed",
         razorpay_orderId: razorpayOrder.id,
-        orders: allOrders,
+        successfulOrders: allOrders,
+        failedItems,
       });
     }
   } catch (error) {
@@ -885,10 +998,10 @@ exports.viewAllOrders = async (req, res) => {
   try {
     const allorders = await orders
       .find({ userId: req.user._id })
-      .populate('productId', "imagesUrl description")
-      .sort({_id: -1})
+      .populate("productId", "imagesUrl description")
+      .sort({ _id: -1 })
       .exec();
-    
+
     if (!allorders || allorders.length === 0) {
       return res.status(404).json({
         success: false,
@@ -910,24 +1023,24 @@ exports.viewAllOrders = async (req, res) => {
   }
 };
 
-//get a single order by id: 
-exports.getOrderById = async(req, res) => {
+//get a single order by id:
+exports.getOrderById = async (req, res) => {
   try {
     const id = req.params;
-    if(!mongoose.Types.ObjectId.isValid(id)){
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(401).json({
         success: false,
         message: "invalid order ID",
-        error: "UnAuthorized"
-      })
+        error: "UnAuthorized",
+      });
     }
     const myOrder = await orders.findById(id);
-    if(!myOrder){
+    if (!myOrder) {
       return res.status(404).json({
         success: true,
         message: "Order not Found",
         error: "Not Found",
-      })
+      });
     }
 
     if (myOrder.userId.toString() !== req.user._id.toString()) {
@@ -941,16 +1054,16 @@ exports.getOrderById = async(req, res) => {
     return res.status(200).json({
       success: true,
       message: "Order retrieved successfully",
-      data: myOrder
-    })
+      data: myOrder,
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error.message
-    })
+      error: error.message,
+    });
   }
-}
+};
 
 //////////////**********************   Payment Gateways      *************************************/
 
@@ -1058,7 +1171,7 @@ exports.verifyPayment = async (req, res) => {
       { "paymentInfo.razorpay_order_id": razorpay_order_id },
       {
         $set: {
-          status: 'conformed',
+          status: "conformed",
           payment_status: "paid",
           "paymentInfo.razorpay_payment_id": razorpay_payment_id,
           "paymentInfo.razorpay_signature": razorpay_signature,
@@ -1084,8 +1197,8 @@ exports.verifyPayment = async (req, res) => {
       "paymentInfo.razorpay_order_id": razorpay_order_id,
     });
     for (const order of allorders) {
-      order.status = 'cancelled';
-      order.payment_status = 'cancelled';
+      order.status = "cancelled";
+      order.payment_status = "cancelled";
     }
     return res.status(500).json({
       success: false,

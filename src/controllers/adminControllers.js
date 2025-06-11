@@ -2,9 +2,212 @@ const { default: mongoose } = require("mongoose");
 const users = require("../models/userschema");
 const products = require("../models/productschema");
 const orders = require("../models/ordersschema.js");
-// const { all } = require("../routes/orderRoutes.js");
+const admins = require('../models/adminSchema.js')
+ 
+//✅✅✅✅✅✅✅✅✅ Admin Calls ✅✅✅✅✅✅✅✅✅✅✅
+exports.adminSignup = async(req, res) => {
+  try {
+      const { firstname, lastname, email, password} = req.body;
+      const existed = await admins.findOne({ email: email});
+      if (existed) {
+        return res.status(401).json({
+          success: false,
+          message: "email already exist, try another",
+          error: "Bad Request"
+        });
+      }
+  
+      const User = await admins.create({
+        firstname,
+        lastname,
+        email,
+        password,
+      });
+      
+      return res.status(200).json({
+        success: true,
+        message: "verification has been send to the email, please verify",
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+        error: error.message,
+      });
+    }
+}
 
-///****************** User Management:  ***********************/
+exports.adminLogin = async(req, res) => {
+  try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({
+          success: false,
+          message: "all fileds are required",
+          error: "Bad Request"
+        });
+      }
+      const user = await admins.findOne({
+        email: email,
+      }).select('password firstname lastname accountType');
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: "Incorrect Email",
+          error: "Bad Request",
+        });
+      }
+      if(user.password === undefined || !user.password){
+        return res.status(401).json({
+          success: false,
+          message: "password not set",
+          error: "Bad Request"
+        })
+      }
+      const isValidPassword = await user.comparePassword(password);
+      if (!isValidPassword) {
+        return res.status(401).json({
+          success: false,
+          message: "password doesn't match",
+          error: "Bad Request"
+        });
+      }
+  
+      if(user.status === 'inactive'){
+        return res.status(402).json({
+          success: false,
+          message: "Account is Inactive please verify",
+          error: "Bad Request"
+        })
+      }
+      const token = generateUserToken(user);
+      user.jwtExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
+      await user.save();
+      return res.status(200).json({
+        success: true,
+        message: "login successfully",
+        JWTtoken: token,
+        username: user.firstname + " " + user.lastname,
+        userID: user._id,
+        role: user.accountType,
+      });       
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+        error: error.message,
+      });
+    }
+}
+
+exports.changePassword = async(req, res) => {
+  try {
+      const { oldpassword, newpassword } = req.body;
+      if (!oldpassword || !newpassword) {
+        return res.status(400).json({
+          error: "all fields are required",
+        });
+      }
+      const user = await admins.findById(req.user._id).select("password");
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "user does not exist",
+        });
+      }
+      const isPassword = await user.comparePassword(oldpassword);
+      if (!isPassword) {
+        return res.status(401).json({
+          success: false,
+          message: "incorrect password",
+          error: 'Bad Request'
+        });
+      }
+      user.password = newpassword;
+      await user.save();
+      return res
+        .status(204)
+        .json({ message: "password updated successfully, Please Login" });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+        error: error.message,
+      });
+    }
+}
+
+exports.adminProfileUpdate = async(req, res) => {
+  try {
+      const allowed = [ 
+        "firstname",
+        "lastname",
+        "phone", 
+        "Address"
+      ]
+      const updatedData = {};
+      allowed.forEach((field) => {
+        if(req.body[field] !== undefined){
+          updatedData[field] = req.body[field];
+        }
+      });
+      const updatedUser = await admins.findByIdAndUpdate(
+        req.user._id,
+        updatedData,
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+      return res.status(200).json({
+        success: true,
+        message: "Profile updated successfully",
+        updatedUser,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+        error: error.message,
+      });
+    }
+}
+
+exports.uploadadminProfilePic = async(req, res) => {
+  try {
+    if(!req.file){
+      return res.status(401).json({
+        success: false,
+        message: "profile image is required",
+        error: "Bad Request"
+      })
+    }
+    const profilePic = req.file.location
+    const user = await admins.findById(req.user._id);
+    if(!user){
+      return res.status(404).json({
+        success: false,
+        message: "User not Found",
+        error: 'Not Found'
+      })
+    }
+    if(user.profileUrl){
+      const key = decodeURIComponent(new URL(url).pathname).substring(1);
+      await deleteOldImages(key);
+    }
+    user.profileUrl = profilePic;
+    await user.save();
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message
+    })
+  }
+}
+
+
+// ✅✅✅✅✅✅✅✅✅✅ Action on  User ✅✅✅✅✅✅✅✅✅✅✅
 
 //set a user account inactive:
 exports.setUserInactive = async (req, res) => {
@@ -118,7 +321,7 @@ exports.viewUser = async (req, res) => {
   }
 };
 
-//********************* Products Management *******************/
+// ✅✅✅✅✅✅✅✅✅✅ Products  ✅✅✅✅✅✅✅✅✅✅✅✅✅
 
 //get all products fro the admin :
 exports.getAllProductsForAdmim = async (req, res) => {
@@ -335,7 +538,7 @@ exports.setViewinProduct = async (req, res) => {
   }
 };
 
-//******************** Discount Management:  ******************/
+// ❌❌❌❌❌❌❌❌ Discount calls ❌❌❌❌❌❌❌❌
 
 //set a discount for a product:
 exports.setDiscountOnProduct = async (req, res) => {
@@ -409,7 +612,7 @@ exports.removeDiscountOnProduct = async (req, res) => {
   }
 };
 
-//*********************  Orders Management:  ********************//
+// ✅✅✅✅✅✅✅✅✅ Action on Orders ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
 //view all inprogess orders :
 exports.viewAllRecentOrders = async (req, res) => {
@@ -525,7 +728,7 @@ exports.viewAllCancelRequestedOrders = async (req, res) => {
     const skip = (page - 1) * limit;
     const allorders = await orders
       .find({
-        cancel_request: { $in: ["requested"] },
+        status: { $in: ["requested for cancel"] },
       })
       .populate("userId", "firstname, lastname")
       .populate("productId", "name, price, size, discountPrice")
@@ -591,7 +794,8 @@ exports.viewAllPendingOrders = async (req, res) => {
   }
 };
 
-//users : - orders :
+// ✅✅✅✅✅✅✅✅✅ Action on User-Orders ✅✅✅✅✅✅✅✅✅✅
+
 exports.getUserOrderById = async (req, res) => {
   try {
     const id = req.params;
@@ -670,7 +874,8 @@ exports.updateUserOrderById = async (req, res) => {
   }
 };
 
-//**********  Payment Status:   *******************/
+// ✅✅✅✅✅✅✅✅ Payments ✅✅✅✅✅✅✅✅✅✅
+
 //view all payment completed orders:
 exports.viewAllSuccessPaymentOrders = async (req, res) => {
   try {
