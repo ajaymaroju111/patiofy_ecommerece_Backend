@@ -75,24 +75,6 @@ adminSchema.methods.comparePassword = function (plainPassword) {
   return bcrypt.compare(plainPassword, this.password);
 };
 
-//send the verification mail every time when email get updated :
-adminSchema.pre("save", async function (next) {
-  if(this.googleId === undefined){
-    if (this.isModified("email")) {
-      const encodedId = Buffer.from(this._id.toString(), "utf-8").toString("base64");
-      this.jwtExpiry = Date.now() + 30 * 60 * 1000;
-      this.status = 'inactive';
-      const fullname = this.firstname + this.lastname
-      await sendEmail({
-        to: this.email,
-        subject: "Account verification",
-        text: conformSignup(fullname, encodedId),
-      });
-    }
-  }
-  next();
-});
-
 //hash all in comming password Strings :
 adminSchema.pre("save", async function (next) {
   if (this.isModified("password")) {

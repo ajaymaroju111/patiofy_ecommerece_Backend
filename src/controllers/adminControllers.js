@@ -2,196 +2,209 @@ const { default: mongoose } = require("mongoose");
 const users = require("../models/userschema");
 const products = require("../models/productschema");
 const orders = require("../models/ordersschema.js");
-const admins = require('../models/adminSchema.js')
- 
+const admins = require("../models/adminSchema.js");
+
 //✅✅✅✅✅✅✅✅✅ Admin Calls ✅✅✅✅✅✅✅✅✅✅✅
-exports.adminSignup = async(req, res) => {
+
+exports.adminSignup = async (req, res) => {
   try {
-      const { firstname, lastname, email, password} = req.body;
-      const existed = await admins.findOne({ email: email});
-      if (existed) {
-        return res.status(401).json({
-          success: false,
-          message: "email already exist, try another",
-          error: "Bad Request"
-        });
-      }
-  
-      const User = await admins.create({
-        firstname,
-        lastname,
-        email,
-        password,
-      });
-      
-      return res.status(200).json({
-        success: true,
-        message: "verification has been send to the email, please verify",
-      });
-    } catch (error) {
-      return res.status(500).json({
+    const { firstname, lastname, email, password } = req.body;
+    if(!firstname || !lastname || !email || !password){
+      return res.status(401).json({
         success: false,
-        message: "Internal Server Error",
-        error: error.message,
+        message: 'All fields are required',
+        error: "Bad Request",
+      })
+    }
+    const existed = await admins.findOne({ email: email });
+    if (existed) {
+      return res.status(401).json({
+        success: false,
+        message: "email already exist, try another",
+        error: "Bad Request",
       });
     }
-}
 
-exports.adminLogin = async(req, res) => {
+    const User = await admins.create({
+      firstname,
+      lastname,
+      email,
+      password,
+      status: "active"
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin account created successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+exports.adminLogin = async (req, res) => {
   try {
-      const { email, password } = req.body;
-      if (!email || !password) {
-        return res.status(400).json({
-          success: false,
-          message: "all fileds are required",
-          error: "Bad Request"
-        });
-      }
-      const user = await admins.findOne({
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "All fileds are required",
+        error: "Bad Request",
+      });
+    }
+    const user = await admins
+      .findOne({
         email: email,
-      }).select('password firstname lastname accountType');
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: "Incorrect Email",
-          error: "Bad Request",
-        });
-      }
-      if(user.password === undefined || !user.password){
-        return res.status(401).json({
-          success: false,
-          message: "password not set",
-          error: "Bad Request"
-        })
-      }
-      const isValidPassword = await user.comparePassword(password);
-      if (!isValidPassword) {
-        return res.status(401).json({
-          success: false,
-          message: "password doesn't match",
-          error: "Bad Request"
-        });
-      }
-  
-      if(user.status === 'inactive'){
-        return res.status(402).json({
-          success: false,
-          message: "Account is Inactive please verify",
-          error: "Bad Request"
-        })
-      }
-      const token = generateUserToken(user);
-      user.jwtExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
-      await user.save();
-      return res.status(200).json({
-        success: true,
-        message: "login successfully",
-        JWTtoken: token,
-        username: user.firstname + " " + user.lastname,
-        userID: user._id,
-        role: user.accountType,
-      });       
-    } catch (error) {
-      return res.status(500).json({
+      })
+      .select("password firstname lastname accountType");
+    if (!user) {
+      return res.status(401).json({
         success: false,
-        message: "Internal Server Error",
-        error: error.message,
+        message: "Incorrect Email",
+        error: "Bad Request",
       });
     }
-}
-
-exports.changePassword = async(req, res) => {
-  try {
-      const { oldpassword, newpassword } = req.body;
-      if (!oldpassword || !newpassword) {
-        return res.status(400).json({
-          error: "all fields are required",
-        });
-      }
-      const user = await admins.findById(req.user._id).select("password");
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: "user does not exist",
-        });
-      }
-      const isPassword = await user.comparePassword(oldpassword);
-      if (!isPassword) {
-        return res.status(401).json({
-          success: false,
-          message: "incorrect password",
-          error: 'Bad Request'
-        });
-      }
-      user.password = newpassword;
-      await user.save();
-      return res
-        .status(204)
-        .json({ message: "password updated successfully, Please Login" });
-    } catch (error) {
-      return res.status(500).json({
+    if (user.accountType !== "admin") {
+      return res.status(401).json({
         success: false,
-        message: "Internal Server Error",
-        error: error.message,
+        message: "You are not Authorized",
+        error: "Not Authorized",
       });
     }
-}
-
-exports.adminProfileUpdate = async(req, res) => {
-  try {
-      const allowed = [ 
-        "firstname",
-        "lastname",
-        "phone", 
-        "Address"
-      ]
-      const updatedData = {};
-      allowed.forEach((field) => {
-        if(req.body[field] !== undefined){
-          updatedData[field] = req.body[field];
-        }
-      });
-      const updatedUser = await admins.findByIdAndUpdate(
-        req.user._id,
-        updatedData,
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
-      return res.status(200).json({
-        success: true,
-        message: "Profile updated successfully",
-        updatedUser,
-      });
-    } catch (error) {
-      return res.status(500).json({
+    if (user.password === undefined || !user.password) {
+      return res.status(401).json({
         success: false,
-        message: "Internal Server Error",
-        error: error.message,
+        message: "password not set",
+        error: "Bad Request",
       });
     }
-}
+    const isValidPassword = await user.comparePassword(password);
+    if (!isValidPassword) {
+      return res.status(402).json({
+        success: false,
+        message: "password doesn't match",
+        error: "UnAuthorized",
+      });
+    }
 
-exports.uploadadminProfilePic = async(req, res) => {
+    if (user.status === "inactive") {
+      return res.status(402).json({
+        success: false,
+        message: "Account is Inactive please verify",
+        error: "Bad Request",
+      });
+    }
+    const token = generateUserToken(user);
+    user.jwtExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
+    await user.save();
+    return res.status(200).json({
+      success: true,
+      message: "login successfully",
+      JWTtoken: token,
+      username: user.firstname + " " + user.lastname,
+      userID: user._id,
+      role: user.accountType,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+exports.changePassword = async (req, res) => {
   try {
-    if(!req.file){
+    const { oldpassword, newpassword } = req.body;
+    if (!oldpassword || !newpassword) {
+      return res.status(400).json({
+        error: "all fields are required",
+      });
+    }
+    const user = await admins.findById(req.user._id).select("password");
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "user does not exist",
+      });
+    }
+    const isPassword = await user.comparePassword(oldpassword);
+    if (!isPassword) {
+      return res.status(401).json({
+        success: false,
+        message: "incorrect password",
+        error: "Bad Request",
+      });
+    }
+    user.password = newpassword;
+    await user.save();
+    return res
+      .status(204)
+      .json({ message: "password updated successfully, Please Login" });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+exports.adminProfileUpdate = async (req, res) => {
+  try {
+    const allowed = ["firstname", "lastname", "phone", "Address"];
+    const updatedData = {};
+    allowed.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updatedData[field] = req.body[field];
+      }
+    });
+    const updatedUser = await admins.findByIdAndUpdate(
+      req.user._id,
+      updatedData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      updatedUser,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+exports.uploadadminProfilePic = async (req, res) => {
+  try {
+    if (!req.file) {
       return res.status(401).json({
         success: false,
         message: "profile image is required",
-        error: "Bad Request"
-      })
+        error: "Bad Request",
+      });
     }
-    const profilePic = req.file.location
+    const profilePic = req.file.location;
     const user = await admins.findById(req.user._id);
-    if(!user){
+    if (!user) {
       return res.status(404).json({
         success: false,
         message: "User not Found",
-        error: 'Not Found'
-      })
+        error: "Not Found",
+      });
     }
-    if(user.profileUrl){
+    if (user.profileUrl) {
       const key = decodeURIComponent(new URL(url).pathname).substring(1);
       await deleteOldImages(key);
     }
@@ -201,11 +214,10 @@ exports.uploadadminProfilePic = async(req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error.message
-    })
+      error: error.message,
+    });
   }
-}
-
+};
 
 // ✅✅✅✅✅✅✅✅✅✅ Action on  User ✅✅✅✅✅✅✅✅✅✅✅
 
@@ -233,14 +245,14 @@ exports.setUserInactive = async (req, res) => {
         message: "user not found",
       });
     }
-    if (user.status === "terminate") {
+    if (user.status === "Blocked") {
       res.status(204).json({
         success: false,
-        message: "account already in terminate state",
+        message: "account already in Blocked state",
         error: "No Content",
       });
     }
-    (user.status = "terminate"), await user.save();
+    (user.status = "Blocked"), await user.save();
     return res.status(200).json({
       success: true,
       message: "user account set terminate successfully",
@@ -271,7 +283,7 @@ exports.viewAllUsers = async (req, res) => {
         message: "products not found",
       });
     }
-    const total =  allusers.length
+    const total = allusers.length;
     return res.status(200).json({
       currentPage: page,
       totalPages: Math.ceil(total / limit),
@@ -304,7 +316,7 @@ exports.viewUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         succecss: false,
-        message: " user not found",
+        message: "user not found",
       });
     }
     return res.status(200).json({
@@ -330,8 +342,9 @@ exports.getAllProductsForAdmim = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    
-    const allproducts = await products.find().skip(skip).limit(limit).exec();
+    const allproducts = await products.find().populate({
+        path: "product_Matrix",
+      }).skip(skip).limit(limit).exec();
     if (allproducts.length === 0 || !allproducts) {
       return res.status(404).json({
         success: false,
@@ -365,22 +378,10 @@ exports.getProductByIdForAdmin = async (req, res) => {
         message: "Invalid product ID format",
       });
     }
-    // const cacheKey = `product:${id}`;
 
-    // try {
-    //   const cacheProduct = await redis.get(cacheKey);
-    // if(cacheProduct){
-    //   return res.status(200).json({
-    //     success: true,
-    //     cached: true,
-    //     data : cacheProduct
-    //   })
-    // }
-    // } catch (redisError) {
-    //   console.error(redisError);
-    // }
-
-    const product = await products.findById(id);
+    const product = await products.findById(id).populate({
+        path: "product_Matrix",
+      });
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -388,13 +389,6 @@ exports.getProductByIdForAdmin = async (req, res) => {
         error: "Not Found",
       });
     }
-
-    // try {
-    // await redis.set(cacheKey, JSON.stringify(product), 'EX', 3600) //cache expiery time is 1 hour
-
-    // } catch (redisError) {
-    //   console.error(redisError);
-    // }
 
     return res.status(200).json({
       success: true,
@@ -574,7 +568,7 @@ exports.setDiscountOnProduct = async (req, res) => {
       error: error.message,
     });
   }
-}; 
+};
 
 //remove discount for a product:
 exports.removeDiscountOnProduct = async (req, res) => {
@@ -624,9 +618,9 @@ exports.viewAllRecentOrders = async (req, res) => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const allorders = await orders
-      .find({createdAt: { $gte: thirtyDaysAgo }})
-      .populate("userId", "firstname lastname")
-      .populate("productId", "name price size discountPrice")
+      .find({ createdAt: { $gte: thirtyDaysAgo } })
+      .populate("userId")
+      .populate("productId")
       .limit(limit)
       .skip(skip)
       .sort({ _id: -1 })
@@ -659,8 +653,8 @@ exports.viewAllRefundedOrders = async (req, res) => {
       .find({
         status: { $in: ["refunded"] },
       })
-      .populate("userId", "firstname, lastname")
-      .populate("productId", "name, price, size, discountPrice")
+      .populate("userId")
+      .populate("productId")
       .exec();
     if (allorders.length === 0) {
       return res.status(404).json({
@@ -672,7 +666,7 @@ exports.viewAllRefundedOrders = async (req, res) => {
       success: true,
       page: page,
       totla_items: allorders.length,
-      message: "refunded orders are retrieved ",
+      message: "refunded orders are retrieved successfully ",
       data: allorders,
     });
   } catch (error) {
@@ -684,7 +678,7 @@ exports.viewAllRefundedOrders = async (req, res) => {
   }
 };
 
-//view all users orders : 
+//view all users orders :
 exports.viewAllUsersOrders = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -693,15 +687,15 @@ exports.viewAllUsersOrders = async (req, res) => {
 
     const allorders = await orders
       .find()
-      .populate("userId", "firstname, lastname")
-      .populate("productId", "name, price, size, discountPrice")
+      .populate("userId")
+      .populate("productId")
       .limit(limit)
       .skip(skip)
       .exec();
     if (allorders.length === 0) {
       return res.status(404).json({
         success: true,
-        message: "No  active orders found",
+        message: "No Active orders found",
       });
     }
     res.status(200).json({
@@ -728,10 +722,10 @@ exports.viewAllCancelRequestedOrders = async (req, res) => {
     const skip = (page - 1) * limit;
     const allorders = await orders
       .find({
-        status: { $in: ["requested for cancel"] },
+        status: { $in: ["requested_for_cancel"] },
       })
-      .populate("userId", "firstname, lastname")
-      .populate("productId", "name, price, size, discountPrice")
+      .populate("userId",)
+      .populate("productId")
       .skip(skip)
       .limit(limit)
       .exec();
@@ -745,7 +739,7 @@ exports.viewAllCancelRequestedOrders = async (req, res) => {
       success: true,
       page: page,
       totlal_pages: Math.ceil(allorders.length / 10),
-      message: "cancel requests orders are retrieved ",
+      message: "cancel request orders are retrieved ",
       data: allorders,
     });
   } catch (error) {
@@ -767,8 +761,8 @@ exports.viewAllPendingOrders = async (req, res) => {
       .find({
         status: { $in: ["pending"] },
       })
-      .populate("userId", "firstname, lastname")
-      .populate("productId", "name, price, size, discountPrice")
+      .populate("userId")
+      .populate("productId")
       .skip(skip)
       .limit(limit)
       .exec();

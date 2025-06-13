@@ -28,6 +28,7 @@ const {
 const {
   authenticate,
   isAdmin,
+  adminAuthenticate,
 } = require('../middlewares/authUser.js');
 const {
   myProducts,
@@ -45,61 +46,73 @@ const {
   getProductMatrixById,
   deleteProductMatrix,
 } = require('../controllers/productControllers.js');
+const { createCategory, getAllCategories } = require('../controllers/categoryControllers.js');
+const { getallFabrices, createFabric } = require('../controllers/fabricControllers.js');
 
 
 // ✅✅✅✅✅✅✅✅✅✅✅✅✅ users ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
-router.get('/users',authenticate, isAdmin, viewAllUsers);
+router.get('/users',adminAuthenticate, isAdmin, viewAllUsers);
 router.put('/user/:id',authenticate, isAdmin, setUserInactive);
 router.get('/user/:id',authenticate, isAdmin, viewUser);
 
 
 // ✅✅✅✅✅✅✅✅✅✅✅ products ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
-router.post('/product', authenticate, isAdmin, productmages, createProduct);
-router.put('/product/viewin/:id', authenticate, isAdmin, setViewinProduct);
-router.get('/allproducts', authenticate, isAdmin, getAllProductsForAdmim);
-router.get('/products/filter', authenticate, isAdmin, filterProducts);
-router.get('/product/:id', authenticate, isAdmin, getProductByIdForAdmin);
-router.patch('/product/:id', authenticate, isAdmin, updateProduct);
-router.put('/product/:id', authenticate, isAdmin, productmages, updateImages);
-router.delete('/product/:id', authenticate, isAdmin, deleteProduct);
+router.post('/product', adminAuthenticate, isAdmin, productmages, createProduct);
+router.put('/product/viewin/:id', adminAuthenticate, isAdmin, setViewinProduct);
+router.get('/allproducts', adminAuthenticate, isAdmin, getAllProductsForAdmim);
+router.get('/products/filter', adminAuthenticate, isAdmin, filterProducts);
+router.get('/product/:id', adminAuthenticate, isAdmin, getProductByIdForAdmin);
+router.patch('/product/:id', adminAuthenticate, isAdmin, updateProduct);
+router.put('/product/:id', adminAuthenticate, isAdmin, productmages, updateImages);
+router.delete('/product/:id', adminAuthenticate, isAdmin, deleteProduct);
 
 // ✅✅✅✅✅✅✅✅✅✅ Product matrix ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
-router.patch('/matrix/update', authenticate, isAdmin, updateProductMatrix);
-router.post('/matrix/:id', authenticate, isAdmin, createProductMatrix);
-router.delete('/matrix/:id', authenticate, isAdmin, getProductMatrixById);
-router.get('/matrix/:id', authenticate, isAdmin, deleteProductMatrix);
+router.patch('/matrix/update', adminAuthenticate, isAdmin, updateProductMatrix);
+router.post('/matrix/:id', adminAuthenticate, isAdmin, createProductMatrix);
+router.delete('/matrix/:id', adminAuthenticate, isAdmin, getProductMatrixById);
+router.get('/matrix/:id', adminAuthenticate, isAdmin, deleteProductMatrix);
 
 // ❌❌❌❌❌❌❌❌❌ product publish ❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌
-router.put('/product/publish/:id', authenticate, isAdmin,publishProduct );
-router.put('/product/unpublish/:id', authenticate, isAdmin,unPublishProduct);
+router.put('/product/publish/:id', adminAuthenticate, isAdmin,publishProduct );
+router.put('/product/unpublish/:id', adminAuthenticate, isAdmin,unPublishProduct);
 
 // ❌❌❌❌❌❌❌❌❌ product discount❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌
 
-router.put('/product/discount/:id', authenticate, isAdmin, setDiscountOnProduct);
-router.put('/product/undiscount/:id', authenticate, isAdmin, removeDiscountOnProduct);
+router.put('/product/discount/:id', adminAuthenticate, isAdmin, setDiscountOnProduct);
+router.put('/product/undiscount/:id', adminAuthenticate, isAdmin, removeDiscountOnProduct);
 
 // ✅✅✅✅✅✅✅✅✅✅✅✅✅ orders ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
-router.get('/orders/recent', authenticate, isAdmin, viewAllRecentOrders);
-router.get('/orders/refund', authenticate, isAdmin, viewAllRefundedOrders);
-router.get('/orders/all', authenticate, isAdmin, viewAllUsersOrders);
-router.get('/orders/requested/cancel', authenticate, isAdmin, viewAllCancelRequestedOrders);
-router.get('/orders/pending', authenticate, isAdmin, viewAllPendingOrders);
+router.get('/orders/recent', adminAuthenticate, isAdmin, viewAllRecentOrders);
+router.get('/orders/refund', adminAuthenticate, isAdmin, viewAllRefundedOrders);
+router.get('/orders/all', adminAuthenticate, isAdmin, viewAllUsersOrders);
+router.get('/orders/requested/cancel', adminAuthenticate, isAdmin, viewAllCancelRequestedOrders);
+router.get('/orders/pending', adminAuthenticate, isAdmin, viewAllPendingOrders);
 
 // ✅✅✅✅✅✅✅✅✅✅✅✅✅ payments ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
-router.get('/payment/success', authenticate, isAdmin, viewAllSuccessPaymentOrders);
-router.get('/payment/pending', authenticate, isAdmin, viewAllUnSuccessPaymentOrders);
+router.get('/payment/success', adminAuthenticate, isAdmin, viewAllSuccessPaymentOrders);
+router.get('/payment/pending', adminAuthenticate, isAdmin, viewAllUnSuccessPaymentOrders);
 
 //✅✅✅✅✅✅✅✅✅✅✅✅ Admin useres ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
-router.get('/myProducts',authenticate, isAdmin, myProducts);
-router.get('/signup',  authenticate, isAdmin, adminSignup);
-router.get('/login',  authenticate, isAdmin, adminLogin);
-router.patch('/update',  authenticate, isAdmin, adminProfileUpdate);
-router.put('/password/update',  authenticate, isAdmin, changePassword);
-router.get('/view',  authenticate, isAdmin, getById);
+router.get('/myProducts',adminAuthenticate, isAdmin, myProducts);
+router.post('/signup', adminSignup);
+router.post('/login',  adminLogin);
+router.patch('/update',  adminAuthenticate, isAdmin, adminProfileUpdate);
+router.put('/password/update',  adminAuthenticate, isAdmin, changePassword);
+router.get('/view',  adminAuthenticate, isAdmin, getById);
+
+// ✅✅✅✅✅✅✅✅✅✅ categories ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
+
+router.post('/category',adminAuthenticate, isAdmin, createCategory);
+router.get('/category',adminAuthenticate, isAdmin, getAllCategories);
+
+// ✅✅✅✅✅✅✅✅✅✅ Fabrics ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
+router.post('/fabric',adminAuthenticate, isAdmin, createFabric);
+router.get('/fabric',adminAuthenticate, isAdmin, getallFabrices);
+
 
 module.exports = router;

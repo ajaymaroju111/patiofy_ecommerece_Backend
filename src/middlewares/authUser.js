@@ -2,7 +2,8 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const users = require("../models/userschema.js");
 const admins = require('../models/adminSchema.js')
-const crypto = require('crypto')
+const crypto = require('crypto');
+const { error } = require("console");
 
 
 //generate a JsonWebToken for the user for the authentiction : 
@@ -36,6 +37,13 @@ exports.authenticate = async (req, res, next) => {
     // Fetch user from DB
     const user = await users.findById(decode.id);
      // Check account status :
+     if(user.status === 'Blocked'){
+      return res.status(402).json({
+        success: false,
+        message: "Your account is Blocked, please Contact Patiofy team",
+        error: "UnAuthorized"
+      })
+     }
     if (user.status !== "active") {
       return res
         .status(403)
@@ -47,7 +55,7 @@ exports.authenticate = async (req, res, next) => {
     if (error.name === 'TokenExpiredError') {
     return res.status(401).json({
       success: false,
-      message: 'Token has expired. Please login again.',
+      message: 'session expired. Please login again.',
       expiredAt: error.expiredAt,
     });
   }

@@ -435,10 +435,10 @@ exports.makeOrder = async (req, res) => {
         });
       }
 
-      const matrix = await ProductMatrix.findOne(
-        { productId: product._id },
-        { size: size }
-      );
+      const matrix = await ProductMatrix.findOne({
+        productId: product._id,
+        size: size,
+      });
       if (!matrix) {
         return res.status(404).json({
           success: false,
@@ -467,7 +467,7 @@ exports.makeOrder = async (req, res) => {
           message: "not a number quntity",
         });
       }
-      const finalCost = Number(product.discountPrice * quantity);
+      const finalCost = Number(matrix.selling_price * quantity);
       if (isNaN(finalCost)) {
         return res.status(401).json({
           message: "final cost should be a number",
@@ -498,6 +498,8 @@ exports.makeOrder = async (req, res) => {
         quantity: quantity,
         payment_mode: payment_mode,
         final_cost: finalCost,
+        size: matrix.size,
+        selling_cost : matrix.selling_price,
         paymentInfo: {
           razorpay_order_id:
             payment_mode === "online" ? razorpayOrder.id : undefined,
@@ -634,8 +636,7 @@ exports.makeOrder = async (req, res) => {
         }
 
         const matrix = await ProductMatrix.findOne({
-          productId: cart.productId,
-          size: cart.size, 
+          $and: [{ productId: cart.productId }, { size: cart.size }],
         });
 
         if (!matrix || !matrix.size || !matrix.stock) {
@@ -657,15 +658,11 @@ exports.makeOrder = async (req, res) => {
         }
 
         const quantity = Number(cart.quantity);
-        const finalCost = Number(cart.discountedPrice * quantity);
+        const finalCost = Number(cart.selling_price * quantity);
         if (isNaN(finalCost)) {
           failedItems.push({ cartId, reason: "Final cost invalid" });
           continue;
         }
-
-        // Deduct stock (optional - or do it later in bulk)
-        matrix.stock -= quantity;
-        await matrix.save();
 
         const newOrder = await orders.create({
           userId: req.user._id,
@@ -690,6 +687,8 @@ exports.makeOrder = async (req, res) => {
           },
           email,
           quantity,
+          size: matrix.size,
+          selling_cost: matrix.selling_price,
           payment_mode,
           final_cost: finalCost,
           paymentInfo: {
@@ -697,6 +696,10 @@ exports.makeOrder = async (req, res) => {
               payment_mode === "online" ? razorpayOrder.id : undefined,
           },
         });
+
+        // Deduct stock (optional - or do it later in bulk)
+        matrix.stock -= quantity;
+        await matrix.save();
 
         await carts.deleteOne({ _id: cart._id });
         allOrders.push(newOrder);
@@ -757,7 +760,7 @@ exports.cancelOrder = async (req, res) => {
     await order.save();
     return res.status(200).json({
       success: true,
-      message: "Order cancellation has been requested successfully.",
+      message: "Your order cancellation request has been submitted successfully.",
     });
   } catch (error) {
     return res.status(500).json({
@@ -946,19 +949,6 @@ exports.getOrderById = async (req, res) => {
         error: "Bad Request",
       });
     }
-    // const cacheKey = `order:${id}`;
-    // try {
-    //   const cacheOrder = await redis.get(cacheKey);
-    //   if (cacheOrder) {
-    //     return res.status(500).json({
-    //       success: false,
-    //       cached: true,
-    //       data: cacheOrder,
-    //     });
-    //   }
-    // } catch (cacheError) {
-    //   console.error(cacheError);
-    // }
     const order = await orders.findById(id);
     if (order.userId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
@@ -974,11 +964,6 @@ exports.getOrderById = async (req, res) => {
         error: "Not Found",
       });
     }
-    // try {
-    //   await redis.set(cacheKey, JSON.stringify(order), 'Ex', 3600)
-    // } catch (cacheError) {
-    //   console.error(cacheError);
-    // }
     return res.status(200).json({
       success: true,
       cached: false,
@@ -998,7 +983,7 @@ exports.viewAllOrders = async (req, res) => {
   try {
     const allorders = await orders
       .find({ userId: req.user._id })
-      .populate("productId", "imagesUrl description")
+      .populate("productId")
       .sort({ _id: -1 })
       .exec();
 
@@ -1034,7 +1019,7 @@ exports.getOrderById = async (req, res) => {
         error: "UnAuthorized",
       });
     }
-    const myOrder = await orders.findById(id);
+    const myOrder = await orders.findById(id).populate('productId').exec();
     if (!myOrder) {
       return res.status(404).json({
         success: true,

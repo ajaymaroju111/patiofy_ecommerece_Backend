@@ -12,14 +12,20 @@ const orderSchema = new mongoose.Schema({
   orderId:{
     type: String,
   },
+  size: {
+    type: String
+  },
   email : {
     type : String,
     match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
   },
   status: {
     type: String,
-    enum: ['pending', 'conformed','cancelled', 'requested for cancel', 'returned'],
+    enum: ['pending', 'conformed','cancelled', 'requested_for_cancel', 'returned'],
     default: 'pending',
+  },
+  selling_cost: {
+    type: Number
   },
   final_cost: {
     type: Number,

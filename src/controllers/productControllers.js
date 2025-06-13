@@ -4,7 +4,7 @@ const fabrics = require("../models/fabricschema.js");
 const { default: mongoose } = require("mongoose");
 const reviews = require("../models/reviewschema.js");
 const products = require("../models/productschema.js");
-const categories = require("../models/catogeriesschema.js");
+const categories = require("../models/categoriesschema.js");
 const { deleteOldImages } = require("../middlewares/S3_bucket.js");
 
 // ✅✅✅✅✅✅✅✅✅✅✅  Products  ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
@@ -24,10 +24,39 @@ exports.createProduct = async (req, res) => {
     } = req.body;
 
     //checking for the body data :
-    if (!name || !description || !viewIn || !ProductStatus || !tags || !stock) {
+    if (
+      !name ||
+      !description ||
+      !viewIn ||
+      !ProductStatus ||
+      !tags ||
+      !stock ||
+      !fabric ||
+      !category
+    ) {
       return res.status(400).json({
         success: false,
         message: "all fields are required",
+        error: "Bad Request",
+      });
+    }
+    //validate fabric from the DB :
+    const isValidFabric = await fabrics.findOne({ fabric_name: fabric });
+    if (!isValidFabric) {
+      return res.status(401).json({
+        success: false,
+        message: `${fabric} is not a valid value`,
+        error: "Bad Request",
+      });
+    }
+    //validate category from the DB :
+    const isValidCategory = await categories.findOne({
+      categery_name: category,
+    });
+    if (!isValidCategory) {
+      return res.status(401).json({
+        success: false,
+        message: `${category} is not a valid value`,
         error: "Bad Request",
       });
     }
@@ -105,7 +134,7 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-//update product Product  :
+//update product Product :
 exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -252,7 +281,11 @@ exports.getProductById = async (req, res) => {
     const product = await products
       .findById(id)
       .select("-userId, -ProductStatus, -createdAt, -updatedAt")
-      .populate("rating", "finfinalRating");
+      .populate({
+        path: "product_Matrix",
+      })
+      .exec();
+    // .populate("rating", "finfinalRating");
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -441,7 +474,7 @@ exports.filterProducts = async (req, res) => {
       if (!allstockProducts) {
         return res.status(404).json({
           success: false,
-          message: "Products not found",
+          message: "No matching products found.",
           error: "Not Found",
         });
       }
@@ -464,14 +497,14 @@ exports.filterProducts = async (req, res) => {
       }
     }
 
-    if (price) {
-      const [min, max] = price.split("_").map(Number);
-      if (!isNaN(min) && !isNaN(max)) {
-        filter.price = { $gte: min, $lte: max };
-      } else if (isNaN(min)) {
-        filter.price = { $gte: min };
-      }
-    }
+    // if (price) {
+    //   const [min, max] = price.split("_").map(Number);
+    //   if (!isNaN(min) && !isNaN(max)) {
+    //     filter.price = { $gte: min, $lte: max };
+    //   } else if (isNaN(min)) {
+    //     filter.price = { $gte: min };
+    //   }
+    // }
 
     if (size) {
       filter.size = size;
@@ -479,6 +512,33 @@ exports.filterProducts = async (req, res) => {
     if (fabric) {
       filter.fabric = fabric;
     }
+    //newly added : 
+        // Handle price filter through ProductMatrix without changing the rest of the logic
+    if (price) {
+      const [min, max] = price.split("_").map(Number);
+      let matrixFilter = {};
+
+      if (!isNaN(min) && !isNaN(max)) {
+        matrixFilter.selling_price = { $gte: min, $lte: max };
+      } else if (!isNaN(min)) {
+        matrixFilter.selling_price = { $gte: min };
+      }
+
+      if (Object.keys(matrixFilter).length > 0) {
+        const matchedMatrices = await ProductMatrix.find(matrixFilter, { productId: 1 }).lean();
+        const matchingProductIds = matchedMatrices.map((m) => m.productId);
+
+        if (matchingProductIds.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: "No products found in this price range",
+          });
+        }
+
+        filter._id = { $in: matchingProductIds };
+      }
+    }
+
 
     //usage of aggregations pipelines :
     const filterproduct = await products
@@ -570,6 +630,9 @@ exports.filterProducts = async (req, res) => {
   }
 };
 
+
+
+
 //check the insock and out stock products :
 exports.viewProductsStock = async (req, res) => {
   try {
@@ -587,8 +650,12 @@ exports.viewProductsStock = async (req, res) => {
     }
     const stockProducts = await products
       .find({ stock: stock })
+      .populate({
+        path: "product_Matrix",
+      })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .exec();
     if (!stockProducts) {
       return res.status(404).json({
         success: false,
@@ -615,9 +682,14 @@ exports.viewProductsStock = async (req, res) => {
 
 exports.newCollections = async (req, res) => {
   try {
-    const newCollections = await products.find({
-      viewIn: { $in: ["new_collection", "all"] },
-    });
+    const newCollections = await products
+      .find({
+        viewIn: { $in: ["new_collection", "all"] },
+      })
+      .populate({
+        path: "product_Matrix",
+      })
+      .exec();
     if (!newCollections || newCollections.length === 0) {
       return res.status(404).json({
         success: false,
@@ -641,9 +713,14 @@ exports.newCollections = async (req, res) => {
 
 exports.trendingCollections = async (req, res) => {
   try {
-    const trendingCollections = await products.find({
-      viewIn: { $in: ["trending", "all"] },
-    });
+    const trendingCollections = await products
+      .find({
+        viewIn: { $in: ["trending", "all"] },
+      })
+      .populate({
+        path: "product_Matrix",
+      })
+      .exec();
     if (!trendingCollections || trendingCollections.length === 0) {
       return res.status(404).json({
         success: false,
@@ -668,9 +745,14 @@ exports.trendingCollections = async (req, res) => {
 //finding the best seller :
 exports.findBestSellerProducts = async (req, res) => {
   try {
-    const bestsellers = await products.find({
-      viewIn: { $in: ["best_seller", "all"] },
-    });
+    const bestsellers = await products
+      .find({
+        viewIn: { $in: ["best_seller", "all"] },
+      })
+      .populate({
+        path: "product_Matrix",
+      })
+      .exec();
     if (!bestsellers || bestsellers.length === 0) {
       return res.status(404).json({
         success: false,
@@ -695,14 +777,19 @@ exports.findBestSellerProducts = async (req, res) => {
 exports.searchProducts = async (req, res) => {
   try {
     const query = req.query.q;
-    const output = await products.find({
-      $or: [
-        { name: { $regex: query, $options: "i" } },
-        // {description : {$regex : query, $options : 'i'}},
-        // {category : {$regex : query, $options : 'i'}},
-        // {tags : {$regex : query, $options : 'i'}}
-      ],
-    });
+    const output = await products
+      .find({
+        $or: [
+          { name: { $regex: query, $options: "i" } },
+          // {description : {$regex : query, $options : 'i'}},
+          // {category : {$regex : query, $options : 'i'}},
+          // {tags : {$regex : query, $options : 'i'}}
+        ],
+      })
+      .populate({
+        path: "product_Matrix",
+      })
+      .exec();
     if (!output || (await output).length === 0) {
       return res.status(404).json({
         success: false,
@@ -733,14 +820,8 @@ exports.viewAllCarts = async (req, res) => {
   try {
     const allCarts = await carts
       .find({ userId: req.user._id })
-      .populate({
-        path: "items.productId", // 1st level: cart -> product
-        populate: {
-          path: "product_Matrix", // 2nd level: product -> matrix
-          model: "ProductMatrix", // MUST match what you used in mongoose.model()
-        },
-      })
       .populate("userId")
+      .populate("productId")
       .exec();
 
     const uniqueCartIds = await carts.find({ userId: req.user._id });
@@ -782,10 +863,9 @@ exports.addToCart = async (req, res) => {
       });
     }
 
-    const productMatrix = await ProductMatrix.findOne(
-      { productId: id },
-      { size: size }
-    );
+    const productMatrix = await ProductMatrix.findOne({
+      $and: [{ productId: id }, { size: size }],
+    });
     if (!productMatrix) {
       return res.status(404).json({
         success: false,
@@ -794,18 +874,9 @@ exports.addToCart = async (req, res) => {
       });
     }
 
-    const isCartExist = await carts
-      .findOne({
-        $and: [{ productId: id }, { userId: req.user._id }, { size: size }],
-      })
-      .populate({
-        path: "items.productId", // 1st level: cart -> product
-        populate: {
-          path: "product_Matrix", // 2nd level: product -> matrix
-          model: "ProductMatrix", // MUST match what you used in mongoose.model()
-        },
-      })
-      .exec();
+    const isCartExist = await carts.findOne({
+      $and: [{ productId: id }, { userId: req.user._id }, { size: size }],
+    });
     if (!isCartExist) {
       if (quantity > productMatrix.stock || !productMatrix.stock) {
         return res.status(401).json({
@@ -820,6 +891,7 @@ exports.addToCart = async (req, res) => {
         size: size,
         userId: req.user._id,
         productId: product._id,
+        selling_price: productMatrix.selling_price,
       });
       return res.status(200).json({
         success: true,
@@ -853,20 +925,20 @@ exports.addToCart = async (req, res) => {
       });
     }
 
-    const data = await (
-      await cartUpdate.populate("userId", "firstname")
-    ).populate({
-      path: "items.productId", // 1st level: cart -> product
-      populate: {
-        path: "product_Matrix", // 2nd level: product -> matrix
-        model: "ProductMatrix", // MUST match what you used in mongoose.model()
-      },
-    });
+    // const data = await (
+    //   await cartUpdate.populate("userId")
+    // ).populate({
+    //   path: "items.productId", // 1st level: cart -> product
+    //   populate: {
+    //     path: "product_Matrix", // 2nd level: product -> matrix
+    //     model: "ProductMatrix", // MUST match what you used in mongoose.model()
+    //   },
+    // });
 
     return res.status(200).json({
       success: true,
       message: " cart quantity updated successfully",
-      data: data,
+      data: cartUpdate,
     });
   } catch (error) {
     return res.status(500).json({
@@ -890,13 +962,8 @@ exports.getCartById = async (req, res) => {
 
     const cart = await carts
       .findById(id)
-      .populate({
-        path: "items.productId", // 1st level: cart -> product
-        populate: {
-          path: "product_Matrix", // 2nd level: product -> matrix
-          model: "ProductMatrix", // MUST match what you used in mongoose.model()
-        },
-      })
+      .populate("productId")
+      .populate("userId")
       .exec();
     if (cart.userId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
@@ -929,7 +996,7 @@ exports.getCartById = async (req, res) => {
 exports.updateCart = async (req, res) => {
   try {
     const { id } = req.params;
-    const { quantity, size } = req.body;
+    const { quantity } = req.body;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -939,14 +1006,7 @@ exports.updateCart = async (req, res) => {
     }
     const isCart = await carts
       .findOne({
-        $and: [{ _id: id }, { userId: req.user._id }, { size: size }],
-      })
-      .populate({
-        path: "items.productId", // 1st level: cart -> product
-        populate: {
-          path: "product_Matrix", // 2nd level: product -> matrix
-          model: "ProductMatrix", // MUST match what you used in mongoose.model()
-        },
+        $and: [{ _id: id }, { userId: req.user._id }],
       })
       .exec();
     if (!isCart) {
@@ -964,49 +1024,32 @@ exports.updateCart = async (req, res) => {
         error: "Not Found",
       });
     }
-    const productMatrix = await ProductMatrix.findOne(
-      { productId: product._id },
-      { size: size }
-    );
-    if (quantity > productMatrix.stock || !productMatrix.stock) {
+    const Matrix = await ProductMatrix.findOne({
+      $and: [{ productId: product._id }, { size: isCart.size }],
+    });
+    if (!Matrix) {
+      return res.status(404).json({
+        success: false,
+        message: "Pricing not available",
+        error: "Not Found",
+      });
+    }
+    if (quantity > Matrix.stock || !Matrix.stock) {
       return res.status(402).json({
         success: false,
-        message: `product limit exceeded!! only ${productMatrix.stock} items left in ${size} size`,
+        message: `product limit exceeded!! only ${Matrix.stock} items left in ${size} size`,
         error: "Stock limit exceeded",
       });
     }
-    const updateCart = await carts
-      .findByIdAndUpdate(
-        id,
-        {
-          $set: {
-            quantity: quantity,
-          },
-        },
-        {
-          new: true,
-        }
-      )
-      .populate({
-        path: "items.productId", // 1st level: cart -> product
-        populate: {
-          path: "product_Matrix", // 2nd level: product -> matrix
-          model: "ProductMatrix", // MUST match what you used in mongoose.model()
-        },
-      })
-      .exec();
 
-    if (!updateCart) {
-      return res.status(404).json({
-        success: false,
-        message: "Cart not updated",
-        error: "update action failed",
-      });
-    }
+    isCart.quantity = quantity;
+    await isCart.save();
+    const data =  await isCart.populate('productId')
+
     return res.status(200).json({
       success: true,
       message: "cart updated successfully",
-      data: updateCart,
+      data: data,
     });
   } catch (error) {
     return res.status(500).json({
@@ -1037,14 +1080,6 @@ exports.deleteCart = async (req, res) => {
         success: false,
         message: "cart not found",
         error: "Not Found",
-      });
-    }
-
-    if (isUser.userId.toString() !== req.user.id.toString()) {
-      return res.status(401).json({
-        success: false,
-        message: "You are not Authorized",
-        error: "UnAuthorized",
       });
     }
 
@@ -1173,7 +1208,7 @@ exports.createProductMatrix = async (req, res) => {
       });
     }
 
-    const createdMatrices = [];
+    // const createdMatrices = [];
 
     for (const matrix of matrices) {
       const { original_price, selling_price, size, stock } = matrix;
@@ -1190,7 +1225,6 @@ exports.createProductMatrix = async (req, res) => {
           error: "Bad Request",
         });
       }
-
       if (original_price < selling_price) {
         return res.status(400).json({
           success: false,
@@ -1210,6 +1244,7 @@ exports.createProductMatrix = async (req, res) => {
           message: `Product matrix already exists for size "${size}"`,
           error: "Conflict",
         });
+        // continue;
       }
 
       const newMatrix = await ProductMatrix.create({
@@ -1220,17 +1255,20 @@ exports.createProductMatrix = async (req, res) => {
         stock: Number(stock),
       });
 
-      createdMatrices.push(newMatrix._id);
+      // createdMatrices.push(newMatrix._id);
+      product.product_Matrix.push(newMatrix._id);
     }
-
-    // product.product_Matrix = createdMatrices;
-    product.product_Matrix.push(...createdMatrices);
     await product.save();
 
+    // product.product_Matrix = createdMatrices;
+    // product.product_Matrix.push(...createdMatrices);
+    // await product.save();
+
+    const data = await product.populate("product_Matrix");
     return res.status(200).json({
       success: true,
       message: "Product matrices created successfully",
-      createdMatrices,
+      data: data,
     });
   } catch (error) {
     return res.status(500).json({
@@ -1310,6 +1348,23 @@ exports.createProductMatrix = async (req, res) => {
 
 exports.updateProductMatrix = async (req, res) => {
   try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid Id",
+        error: "Invalid",
+      });
+    }
+    const product = await products.findById(id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not Found",
+        error: "Not Found",
+      });
+    }
+
     const { updates } = req.body;
     if (!Array.isArray(updates) || updates.length === 0) {
       return res.status(400).json({
@@ -1331,7 +1386,11 @@ exports.updateProductMatrix = async (req, res) => {
 
       const matrix = await ProductMatrix.findById(id);
       if (!matrix) {
-        results.push({ id, success: false, message: "Product matrix not found" });
+        results.push({
+          id,
+          success: false,
+          message: "Product matrix not found",
+        });
         continue;
       }
 
@@ -1355,14 +1414,22 @@ exports.updateProductMatrix = async (req, res) => {
         updateData.selling_price !== undefined &&
         updateData.selling_price > updateData.original_price
       ) {
-        results.push({ id, success: false, message: "Selling price cannot be greater than original price" });
+        results.push({
+          id,
+          success: false,
+          message: "Selling price cannot be greater than original price",
+        });
         continue;
       }
 
-      const updatedMatrix = await ProductMatrix.findByIdAndUpdate(id, updateData, {
-        new: true,
-        runValidators: true,
-      });
+      const updatedMatrix = await ProductMatrix.findByIdAndUpdate(
+        id,
+        updateData,
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
 
       results.push({
         id,
@@ -1370,6 +1437,19 @@ exports.updateProductMatrix = async (req, res) => {
         message: "Product matrix updated",
         updated: updatedMatrix,
       });
+
+      // Update all carts with this productId to reflect new prices
+      const updatedCarts = await carts.updateMany(
+        {
+          productId: id,
+          size: matrix.size,
+        },
+        {
+          $set: {
+            selling_price: matrix.selling_price,
+          },
+        }
+      );
     }
 
     return res.status(200).json({
@@ -1385,7 +1465,6 @@ exports.updateProductMatrix = async (req, res) => {
     });
   }
 };
-
 
 //read product_matrix :
 exports.getProductMatrixById = async (req, res) => {
@@ -1414,7 +1493,7 @@ exports.getProductMatrixById = async (req, res) => {
         error: "Not Found",
       });
     }
-    
+
     return res.status(200).json({
       success: true,
       message: "product matrix retrieved successfully",
@@ -1471,7 +1550,7 @@ exports.deleteProductMatrix = async (req, res) => {
   }
 };
 
-// ❌❌❌❌❌❌❌❌❌❌  ❌❌❌❌❌❌❌❌❌❌
+// ❌❌❌❌❌❌❌❌❌❌ Rating  ❌❌❌❌❌❌❌❌❌❌
 
 //get rating of a product id :
 exports.getRatingById = async (req, res) => {

@@ -31,7 +31,7 @@ const {
 } = require("../middlewares/authUser.js");
 const passport = require("passport");
 
-// 🔹 Step 1: Google OAuth Login Route
+//  Step 1: Google OAuth Login Route
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })

@@ -54,7 +54,7 @@ const userschema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["inactive", "active", "terminate"],
+      enum: ["inactive", "active", "Blocked"],
       default: "inactive",
       trim: true,
     },
@@ -69,6 +69,10 @@ const userschema = new mongoose.Schema(
       type: String,
       enum: ['user', 'admin'],
       default: 'user'
+    },
+    password_attempts: {
+      type: Number,
+      default: 3,
     }
   },
   { timestamps: true }

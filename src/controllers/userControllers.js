@@ -67,7 +67,7 @@ exports.signUp = async (req, res) => {
     if(!istermsandConditions || istermsandConditions === false){
       return res.status(401).json({
         success : false,
-        message: "terms and condition are not accespted",
+        message: "terms and conditions should be accepted",
         error: "Bad Request"
       })
     }
@@ -83,7 +83,7 @@ exports.signUp = async (req, res) => {
     
     return res.status(200).json({
       success: true,
-      message: "verification has been send to the email, please verify",
+      message: "A verification email has been sent. Please check your inbox to verify your email address.",
     });
   } catch (error) {
     return res.status(500).json({
@@ -101,7 +101,7 @@ exports.resend = async (req, res) => {
     if (!email) {
       return res.status(400).json({
         success: false,
-        message: "email is required",
+        message: "Email is required",
         error: "Bad Request",
       });
     }
@@ -198,6 +198,15 @@ exports.signIn = async (req, res) => {
         error: "Bad Request",
       });
     }
+
+    if(user.accountType !== 'user'){
+      return res.status(401).json({
+        success: false,
+        message: "You are not Authorized",
+        error: "Not Authorized"
+      })
+    }
+
     if(user.password === undefined || !user.password){
       return res.status(401).json({
         success: false,
@@ -304,7 +313,7 @@ exports.forgetPassword = async (req, res) => {
     });
     return res.status(200).json({
       success: true,
-      message: "reset password link sent to the email",
+      message: "A password reset link has been sent to your email.",
     });
   } catch (error) {
     console.log(error);
@@ -339,7 +348,7 @@ exports.setPassword = async (req, res) => {
     await user.save();
     return res.status(200).json({
       success: true,
-      message: "new password updated , please login",
+      message: "Your password has been updated. Please log in.",
     });
   } catch (error) {
     return res.status(500).json({
@@ -379,7 +388,7 @@ exports.changePassword = async (req, res) => {
     await user.save();
     return res
       .status(204)
-      .json({ message: "password updated successfully, Please Login" });
+      .json({ message: "Password updated successfully. Please log in." });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -466,12 +475,6 @@ exports.myProducts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    // const cacheKey = `myproducts:my`
-    // try {
-    //   const cacheProducts = await redis.get(cacheKey)
-    // } catch (redisError) {
-    //   console.error(redisError)
-    // }
     const myproducts = await products
       .find({ userId: id })
       .select("-_id -userId -createdAt -updatedAt -__v")
@@ -481,15 +484,11 @@ exports.myProducts = async (req, res) => {
     if (!products) {
       return res.status(404).json({
         success: false,
-        message: "products not found",
+        message: "No products found.",
+        error: "Not Found"
       });
     }
     const total = await products.countDocuments();
-    // try {
-    //   await redis.set(cacheKey, JSON.stringify(myproducts), 'EX', 3600)
-    // } catch (redisError) {
-    //   console.error(redisError);
-    // }
     return res.status(200).json({
       success: true,
       page,
