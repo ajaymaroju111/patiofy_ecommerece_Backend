@@ -296,7 +296,6 @@ exports.getProductById = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      cached: false,
       data: product,
     });
   } catch (error) {
@@ -335,7 +334,6 @@ exports.getAllProducts = async (req, res) => {
     return res.status(200).json({
       success: true,
       page,
-      cached: false,
       data: allproducts,
       totalPages: Math.ceil(total / limit),
     });
@@ -616,7 +614,6 @@ exports.filterProducts = async (req, res) => {
     return res.status(200).json({
       success: true,
       page: page,
-      cached: false,
       totalProducts: filterproduct[0].products.length,
       totalpages: Math.ceil((filterproduct[0].products.length || 0) / limit),
       filterproduct,
@@ -629,8 +626,6 @@ exports.filterProducts = async (req, res) => {
     });
   }
 };
-
-
 
 
 //check the insock and out stock products :
@@ -829,7 +824,6 @@ exports.viewAllCarts = async (req, res) => {
 
     return res.status(200).json({
       succcess: true,
-      cached: false,
       data: allCarts,
       count: totalUniqueCarts,
     });
@@ -980,7 +974,6 @@ exports.getCartById = async (req, res) => {
     }
     return res.status(200).json({
       success: true,
-      cached: false,
       data: cart,
     });
   } catch (error) {

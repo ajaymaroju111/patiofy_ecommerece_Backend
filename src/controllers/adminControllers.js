@@ -355,7 +355,6 @@ exports.getAllProductsForAdmim = async (req, res) => {
     return res.status(200).json({
       success: true,
       page,
-      cached: false,
       data: allproducts,
       totalPages: Math.ceil(total / limit),
     });
@@ -392,7 +391,6 @@ exports.getProductByIdForAdmin = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      cached: false,
       data: product,
     });
   } catch (error) {

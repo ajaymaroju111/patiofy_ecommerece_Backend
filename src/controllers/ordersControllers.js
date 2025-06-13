@@ -500,6 +500,7 @@ exports.makeOrder = async (req, res) => {
         final_cost: finalCost,
         size: matrix.size,
         selling_cost : matrix.selling_price,
+        original_cost: matrix.original_price,
         paymentInfo: {
           razorpay_order_id:
             payment_mode === "online" ? razorpayOrder.id : undefined,
@@ -691,6 +692,7 @@ exports.makeOrder = async (req, res) => {
           selling_cost: matrix.selling_price,
           payment_mode,
           final_cost: finalCost,
+          original_cost: matrix.original_price,
           paymentInfo: {
             razorpay_order_id:
               payment_mode === "online" ? razorpayOrder.id : undefined,
@@ -755,8 +757,15 @@ exports.cancelOrder = async (req, res) => {
         message: "you are not authorized",
         error: "UnAuthorized",
       });
+      
     }
-    order.cancel_request = "requested";
+    if(order.status === "requested_for_cancel"){
+      return res.status(401).json({
+        success: false,
+        message: "Already requested for order cancellation"
+      })
+    }
+    order.status = "requested_for_cancel";
     await order.save();
     return res.status(200).json({
       success: true,
@@ -966,7 +975,6 @@ exports.getOrderById = async (req, res) => {
     }
     return res.status(200).json({
       success: true,
-      cached: false,
       data: order,
     });
   } catch (error) {
@@ -996,7 +1004,6 @@ exports.viewAllOrders = async (req, res) => {
     }
     return res.status(200).json({
       success: true,
-      cached: false,
       data: allorders,
     });
   } catch (error) {

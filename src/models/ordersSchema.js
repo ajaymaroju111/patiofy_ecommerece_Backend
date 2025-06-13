@@ -24,6 +24,9 @@ const orderSchema = new mongoose.Schema({
     enum: ['pending', 'conformed','cancelled', 'requested_for_cancel', 'returned'],
     default: 'pending',
   },
+  original_cost: {
+    type: Number,
+  },
   selling_cost: {
     type: Number
   },
