@@ -722,140 +722,6 @@ paths:
                     type: string
                     example: "Internal Server Error"
 
-  /patiofy/auth/products/review/{id}:
-    get:
-      summary: Get product review by ID
-      description: Retrieve the review for a product if it exists.
-      tags:
-        - Reviews (Products)
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-          description: The ID of the product to retrieve the review for
-      responses:
-        '200':
-          description: Review retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: review retrieved successfully
-                  rate:
-                    type: object
-                    description: Review object
-        '401':
-          description: Product not found or unavailable
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
-                    type: string
-                    example: product is no longer available
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
-                    type: string
-                    example: Internal Server Error
-                  error:
-                    type: object
-                    description: Error object with details
-    post:
-      tags:
-        - Reviews (Products)
-      security:
-        - BearerAuth: []
-      summary: Submit a rating and review for a product
-      description: Allows a logged-in user to rate a product (1-5 stars) with an optional review message. Prevents duplicate ratings.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID of the product to be rated
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - rating
-              properties:
-                rating:
-                  type: integer
-                  minimum: 1
-                  maximum: 5
-                  example: 5
-      responses:
-        '200':
-          description: Rating submitted successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "review added successfully"
-                  rate:
-                    type: object
-                    description: Updated review object
-        '400':
-          description: Bad request (e.g., missing rating or duplicate rating)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  error:
-                    type: string
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
-                    type: string
-                    example: "Internal Server Error"
-                  error:
-                    type: string
-
   /patiofy/auth/user/delete:
     delete:
       summary: Delete user account
@@ -3019,7 +2885,6 @@ paths:
                     example: Internal Server Error
                   error:
                     type: string  
-
 
   /patiofy/auth/admin/users:
   # get all users
@@ -5743,7 +5608,7 @@ paths:
                     type: string
                     example: Unexpected error occurred
 
-# ✅✅✅✅✅✅✅✅✅  ✅✅✅✅✅✅✅✅✅✅
+# ✅✅✅✅✅✅✅✅✅ Fabrics ✅✅✅✅✅✅✅✅✅✅
 
   /patiofy/auth/admin/fabric:
     post:
@@ -5901,11 +5766,310 @@ paths:
                     type: string
                     example: Unexpected error occurred
 
+# ✅✅✅✅✅✅✅ ratings ✅✅✅✅✅✅✅✅✅✅
+
+  /patiofy/auth/products/review/{id}:
+     post:
+      tags:
+        - Reviews
+      security:
+        - BearerAuth: []
+      summary: Post a review for a product
+      description: Creates a review for a specific product by a user.
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 665e3a31e4c4ddf92c7712c3
+          description: The ID of the product to review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - rating
+              properties:
+                userId:
+                  type: string
+                  example: 665d221ac719c577154af78f
+                  description: ID of the user posting the review
+                message:
+                  type: string
+                  example: "Fantastic product! Highly recommended."
+                rating:
+                  type: number
+                  example: 4
+                  minimum: 1
+                  maximum: 5
+      responses:
+        '201':
+          description: Review posted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Review posted successfully
+                  data:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                        example: 666abc1234567
+                      productId:
+                        type: string
+                        example: 665e3a31e4c4ddf92c7712c3
+                      userId:
+                        type: string
+                        example: 665d221ac719c577154af78f
+                      message:
+                        type: string
+                        example: Fantastic product! Highly recommended.
+                      rating:
+                        type: number
+                        example: 4
+                      createdAt:
+                        type: string
+                        format: date-time
+                      updatedAt:
+                        type: string
+                        format: date-time
+        '400':
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: productId, userId and rating are required
+        '500':
+          description: Server error while posting review
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Error while posting review
+                  error:
+                    type: string
+                    example: Internal Server Error    
+     get:
+      tags:
+        - Reviews
+      security:
+        - BearerAuth: []
+      summary: Get reviews for a product
+      description: Fetches all reviews for a given product, including average rating and total number of ratings.
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: The ID of the product
+          schema:
+            type: string
+            example: 665e3a31e4c4ddf92c7712c3
+      responses:
+        '200':
+          description: Successfully fetched reviews and rating summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  productId:
+                    type: string
+                    example: 665e3a31e4c4ddf92c7712c3
+                  count:
+                    type: number
+                    example: 5
+                  averageRating:
+                    type: number
+                    example: 4.3
+                  totalRatings:
+                    type: number
+                    example: 5
+                  reviews:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: 666abc1234567
+                        userId:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                              example: 665d221ac719c577154af78f
+                            firstname:
+                              type: string
+                              example: Ajay
+                            lastname:
+                              type: string
+                              example: Kumar
+                            email:
+                              type: string
+                              example: ajay@example.com
+                        message:
+                          type: string
+                          example: "Amazing product"
+                        rating:
+                          type: number
+                          example: 5
+                        createdAt:
+                          type: string
+                          format: date-time
+                        updatedAt:
+                          type: string
+                          format: date-time
+        '400':
+          description: Invalid product ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Invalid product ID
+        '500':
+          description: Server error while fetching reviews
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Error while fetching reviews
+                  error:
+                    type: string
+                    example: Internal Server Error
 
 
 
-
-
+  /patiofy/auth/products/review/all{id}:
+    get:
+      tags:
+        - Reviews
+      security:
+        - BearerAuth: []
+      summary: Get all reviews for a specific product
+      description: Fetches all reviews for a given product, including user info and sorted by latest.
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 665e3a31e4c4ddf92c7712c3
+          description: The ID of the product to fetch reviews for
+      responses:
+        '200':
+          description: A list of reviews for the product
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  count:
+                    type: integer
+                    example: 3
+                  reviews:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: 666abc1234567
+                        userId:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                              example: 665d221ac719c577154af78f
+                            firstname:
+                              type: string
+                              example: Ajay
+                            lastname:
+                              type: string
+                              example: Kumar
+                            email:
+                              type: string
+                              example: ajay@example.com
+                        message:
+                          type: string
+                          example: Amazing quality and delivery!
+                        rating:
+                          type: number
+                          example: 4
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: 2025-06-13T12:00:00.000Z
+        '404':
+          description: No reviews found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: No reviews found for this product
+        '500':
+          description: Server error while fetching reviews
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Error while fetching reviews
+                  error:
+                    type: string
+                    example: Internal Server Error
 
 
 

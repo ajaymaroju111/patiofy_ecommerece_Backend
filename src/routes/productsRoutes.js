@@ -22,6 +22,9 @@ const {
   getFilterNames,
   searchProducts,
   trendingCollections,
+  createReview,
+  getReviewsByProduct,
+  getallReviewsByProduct,
 } = require('../controllers/productControllers.js');
 
 // product Routes : 
@@ -43,7 +46,8 @@ router.put('/cart/:id', authenticate, updateCart);
 router.delete('/cart/:id', authenticate, deleteCart);
 
 // Rating Routes : 
-router.get("/review/:id", authenticate, getRatingById);
-router.post("/review/:id", authenticate, ratingProduct);
+router.get("/reviews/all/:id", authenticate, getallReviewsByProduct);
+router.get("/review/:id", authenticate, getReviewsByProduct);
+router.post("/review/:id", authenticate, createReview);
 
 module.exports = router;

@@ -450,6 +450,7 @@ exports.getFilterNames = async (req, res) => {
   }
 };
 
+
 //search for products : ( NAN )
 exports.filterProducts = async (req, res) => {
   try {
@@ -510,8 +511,33 @@ exports.filterProducts = async (req, res) => {
     if (fabric) {
       filter.fabric = fabric;
     }
-    //newly added : 
-        // Handle price filter through ProductMatrix without changing the rest of the logic
+    //newly added :
+    // Handle price filter through ProductMatrix without changing the rest of the logic
+    // if (price) {
+    //   const [min, max] = price.split("_").map(Number);
+    //   let matrixFilter = {};
+
+    //   if (!isNaN(min) && !isNaN(max)) {
+    //     matrixFilter.selling_price = { $gte: min, $lte: max };
+    //   } else if (!isNaN(min)) {
+    //     matrixFilter.selling_price = { $gte: min };
+    //   }
+
+    //   if (Object.keys(matrixFilter).length > 0) {
+    //     const matchedMatrices = await ProductMatrix.find(matrixFilter, { productId: 1 }).lean();
+    //     const matchingProductIds = matchedMatrices.map((m) => m.productId);
+
+    //     if (matchingProductIds.length === 0) {
+    //       return res.status(404).json({
+    //         success: false,
+    //         message: "No products found in this price range",
+    //       });
+    //     }
+
+    //     filter._id = { $in: matchingProductIds };
+    //   }
+    // }
+
     if (price) {
       const [min, max] = price.split("_").map(Number);
       let matrixFilter = {};
@@ -523,7 +549,9 @@ exports.filterProducts = async (req, res) => {
       }
 
       if (Object.keys(matrixFilter).length > 0) {
-        const matchedMatrices = await ProductMatrix.find(matrixFilter, { productId: 1 }).lean();
+        const matchedMatrices = await ProductMatrix.find(matrixFilter, {
+          productId: 1,
+        }).lean();
         const matchingProductIds = matchedMatrices.map((m) => m.productId);
 
         if (matchingProductIds.length === 0) {
@@ -533,10 +561,17 @@ exports.filterProducts = async (req, res) => {
           });
         }
 
-        filter._id = { $in: matchingProductIds };
+        //Convert productIds into full product documents
+        const productsFound = await products
+          .find({ _id: { $in: matchingProductIds } })
+          .lean();
+
+        return res.status(200).json({
+          success: true,
+          products: productsFound,
+        });
       }
     }
-
 
     //usage of aggregations pipelines :
     const filterproduct = await products
@@ -626,7 +661,6 @@ exports.filterProducts = async (req, res) => {
     });
   }
 };
-
 
 //check the insock and out stock products :
 exports.viewProductsStock = async (req, res) => {
@@ -1037,7 +1071,7 @@ exports.updateCart = async (req, res) => {
 
     isCart.quantity = quantity;
     await isCart.save();
-    const data =  await isCart.populate('productId')
+    const data = await isCart.populate("productId");
 
     return res.status(200).json({
       success: true,
@@ -1546,127 +1580,238 @@ exports.deleteProductMatrix = async (req, res) => {
 // ❌❌❌❌❌❌❌❌❌❌ Rating  ❌❌❌❌❌❌❌❌❌❌
 
 //get rating of a product id :
-exports.getRatingById = async (req, res) => {
+// exports.getRatingById = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid product ID format",
+//       });
+//     }
+//     const product = await products.findById(id);
+//     if (!product) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "product is no longer available",
+//       });
+//     }
+//     const rate = await reviews.findOne({ productId: id });
+//     return res.status(200).json({
+//       success: true,
+//       message: "review retrieved successfully",
+//       rate,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       success: false,
+//       message: "Intenal Server Error",
+//       error: error.message,
+//     });
+//   }
+// };
+
+
+//get all ratings of a product : 
+exports.getallReviewsByProduct = async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
+    const { productId } = req.params;
+
+    const allreviews = await reviews.find({ productId })
+      .populate('userId', 'firstname lastname email') // Optional: include user details
+      .sort({ createdAt: -1 }); // Latest first
+
+    if (!reviews.length) {
+      return res.status(404).json({
         success: false,
-        message: "Invalid product ID format",
+        message: 'No reviews found for this product',
       });
     }
-    const product = await products.findById(id);
-    if (!product) {
-      return res.status(401).json({
-        success: false,
-        message: "product is no longer available",
-      });
-    }
-    const rate = await reviews.findOne({ productId: id });
+
     return res.status(200).json({
       success: true,
-      message: "review retrieved successfully",
-      rate,
+      count: reviews.length,
+      reviews,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Intenal Server Error",
+      message: 'Error while fetching reviews',
       error: error.message,
     });
   }
 };
 
 //rating a product :
-exports.ratingProduct = async (req, res) => {
+exports.createReview = async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid product ID",
-        error: "Bad Request",
-      });
-    }
-    const { rating } = req.body;
-    if (!rating || rating < 1 || rating > 5) {
+
+    const { productId } = req.params;
+    const {message, rating } = req.body;
+
+    if (!productId || !userId || !rating) {
       return res.status(400).json({
         success: false,
-        error: "Please provide a valid rating (1 - 5)",
+        message: 'productId, userId and rating are required',
       });
     }
-    const product = await products.findById(id);
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "product not found",
-        error: "Not Found",
-      });
-    }
-    const rate = await reviews.findOne({ productId: id });
-    if (!rate) {
-      await reviews.create({
-        productId: id,
-        userId: [req.user._id],
-        [`r${rating}`]: {
-          data: {
-            count: 1,
-          },
-        },
-        finalRating: rating,
-      });
-    } else {
-      if (rate.userId.includes(req.user._id)) {
-        return res.status(400).json({
-          success: false,
-          error: "You have already rated this product",
-        });
-      }
 
-      // Add user to userId list
-      rate.userId.push(req.user._id);
+    const review = await reviews.create({ productId, userId, message, rating });
 
-      const ratingKey = `r${rating}`;
-
-      // Initialize rating block if it doesn't exist
-      if (!rate[ratingKey]) {
-        rate[ratingKey] = {
-          data: {
-            messages: [],
-            count: 0,
-          },
-        };
-      }
-
-      // Add message and increment count
-      rate[ratingKey].data.count += 1;
-
-      // Recalculate average rating
-      const totalScore = [1, 2, 3, 4, 5].reduce((sum, r) => {
-        const count = rate[`r${r}`]?.data?.count || 0;
-        return sum + r * count;
-      }, 0);
-
-      const totalCount = [1, 2, 3, 4, 5].reduce((sum, r) => {
-        return sum + (rate[`r${r}`]?.data?.count || 0);
-      }, 0);
-
-      rate.finalRating =
-        totalCount > 0 ? Math.round((totalScore / totalCount) * 10) / 10 : 0;
-    }
-    product.rating = rate.finalRating;
-    await product.save();
-    // await rate.save();
-    return res.status(200).json({
+    return res.status(201).json({
       success: true,
-      message: "Review posted successfully",
-      rating,
+      message: 'Review posted successfully',
+      data: review,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
-      error,
+      message: 'Error while posting review',
+      error: error.message,
+    });
+  }
+};
+
+//giving rating : 
+// exports.ratingProduct = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Invalid product ID",
+//         error: "Bad Request",
+//       });
+//     }
+//     const { rating, message } = req.body;
+//     if (!rating || rating < 1 || rating > 5) {
+//       return res.status(400).json({
+//         success: false,
+//         error: "Please provide a valid rating (1 - 5)",
+//       });
+//     }
+//     const product = await products.findById(id);
+//     if (!product) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "product not found",
+//         error: "Not Found",
+//       });
+//     }
+//     const rate = await reviews.findOne({ productId: id });
+//     if (!rate) {
+//       await reviews.create({
+//         productId: id,
+//         userId: [req.user._id],
+//         [`r${rating}`]: {
+//           data: {
+//             count: 1,
+//           },
+//         },
+//         finalRating: rating,
+//       });
+//     } else {
+//       if (rate.userId.includes(req.user._id)) {
+//         return res.status(400).json({
+//           success: false,
+//           error: "You have already rated this product",
+//         });
+//       }
+
+//       // Add user to userId list
+//       rate.userId.push(req.user._id);
+
+//       const ratingKey = `r${rating}`;
+
+//       // Initialize rating block if it doesn't exist
+//       if (!rate[ratingKey]) {
+//         rate[ratingKey] = {
+//           data: {
+//             messages: [],
+//             count: 0,
+//           },
+//         };
+//       }
+
+//       // Add message and increment count
+//       rate[ratingKey].data.count += 1;
+
+//       // Recalculate average rating
+//       const totalScore = [1, 2, 3, 4, 5].reduce((sum, r) => {
+//         const count = rate[`r${r}`]?.data?.count || 0;
+//         return sum + r * count;
+//       }, 0);
+
+//       const totalCount = [1, 2, 3, 4, 5].reduce((sum, r) => {
+//         return sum + (rate[`r${r}`]?.data?.count || 0);
+//       }, 0);
+
+//       rate.finalRating =
+//         totalCount > 0 ? Math.round((totalScore / totalCount) * 10) / 10 : 0;
+//     }
+//     product.rating = rate.finalRating;
+//     await product.save();
+//     // await rate.save();
+//     return res.status(200).json({
+//       success: true,
+//       message: "Review posted successfully",
+//       rating,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//       error,
+//     });
+//   }
+// };
+
+
+//get a sinfle rating of a product : 
+exports.getReviewsByProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid product ID',
+      });
+    }
+
+    // Fetch reviews
+    const allreview = await reviews.find({productId: productId})
+      .populate('userId', 'firstname lastname email')
+      .sort({ createdAt: -1 });
+
+    // Calculate average rating
+    const aggregation = await reviews.aggregate([
+      { $match: { productId: new mongoose.Types.ObjectId(productId) } },
+      {
+        $group: {
+          _id: '$productId',
+          averageRating: { $avg: '$rating' },
+          totalRatings: { $sum: 1 }
+        },
+      },
+    ]);
+
+    const avgRating = aggregation[0]?.averageRating || 0;
+    const totalRatings = aggregation[0]?.totalRatings || 0;
+
+    return res.status(200).json({
+      success: true,
+      productId,
+      count: reviews.length,
+      averageRating: Number(avgRating.toFixed(1)),
+      totalRatings,
+      reviews,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error while fetching reviews',
+      error: error.message,
     });
   }
 };

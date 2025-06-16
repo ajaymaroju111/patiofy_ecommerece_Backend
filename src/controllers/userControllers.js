@@ -3,8 +3,17 @@ const products = require("../models/productschema.js");
 const userAddresses = require("../models/addressschema.js");
 const queryForm = require("../models/contactschema.js");
 const { sendEmail } = require("../utils/sendEmail.js");
-const { generateUserToken, doubleEncrypt } = require("../middlewares/authUser.js");
-const { conformSignup, forgetPassword, getSuccessMark, sessionExpired, userNotFound } = require("../utils/emailTemplates.js");
+const {
+  generateUserToken,
+  doubleEncrypt,
+} = require("../middlewares/authUser.js");
+const {
+  conformSignup,
+  forgetPassword,
+  getSuccessMark,
+  sessionExpired,
+  userNotFound,
+} = require("../utils/emailTemplates.js");
 const { default: mongoose } = require("mongoose");
 const carts = require("../models/cartschema.js");
 const orders = require("../models/ordersschema.js");
@@ -13,19 +22,19 @@ const orders = require("../models/ordersschema.js");
 exports.setNewPassword = async (req, res) => {
   try {
     const { id } = req.params;
-    if(!mongoose.Types.ObjectId.isValid(id)){
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(401).json({
         success: false,
         message: "Invalid ID",
-        error: "Bad Request"
-      })
+        error: "Bad Request",
+      });
     }
     const { newpassword } = req.body;
     if (!newpassword) {
       return res.status(400).json({
         success: false,
         message: "password is required",
-        error: "Bad Request"
+        error: "Bad Request",
       });
     }
     const update = await users.findById(id);
@@ -33,7 +42,7 @@ exports.setNewPassword = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "User not found",
-        error: "Not Found"
+        error: "Not Found",
       });
     }
     update.password = newpassword;
@@ -54,22 +63,30 @@ exports.setNewPassword = async (req, res) => {
 //account signup for user :
 exports.signUp = async (req, res) => {
   try {
-    const { firstname, lastname, email, password , istermsandConditions} = req.body;
-    const existed = await users.findOne({ email: email});
+    const { firstname, lastname, email, password, istermsandConditions } =
+      req.body;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or missing email address",
+      });
+    }
+    const existed = await users.findOne({ email: email });
     if (existed) {
       return res.status(401).json({
         success: false,
         message: "email already exist, try another",
-        error: "Bad Request"
+        error: "Bad Request",
       });
     }
 
-    if(!istermsandConditions || istermsandConditions === false){
+    if (!istermsandConditions || istermsandConditions === false) {
       return res.status(401).json({
-        success : false,
+        success: false,
         message: "terms and conditions should be accepted",
-        error: "Bad Request"
-      })
+        error: "Bad Request",
+      });
     }
 
     const User = await users.create({
@@ -78,12 +95,13 @@ exports.signUp = async (req, res) => {
       email,
       password,
     });
-    User.isTermsAndConditions  = istermsandConditions
+    User.isTermsAndConditions = istermsandConditions;
     await User.save();
-    
+
     return res.status(200).json({
       success: true,
-      message: "A verification email has been sent. Please check your inbox to verify your email address.",
+      message:
+        "A verification email has been sent. Please check your inbox to verify your email address.",
     });
   } catch (error) {
     return res.status(500).json({
@@ -141,19 +159,19 @@ exports.verify = async (req, res) => {
     const { verificationKey } = req.query;
     //decode the encoded email
     const decodedId = Buffer.from(verificationKey, "base64").toString("utf-8");
-    if(!decodedId){
+    if (!decodedId) {
       return res.status(404).json({
         success: false,
-        message : "Authentication code not found",
+        message: "Authentication code not found",
         error: "Not Found",
-      })
+      });
     }
     const User = await users.findById(decodedId);
     if (!User) {
       return res.status(404).json({
         suceess: false,
         message: "User not Found",
-        error: "Not Found"
+        error: "Not Found",
       });
     }
     //timer for the account activation
@@ -166,8 +184,7 @@ exports.verify = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Mail verified successfully",
-
-    })
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -185,12 +202,22 @@ exports.signIn = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "all fileds are required",
-        error: "Bad Request"
+        error: "Bad Request",
       });
     }
-    const user = await users.findOne({
-      email: email,
-    }).select('password firstname lastname accountType');
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or missing email address",
+      });
+    }
+    const user = await users
+      .findOne({
+        email: email,
+      })
+      .select("password firstname lastname accountType");
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -199,36 +226,36 @@ exports.signIn = async (req, res) => {
       });
     }
 
-    if(user.accountType !== 'user'){
+    if (user.accountType !== "user") {
       return res.status(401).json({
         success: false,
         message: "You are not Authorized",
-        error: "Not Authorized"
-      })
+        error: "Not Authorized",
+      });
     }
 
-    if(user.password === undefined || !user.password){
+    if (user.password === undefined || !user.password) {
       return res.status(401).json({
         success: false,
         message: "password not set",
-        error: "Bad Request"
-      })
+        error: "Bad Request",
+      });
     }
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
       return res.status(401).json({
         success: false,
         message: "password doesn't match",
-        error: "Bad Request"
+        error: "Bad Request",
       });
     }
 
-    if(user.status === 'inactive'){
+    if (user.status === "inactive") {
       return res.status(402).json({
         success: false,
         message: "Account is Inactive please verify",
-        error: "Bad Request"
-      })
+        error: "Bad Request",
+      });
     }
     const token = generateUserToken(user);
     user.jwtExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
@@ -240,7 +267,7 @@ exports.signIn = async (req, res) => {
       username: user.firstname + " " + user.lastname,
       userID: user._id,
       role: user.accountType,
-    });       
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -259,7 +286,7 @@ exports.getById = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Invalid user ID format",
-        error: 'Bad Request',
+        error: "Bad Request",
       });
     }
     const user = await users
@@ -294,6 +321,13 @@ exports.forgetPassword = async (req, res) => {
         success: false,
         message: "email is reqiured",
         error: "Bad Request",
+      });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or missing email address",
       });
     }
     const user = await users.findOne({ email });
@@ -359,7 +393,6 @@ exports.setPassword = async (req, res) => {
   }
 };
 
-
 // reset the password using old password :
 exports.changePassword = async (req, res) => {
   try {
@@ -381,7 +414,7 @@ exports.changePassword = async (req, res) => {
       return res.status(401).json({
         success: false,
         message: "incorrect password",
-        error: 'Bad Request'
+        error: "Bad Request",
       });
     }
     user.password = newpassword;
@@ -401,15 +434,10 @@ exports.changePassword = async (req, res) => {
 //update user profile using ID :
 exports.update = async (req, res) => {
   try {
-    const allowed = [ 
-      "firstname",
-      "lastname",
-      "phone", 
-      "Address"
-    ]
+    const allowed = ["firstname", "lastname", "phone", "Address"];
     const updatedData = {};
     allowed.forEach((field) => {
-      if(req.body[field] !== undefined){
+      if (req.body[field] !== undefined) {
         updatedData[field] = req.body[field];
       }
     });
@@ -435,25 +463,25 @@ exports.update = async (req, res) => {
   }
 };
 
-exports.uploadUserProfilePic = async(req, res) => {
+exports.uploadUserProfilePic = async (req, res) => {
   try {
-    if(!req.file){
+    if (!req.file) {
       return res.status(401).json({
         success: false,
         message: "profile image is required",
-        error: "Bad Request"
-      })
+        error: "Bad Request",
+      });
     }
-    const profilePic = req.file.location
+    const profilePic = req.file.location;
     const user = await users.findById(req.user._id);
-    if(!user){
+    if (!user) {
       return res.status(404).json({
         success: false,
         message: "User not Found",
-        error: 'Not Found'
-      })
+        error: "Not Found",
+      });
     }
-    if(user.profileUrl){
+    if (user.profileUrl) {
       const key = decodeURIComponent(new URL(url).pathname).substring(1);
       await deleteOldImages(key);
     }
@@ -463,10 +491,10 @@ exports.uploadUserProfilePic = async(req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error.message
-    })
+      error: error.message,
+    });
   }
-}
+};
 
 //list all products of a user :
 exports.myProducts = async (req, res) => {
@@ -485,7 +513,7 @@ exports.myProducts = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "No products found.",
-        error: "Not Found"
+        error: "Not Found",
       });
     }
     const total = await products.countDocuments();
@@ -609,12 +637,12 @@ exports.updateAddress = async (req, res) => {
         .json({ success: false, message: "Address not found" });
     }
 
-    if(current.userId.toString() !== req.user._id.toString()){
+    if (current.userId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: "You are not authorized",
         error: "UnAuthorized",
-      })
+      });
     }
 
     const updateData = {};
@@ -636,7 +664,7 @@ exports.updateAddress = async (req, res) => {
       }
     });
 
-     updateData = shippingUpdate;
+    updateData = shippingUpdate;
 
     const updated = await userAddresses.findByIdAndUpdate(
       id,
@@ -681,12 +709,12 @@ exports.getAddress = async (req, res) => {
         message: "Address not found",
       });
     }
-    if(address.userId.toString() !== req.user._id.toString()){
+    if (address.userId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: "You are not authorized",
-        error: "UnAuthorized"
-      })
+        error: "UnAuthorized",
+      });
     }
     return res.status(200).json({
       success: true,
@@ -705,12 +733,12 @@ exports.deleteAddress = async (req, res) => {
   try {
     const { id } = req.params;
     const isUser = await userAddresses.findById(id);
-    if(isUser.userId.toString() !== req.user._id.toString()){
+    if (isUser.userId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: "You are not authorized",
         error: "UnAuthorized",
-      })
+      });
     }
     const deleted = await userAddresses.findByIdAndDelete(id);
     if (!deleted) {
@@ -734,8 +762,7 @@ exports.deleteAddress = async (req, res) => {
 
 exports.viewAllAddresses = async (req, res) => {
   try {
-    const alladdresses = await userAddresses
-      .find({ userId: req.user._id })
+    const alladdresses = await userAddresses.find({ userId: req.user._id });
     if (!alladdresses) {
       return res.status(404).json({
         success: false,

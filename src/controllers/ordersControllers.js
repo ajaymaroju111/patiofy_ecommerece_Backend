@@ -6,8 +6,9 @@ const ProductMatrix = require("../models/productmatrixschema.js");
 const carts = require("../models/cartschema.js");
 const crypto = require("crypto");
 require("dotenv").config();
+const { v4: uuidv4 } = require('uuid');
+const rawUUID = uuidv4();
 const Razorpay = require("razorpay");
-const { error } = require("console");
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_SECRET,
@@ -361,6 +362,7 @@ exports.makeOrder = async (req, res) => {
       firstname,
       lastname,
       address,
+      pincode,
       city,
       state,
       Bcountry,
@@ -370,6 +372,7 @@ exports.makeOrder = async (req, res) => {
       Bcity,
       Bstate,
       Bphone,
+      Bpincode,
       quantity,
       total_pay,
       size, //new
@@ -394,6 +397,14 @@ exports.makeOrder = async (req, res) => {
         error: "Bad Request",
       });
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid or missing email address",
+    });
+  }
 
     const totalPay = Number(total_pay);
     // let total_cost = Math.ceil(total_pay * 100) / 100;
@@ -481,6 +492,7 @@ exports.makeOrder = async (req, res) => {
           lastname: lastname,
           country: country,
           address: address,
+          pincode: pincode,
           city: city,
           state: state,
           phone: Shphone,
@@ -490,6 +502,7 @@ exports.makeOrder = async (req, res) => {
           lastname: Blastname,
           country: Bcountry,
           address: Baddress,
+          pincode: pincode,
           city: Bcity,
           state: Bstate,
           phone: Biphone,
@@ -674,6 +687,7 @@ exports.makeOrder = async (req, res) => {
             country,
             address,
             city,
+            pincode,
             state,
             phone: Shphone,
           },
@@ -681,6 +695,7 @@ exports.makeOrder = async (req, res) => {
             firstname: Bfirstname,
             lastname: Blastname,
             country: Bcountry,
+            pincode: Bpincode,
             address: Baddress,
             city: Bcity,
             state: Bstate,
@@ -757,7 +772,7 @@ exports.cancelOrder = async (req, res) => {
         message: "you are not authorized",
         error: "UnAuthorized",
       });
-      
+
     }
     if(order.status === "requested_for_cancel"){
       return res.status(401).json({
@@ -1150,6 +1165,7 @@ exports.verifyPayment = async (req, res) => {
     const isUser = await orders.find({
       "paymentInfo.razorpay_order_id": razorpay_order_id,
     });
+    const invoiceNumber = `PATINV-${rawUUID.split('-').slice(0, 3).join('').toUpperCase()}`;
     for (const order of isUser) {
       if (order.userId.toString() !== req.user._id.toString()) {
         return res.status(403).json({
@@ -1167,6 +1183,7 @@ exports.verifyPayment = async (req, res) => {
           payment_status: "paid",
           "paymentInfo.razorpay_payment_id": razorpay_payment_id,
           "paymentInfo.razorpay_signature": razorpay_signature,
+          invoice: invoiceNumber,
         },
       }
     );

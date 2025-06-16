@@ -9,12 +9,19 @@ const admins = require("../models/adminSchema.js");
 exports.adminSignup = async (req, res) => {
   try {
     const { firstname, lastname, email, password } = req.body;
-    if(!firstname || !lastname || !email || !password){
+    if (!firstname || !lastname || !email || !password) {
       return res.status(401).json({
         success: false,
-        message: 'All fields are required',
+        message: "All fields are required",
         error: "Bad Request",
-      })
+      });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or missing email address",
+      });
     }
     const existed = await admins.findOne({ email: email });
     if (existed) {
@@ -30,7 +37,7 @@ exports.adminSignup = async (req, res) => {
       lastname,
       email,
       password,
-      status: "active"
+      status: "active",
     });
 
     return res.status(200).json({
@@ -54,6 +61,14 @@ exports.adminLogin = async (req, res) => {
         success: false,
         message: "All fileds are required",
         error: "Bad Request",
+      });
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or missing email address",
       });
     }
     const user = await admins
@@ -342,9 +357,14 @@ exports.getAllProductsForAdmim = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const allproducts = await products.find().populate({
+    const allproducts = await products
+      .find()
+      .populate({
         path: "product_Matrix",
-      }).skip(skip).limit(limit).exec();
+      })
+      .skip(skip)
+      .limit(limit)
+      .exec();
     if (allproducts.length === 0 || !allproducts) {
       return res.status(404).json({
         success: false,
@@ -379,8 +399,8 @@ exports.getProductByIdForAdmin = async (req, res) => {
     }
 
     const product = await products.findById(id).populate({
-        path: "product_Matrix",
-      });
+      path: "product_Matrix",
+    });
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -722,7 +742,7 @@ exports.viewAllCancelRequestedOrders = async (req, res) => {
       .find({
         status: { $in: ["requested_for_cancel"] },
       })
-      .populate("userId",)
+      .populate("userId")
       .populate("productId")
       .skip(skip)
       .limit(limit)

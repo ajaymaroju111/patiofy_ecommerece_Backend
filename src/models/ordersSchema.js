@@ -1,108 +1,125 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
+const { stringify } = require("yamljs");
 
-const orderSchema = new mongoose.Schema({
-  userId:{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'users'
-  },
-  productId:{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'products'
-  },
-  orderId:{
-    type: String,
-  },
-  size: {
-    type: String
-  },
-  email : {
-    type : String,
-    match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
-  },
-  status: {
-    type: String,
-    enum: ['pending', 'conformed','cancelled', 'requested_for_cancel', 'returned'],
-    default: 'pending',
-  },
-  original_cost: {
-    type: Number,
-  },
-  selling_cost: {
-    type: Number
-  },
-  final_cost: {
-    type: Number,
-  },
-  quantity:{
-    type: Number,
-  },
-  shipping_address:{
-    firstname: {
+const orderSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "users",
+    },
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "products",
+    },
+    orderId: {
       type: String,
     },
-    lastname: {
+    size: {
       type: String,
     },
-    country: {
+    email: {
       type: String,
+      match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
     },
-    address: {
+    status: {
       type: String,
+      enum: [
+        "pending",
+        "conformed",
+        "cancelled",
+        "requested_for_cancel",
+        "returned",
+      ],
+      default: "pending",
     },
-    city: {
-      type: String
+    original_cost: {
+      type: Number,
     },
-    state: {
+    selling_cost: {
+      type: Number,
+    },
+    final_cost: {
+      type: Number,
+    },
+    quantity: {
+      type: Number,
+    },
+    shipping_address: {
+      firstname: {
+        type: String,
+      },
+      lastname: {
+        type: String,
+      },
+      country: {
+        type: String,
+      },
+      pincode: {
+        type: Number,
+      },
+      address: {
+        type: String,
+      },
+      city: {
+        type: String,
+      },
+      state: {
+        type: String,
+      },
+      phone: {
+        type: Number,
+      },
+    },
+    billing_address: {
+      firstname: {
+        type: String,
+      },
+      lastname: {
+        type: String,
+      },
+      country: {
+        type: String,
+      },
+      pincode: {
+        type: Number,
+      },
+      address: {
+        type: String,
+      },
+      city: {
+        type: String,
+      },
+      state: {
+        type: String,
+      },
+      phone: {
+        type: String,
+      },
+    },
+    payment_mode: {
       type: String,
+      enum: ["online", "COD"],
+      default: "COD",
     },
-    phone : {
-    type : Number,
-  },
-  },
-  billing_address:{
-    firstname: {
+    payment_status: {
       type: String,
+      enum: ["unpaid", "paid", "refunded", "cancelled"],
+      default: "unpaid",
     },
-    lastname: {
-      type: String,
-    },
-    country: {
-      type: String,
-    },
-    address: {
-      type: String,
-    },
-    city: {
-      type: String
-    },
-    state: {
-      type: String,
-    },
-    phone : {
-    type : String,
-  },
-  },
-  payment_mode: {
-    type: String,
-    enum: ['online', 'COD'],
-    default: 'COD'
-  },
-  payment_status: {
-    type: String,
-    enum: ['unpaid', 'paid', 'refunded', 'cancelled'],
-    default: 'unpaid',
-  },
-  paymentInfo: {
+    paymentInfo: {
       razorpay_payment_id: String,
       razorpay_order_id: String,
       razorpay_signature: String,
     },
-  Date:{
-    type: Date,
-    default: Date.now(),
+    Date: {
+      type: Date,
+      default: Date.now(),
+    },
+    invoice: {
+      type: String,
+    },
   },
-},
-{ timestamps: true }
+  { timestamps: true }
 );
 
 function generateOrderId() {
@@ -124,5 +141,4 @@ orderSchema.pre("save", function (next) {
   next();
 });
 
-
-module.exports = mongoose.model('orders', orderSchema);
+module.exports = mongoose.model("orders", orderSchema);
