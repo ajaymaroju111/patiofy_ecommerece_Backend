@@ -14,100 +14,6 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_SECRET,
 });
 
-// const redis = require("../utils/redisConfig.js");
-
-//create an order:
-// exports.makeOrder = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     let { quantity } = req.body;
-//     if (!mongoose.Types.ObjectId.isValid(id)) {
-//       return res.status(401).json({
-//         success: false,
-//         message: "invalid  cart ID",
-//       });
-//     }
-
-//     const cart = await carts.findById(id);
-//     if (!cart) {
-//       const item = await products.findById(id);
-//       if (!item) {
-//         return res.status(404).json({
-//           success: false,
-//           message: "product not found",
-//           error: "Not Found",
-//         });
-//       }
-//       const isAlreadyExist = await orders.findOne({
-//         productId: id,
-//       });
-//       let aorder;
-//       if (!isAlreadyExist) {
-//         aorder = await orders.create({
-//           userId: req.user._id,
-//           productId: id,
-//           final_price: quantity*product.discountPrice,
-//         });
-//       } else if (isAlreadyExist) {
-//         quantity += 1;
-//         isAlreadyExist.bill = quantity * item.discountPrice;
-//         await isAlreadyExist.save();
-//         return res.status(200).json({
-//           success: true,
-//           quantity: quantity,
-//           message: "order updated successfully",
-//           final_price: isAlreadyExist.bill,
-//         });
-//       }
-//       return res.status(200).json({
-//         success: true,
-//         quantity: quantity,
-//         message: "order added successfully",
-//         final_price: aorder.bill,
-//       });
-//     }
-//     const product = await products.findById(cart.productId);
-//       if (!product) {
-//         return res.status(404).json({
-//           success: false,
-//           message: "product not found",
-//           error: "Not Found",
-//         });
-//       }
-//     const isAlreadyExist = await orders.findOne({ productId: cart.productId });
-//     let order;
-//     if (!isAlreadyExist) {
-//       order = await orders.create({
-//         userId: req.user._id,
-//         productId: cart.productId,
-//         final_price: cart.final_price,
-//       });
-//     } else if (isAlreadyExist) {
-//       cart.quantity += 1;
-//       isAlreadyExist.bill = cart.price;
-//       await isAlreadyExist.save();
-//       return res.status(200).json({
-//         success: true,
-//         quantity: cart.quantity,
-//         message: "order updated successfully",
-//         final_price: isAlreadyExist.bill,
-//       });
-//     }
-//     return res.status(200).json({
-//       success: false,
-//       message: "order placed successfully",
-//       orderId: `your order id is : ${order.orderId}`,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//       error: error.message,
-//     });
-//   }
-// };
-
 exports.getLatestSavedAddress = async (req, res) => {
   try {
     const latestAddress = await userAddresses
@@ -375,7 +281,7 @@ exports.makeOrder = async (req, res) => {
       Bpincode,
       quantity,
       total_pay,
-      size, //new
+      size,
       payment_mode,
       saveNextTime,
     } = req.body;
@@ -536,94 +442,6 @@ exports.makeOrder = async (req, res) => {
         data: newOrder,
       });
     } else {
-      // // Multiple cart IDs
-      // const allOrders = [];
-
-      // const razorpayOrder = await razorpay.orders.create({
-      //   amount: totalPay,
-      //   currency: "INR",
-      //   receipt: `receipt#${Date.now()}`,
-      //   payment_capture: 1,
-      // });
-
-      // for (let cartId of ids) {
-      //   if (!mongoose.Types.ObjectId.isValid(cartId)) continue;
-
-      //   const cart = await carts.findById(cartId);
-      //   if (!cart) {
-      //     return res.status(404).json({
-      //       success: false,
-      //       message: "cart does not exst ",
-      //       error: "Not Found",
-      //     });
-      //   }
-      //   const product = await products.findById(cart.productId);
-      //   if(!product){
-      //     return res.status(404).json({
-      //       success: false,
-      //       message: "product does not exist",
-      //       error: "Not Found"
-      //     })
-      //   }
-
-      //   const matrix = await ProductMatrix
-
-      //   const quantity = Number(cart.quantity);
-      //   const finalCost = Number(cart.discountedPrice * quantity);
-      //   if (isNaN(finalCost)) {
-      //     return res.status(401).json({
-      //       message: "not a number",
-      //     });
-      //   }
-      //   const newOrder = await orders.create({
-      //     userId: req.user._id,
-      //     productId: cart.productId,
-      //     shipping_address: {
-      //       firstname: firstname,
-      //       lastname: lastname,
-      //       country: country,
-      //       address: address,
-      //       city: city,
-      //       state: state,
-      //       phone: Shphone,
-      //     },
-      //     billing_address: {
-      //       firstname: Bfirstname,
-      //       lastname: Blastname,
-      //       country: Bcountry,
-      //       address: Baddress,
-      //       city: Bcity,
-      //       state: Bstate,
-      //       phone: Biphone,
-      //     },
-      //     email,
-      //     actual_price: cart.discountedPrice,
-      //     quantity: cart.quantity,
-      //     payment_mode: payment_mode,
-      //     final_cost: finalCost,
-      //     paymentInfo: {
-      //       razorpay_order_id:
-      //         payment_mode === "online" ? razorpayOrder.id : undefined,
-      //     },
-      //   });
-      //   await carts.deleteOne({ _id: cart._id });
-
-      //   allOrders.push(newOrder);
-      // }
-      // if (!saveNextTime) {
-      //   await userAddresses.deleteMany({ userId: req.user._id });
-      // }
-      // await userAddresses.deleteMany({
-      //   userId: req.user._id, // assuming you store user reference
-      //   _id: { $ne: newAddress._id },
-      // });
-
-      // return res.status(200).json({
-      //   success: true,
-      //   message: "Your cart orders were placed successfully",
-      //   razorpay_orderId: razorpayOrder.id,
-      //   orders: allOrders,
-      // });
       const allOrders = [];
       const failedItems = [];
 
@@ -749,7 +567,7 @@ exports.makeOrder = async (req, res) => {
   }
 };
 
-//cancel order :
+//cancel order : 
 exports.cancelOrder = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1073,67 +891,6 @@ exports.getOrderById = async (req, res) => {
 };
 
 //////////////**********************   Payment Gateways      *************************************/
-
-// exports.verifyPayment = async (req, res) => {
-//   try {
-//     const {
-//       razorpay_order_id,
-//       razorpay_payment_id,
-//       razorpay_signature,
-//       order_id, // your own database order ID
-//     } = req.body;
-//     if (!mongoose.Types.ObjectId.isValid(order_id)) {
-//       return res.status(400).json({
-//         success: false,
-//         messsage: "Invalid ID",
-//         error: "Bad Request",
-//       });
-//     }
-
-//     // 1. Generate the signature using Razorpay secret
-//     const expectedSignature = crypto
-//       .createHmac("sha256", process.env.RAZORPAY_SECRET)
-//       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-//       .digest("hex");
-
-//     // 2. Verify that signatures match
-//     if (expectedSignature !== razorpay_signature) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Payment signature verification failed",
-//         error: "Bad Request",
-//       });
-//     }
-
-//     // 3. Mark order as paid
-//     const updatedOrder = await orders.findByIdAndUpdate(
-//       order_id,
-//       {
-//         payment_status: "paid",
-//         payment_mode: "online",
-//         paymentInfo: {
-//           razorpay_payment_id,
-//           razorpay_order_id,
-//           razorpay_signature,
-//         },
-//       },
-//       { new: true }
-//     );
-
-//     res.status(200).json({
-//       success: true,
-//       message: "Payment verified successfully",
-//       data: updatedOrder,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Internal server error",
-//       error: error.message,
-//     });
-//   }
-// };
 
 exports.verifyPayment = async (req, res) => {
   try {

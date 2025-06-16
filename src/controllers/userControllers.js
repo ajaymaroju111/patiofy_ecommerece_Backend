@@ -17,6 +17,7 @@ const {
 const { default: mongoose } = require("mongoose");
 const carts = require("../models/cartschema.js");
 const orders = require("../models/ordersschema.js");
+const { deleteOldImages } = require("../middlewares/S3_bucket.js");
 
 //set password after google oauth signup :
 exports.setNewPassword = async (req, res) => {
@@ -487,6 +488,10 @@ exports.uploadUserProfilePic = async (req, res) => {
     }
     user.profileUrl = profilePic;
     await user.save();
+    return res.status(200).json({
+      success: true,
+      message: "User profile updated successfully",
+    })
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -497,7 +502,7 @@ exports.uploadUserProfilePic = async (req, res) => {
 };
 
 //list all products of a user :
-exports.myProducts = async (req, res) => {
+exports.myProducts = async (req, res) => { 
   try {
     const id = req.user._id;
     const page = parseInt(req.query.page) || 1;

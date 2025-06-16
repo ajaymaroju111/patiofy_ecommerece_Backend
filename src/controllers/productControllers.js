@@ -450,7 +450,6 @@ exports.getFilterNames = async (req, res) => {
   }
 };
 
-
 //search for products : ( NAN )
 exports.filterProducts = async (req, res) => {
   try {

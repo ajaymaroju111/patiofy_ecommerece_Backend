@@ -3,6 +3,8 @@ const users = require("../models/userschema");
 const products = require("../models/productschema");
 const orders = require("../models/ordersschema.js");
 const admins = require("../models/adminSchema.js");
+const { generateUserToken } = require("../middlewares/authUser.js");
+const { deleteOldImages } = require("../middlewares/S3_bucket.js");
 
 //✅✅✅✅✅✅✅✅✅ Admin Calls ✅✅✅✅✅✅✅✅✅✅✅
 
@@ -346,7 +348,7 @@ exports.viewUser = async (req, res) => {
       error: error.message,
     });
   }
-};
+}; 
 
 // ✅✅✅✅✅✅✅✅✅✅ Products  ✅✅✅✅✅✅✅✅✅✅✅✅✅
 
@@ -885,6 +887,41 @@ exports.updateUserOrderById = async (req, res) => {
     });
   }
 };
+
+exports.searchUsingInvoiceNumber = async(req, res) => {
+  try {
+    const OrderInvoice = req.body;
+    if(!OrderInvoice){
+      return res.status(400).json({
+        success: false,
+        message: "Invoice is Required",
+        error: "Bad Request"
+      })
+    }
+    const allOrders = await orders.find({
+      invoice: OrderInvoice,
+    });
+
+    if(!allOrders || allOrders.length === 0){
+      return res.status(400).json({
+        succecss: false,
+        message: "No Orders Found",
+        error: "Not Found",
+      })
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Orders found successfully",
+      allOrders
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Intenal Server Error",
+      error: error.message
+    })
+  }
+}
 
 // ✅✅✅✅✅✅✅✅ Payments ✅✅✅✅✅✅✅✅✅✅
 

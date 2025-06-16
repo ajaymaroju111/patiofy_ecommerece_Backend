@@ -24,6 +24,7 @@ const {
   changePassword,
   adminLogin,
   adminSignup,
+  searchUsingInvoiceNumber,
 } = require('../controllers/adminControllers.js')
 const {
   authenticate,
@@ -85,6 +86,7 @@ router.put('/product/undiscount/:id', adminAuthenticate, isAdmin, removeDiscount
 
 // ✅✅✅✅✅✅✅✅✅✅✅✅✅ orders ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
+router.post('/orders/invoice', adminAuthenticate, isAdmin, searchUsingInvoiceNumber);
 router.get('/orders/recent', adminAuthenticate, isAdmin, viewAllRecentOrders);
 router.get('/orders/refund', adminAuthenticate, isAdmin, viewAllRefundedOrders);
 router.get('/orders/all', adminAuthenticate, isAdmin, viewAllUsersOrders);
