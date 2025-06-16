@@ -371,10 +371,10 @@ exports.deleteProduct = async (req, res) => {
     await deleteOldImages(oldImageKeys);
     //delete the meta data of that product :
     await ProductMatrix.deleteMany({ productId: id });
-    const isSingleCategory = await categories.find({
+    const isSingleCategory = await products.find({
       categery_name: isproduct.category,
     });
-    const isSingleFabric = await fabrics.find({
+    const isSingleFabric = await products.find({
       categery_name: isproduct.fabric,
     });
     if (isSingleCategory.length === 1) {
@@ -708,6 +708,7 @@ exports.viewProductsStock = async (req, res) => {
   }
 };
 
+
 exports.newCollections = async (req, res) => {
   try {
     const newCollections = await products
@@ -738,6 +739,7 @@ exports.newCollections = async (req, res) => {
     });
   }
 };
+
 
 exports.trendingCollections = async (req, res) => {
   try {
@@ -1305,72 +1307,6 @@ exports.createProductMatrix = async (req, res) => {
   }
 };
 
-//update product_matrix :
-// exports.updateProductMatrix = async (req, res) => {
-//   try {
-//     const id = req.params;
-//     if (!mongoose.Types.ObjectId.isValid(id)) {
-//       return res.status(401).json({
-//         success: false,
-//         message: "invalid id",
-//         error: "UnAuthorized",
-//       });
-//     }
-//     const Matrix = await ProductMatrix.findById(id);
-//     if (!Matrix) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "product matrix not found",
-//       });
-//     }
-
-//     const product = await products.findById(Matrix.productId);
-//     if (!product) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "product not found",
-//         error: "Not Found",
-//       });
-//     }
-
-//     const allowedFields = ["original_price", "selling_price", "stock"];
-//     const updateData = {};
-//     allowedFields.forEach((field) => {
-//       if (req.body[field] !== undefined) {
-//         if (req.body[original_price] < req.body[selling_price]) {
-//           return res.status(400).json({
-//             success: false,
-//             messsage: "selling price can not be greater than original price",
-//             error: "unauthorized",
-//           });
-//         }
-//         updateData[field] = req.body[field];
-//       }
-//     });
-
-//     const updateMatrix = await ProductMatrix.findByIdAndUpdate(id, updateData, {
-//       new: true,
-//       runValidators: true,
-//     });
-//     if (!updateMatrix) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "some thing went wrong , not updated",
-//         error: "unAuthorized",
-//       });
-//     }
-//     return res.status(200).json({
-//       success: false,
-//       message: "product matrix updated successfully",
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//       error: error.message,
-//     });
-//   }
-// };
 
 exports.updateProductMatrix = async (req, res) => {
   try {

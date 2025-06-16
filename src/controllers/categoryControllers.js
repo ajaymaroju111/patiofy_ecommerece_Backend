@@ -10,7 +10,7 @@ exports.createCategory = async(req, res) => {
         error: "Bad Request"
       })
     }
-    const isCategory = await categories.find({ categery_name: category });
+    const isCategory = await categories.findOne({ categery_name: category });
     if(isCategory){
       return res.status(401).json({
         success: false,

@@ -1,5 +1,6 @@
 const fabrics = require("../models/fabricschema")
 
+//create a new fabric
 exports.createFabric = async(req, res) => {
   try {
     const {fabric} = req.body;
@@ -10,7 +11,7 @@ exports.createFabric = async(req, res) => {
         error: "Bad Request"
       })
     }
-    const isFabric = await fabrics.find({ fabric_name: fabric});
+    const isFabric = await fabrics.findOne({ fabric_name: fabric});
     if(isFabric){
       return res.status(400).json({
         success: false,
@@ -35,6 +36,7 @@ exports.createFabric = async(req, res) => {
   }
 }
 
+//display all fabrics : 
 exports.getallFabrices = async(req, res) => {
   try {
     const allfabrics = await fabrics.find();
