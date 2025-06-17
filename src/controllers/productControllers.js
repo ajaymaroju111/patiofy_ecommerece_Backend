@@ -841,6 +841,7 @@ exports.searchProducts = async (req, res) => {
     });
   }
 };
+
 //*****************         PRODUCT CART ROUTES               ***********************/
 
 // ✅✅✅✅✅✅✅✅✅✅  carts  ✅✅✅✅✅✅✅✅✅✅✅✅
