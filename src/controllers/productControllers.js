@@ -7,7 +7,7 @@ const products = require("../models/productschema.js");
 const categories = require("../models/categoriesschema.js");
 const { deleteOldImages } = require("../middlewares/S3_bucket.js");
 
-// ✅✅✅✅✅✅✅✅✅✅✅  Products  ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
+//✅✅✅✅✅✅✅✅✅✅✅  Products  ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
 //create a product Product :
 exports.createProduct = async (req, res) => {
@@ -406,7 +406,7 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-// ❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌
+// ❌❌❌❌❌❌❌❌❌❌  ❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌
 
 //get catogeries, size and fabric :
 exports.getFilterNames = async (req, res) => {
@@ -811,7 +811,7 @@ exports.searchProducts = async (req, res) => {
       .find({
         $or: [
           { name: { $regex: query, $options: "i" } },
-          // {description : {$regex : query, $options : 'i'}},
+          // { description : {$regex : query, $options : 'i'}},
           // {category : {$regex : query, $options : 'i'}},
           // {tags : {$regex : query, $options : 'i'}}
         ],

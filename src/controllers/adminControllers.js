@@ -921,7 +921,7 @@ exports.searchUsingInvoiceNumber = async(req, res) => {
       error: error.message
     })
   }
-}
+};
 
 // ✅✅✅✅✅✅✅✅ Payments ✅✅✅✅✅✅✅✅✅✅
 

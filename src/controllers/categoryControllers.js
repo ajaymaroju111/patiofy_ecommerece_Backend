@@ -35,7 +35,7 @@ exports.createCategory = async(req, res) => {
       error: error.message
     })
   }
-}
+};
 
 exports.getAllCategories = async(req, res) =>{
   try {
@@ -59,4 +59,4 @@ exports.getAllCategories = async(req, res) =>{
       error: error.message,
     })
   }
-}
+};

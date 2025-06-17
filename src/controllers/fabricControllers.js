@@ -1,4 +1,4 @@
-const fabrics = require("../models/fabricschema")
+const fabrics = require("../models/fabricschema");
 
 //create a new fabric
 exports.createFabric = async(req, res) => {
@@ -34,7 +34,7 @@ exports.createFabric = async(req, res) => {
       error: error.message
     })
   }
-}
+};
 
 //display all fabrics : 
 exports.getallFabrices = async(req, res) => {
@@ -59,4 +59,4 @@ exports.getallFabrices = async(req, res) => {
       error: error.message
     })
   }
-}
+};
