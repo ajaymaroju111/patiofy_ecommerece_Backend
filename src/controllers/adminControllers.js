@@ -283,7 +283,7 @@ exports.setUserInactive = async (req, res) => {
   }
 };
 
-//view all users:
+//view all users :
 exports.viewAllUsers = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;

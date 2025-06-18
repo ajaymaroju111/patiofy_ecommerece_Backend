@@ -1,6 +1,6 @@
 const fabrics = require("../models/fabricschema");
 
-//create a new fabric
+//create a new fabric : 
 exports.createFabric = async(req, res) => {
   try {
     const {fabric} = req.body;

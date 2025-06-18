@@ -1,5 +1,5 @@
 const categories  = require('../models/categoriesschema')
-
+//create a category : 
 exports.createCategory = async(req, res) => {
   try {
     const { category } = req.body;
@@ -37,6 +37,7 @@ exports.createCategory = async(req, res) => {
   }
 };
 
+//get all the categories : 
 exports.getAllCategories = async(req, res) =>{
   try {
     const allCategories = await categories.find();

@@ -215,6 +215,7 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
+//updating the product Images : 
 exports.updateImages = async (req, res) => {
   try {
     const { id } = req.params;
@@ -406,7 +407,7 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-// ❌❌❌❌❌❌❌❌❌❌  ❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌
+//❌❌❌❌❌❌❌❌❌❌  ❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌
 
 //get catogeries, size and fabric :
 exports.getFilterNames = async (req, res) => {
@@ -804,6 +805,7 @@ exports.findBestSellerProducts = async (req, res) => {
   }
 };
 
+//search products - name
 exports.searchProducts = async (req, res) => {
   try {
     const query = req.query.q;
@@ -1135,7 +1137,8 @@ exports.deleteCart = async (req, res) => {
 
 // ✅✅✅✅✅✅✅✅✅✅✅  Product matrix  ✅✅✅✅✅✅✅✅✅✅✅
 
-//create a product matrix :
+//create a product matrix : 
+
 // exports.createProductMatrix = async (req, res) => {
 //   try {
 //     const {id} = req.params;
@@ -1308,7 +1311,7 @@ exports.createProductMatrix = async (req, res) => {
   }
 };
 
-
+//update product matrix : 
 exports.updateProductMatrix = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1578,7 +1581,7 @@ exports.getallReviewsByProduct = async (req, res) => {
   }
 };
 
-//rating a product :
+//rating a product : 
 exports.createReview = async (req, res) => {
   try {
 
@@ -1751,3 +1754,5 @@ exports.getReviewsByProduct = async (req, res) => {
     });
   }
 };
+
+
