@@ -13,7 +13,7 @@ const {
   setPassword,
   changePassword,
   update,
-  myProducts,
+  // myProducts,
   signOut,
   deleteUser,
   addAddress,
@@ -23,6 +23,7 @@ const {
   viewAllAddresses,
   contactUs,
   resend,
+  uploadUserProfilePic,
 } = require("../controllers/userControllers.js");
 // const { ratingProduct } = require("../controllers/productsAuth.js");
 const {
@@ -118,6 +119,7 @@ router.get("/verify", verify);
 router.post("/resend", resend);
 router.post("/signin", signIn);
 router.put("/update", authenticate, update);
+router.post("/profilepic", authenticate, uploadUserProfilePic);
 router.get("/me/:id", authenticate, getById);
 router.post("/password/forget", forgetPassword);
 router.post("/password/change", authenticate, changePassword);

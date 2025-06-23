@@ -516,7 +516,7 @@ exports.changePassword = async (req, res) => {
 //update user profile using ID :
 exports.update = async (req, res) => {
   try {
-    const allowed = ["firstname", "lastname", "phone", "Address"];
+    const allowed = ["firstname", "lastname", "phone"];
     const updatedData = {};
     allowed.forEach((field) => {
       if (req.body[field] !== undefined) {

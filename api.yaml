@@ -527,6 +527,101 @@ paths:
                     type: string
                     example: Some error occurred
 
+  /patiofy/auth/user/profilepic:
+    post:
+      summary: Upload or update user profile picture
+      tags:
+        - users
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - profilePic
+              properties:
+                profilePic:
+                  type: string
+                  format: binary
+                  description: User profile image file
+      responses:
+        '200':
+          description: Profile picture uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statuscode:
+                    type: integer
+                    example: 3
+                  message:
+                    type: string
+                    example: User profile updated successfully
+        '401':
+          description: No file provided
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: profile image is required
+                  error:
+                    type: string
+                    example: Bad Request
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 2
+                  message:
+                    type: string
+                    example: User not Found
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 500
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: error.message
+
   /patiofy/auth/user/password/forget:
      post:
       summary: Request password reset
@@ -1847,8 +1942,7 @@ paths:
 
   /patiofy/auth/user/address:
     post:
-      summary: Add a new user address
-      description: Adds a new address to the authenticated user's address list.
+      summary: Add a new address for the user
       tags:
         - Address
       security:
@@ -1866,25 +1960,40 @@ paths:
                 - city
                 - state
                 - country
+                - house_number
+                - landmark
+                - isShipping
               properties:
                 firstname:
                   type: string
-                  example: John
+                  example: Ajay
                 lastname:
                   type: string
-                  example: Doe
+                  example: Kumar
                 address:
                   type: string
-                  example: 123 Main St
+                  example: 123 MG Road
+                house_number:
+                  type: string
+                  example: H-12
+                landmark:
+                  type: string
+                  example: Near Metro Station
                 city:
                   type: string
-                  example: Springfield
+                  example: Hyderabad
                 state:
                   type: string
-                  example: Illinois
+                  example: Telangana
                 country:
                   type: string
-                  example: USA
+                  example: India
+                isDeafault:
+                  type: boolean
+                  example: true
+                isShipping:
+                  type: boolean
+                  example: true
       responses:
         '200':
           description: Address added successfully
@@ -1896,44 +2005,14 @@ paths:
                   success:
                     type: boolean
                     example: true
+                  statuscode:
+                    type: integer
+                    example: 7
                   message:
                     type: string
                     example: address added successfully
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: false
-                  message:
-                    type: string
-                    example: Internal Server Error
-                  error:
-                    type: object
-                    description: Error details
-
-  /patiofy/auth/user/address/{id}:
-    get:
-      summary: Get Address by ID
-      tags:
-        - Address
-      security:
-         - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: MongoDB ObjectId of the address
-          schema:
-            type: string
-            pattern: '^[a-fA-F0-9]{24}$'
-      responses:
-        '200':
-          description: Successfully retrieved address
+        '400':
+          description: Address already exists
           content:
             application/json:
               schema:
@@ -1942,7 +2021,109 @@ paths:
                   success:
                     type: boolean
                     example: true
-                  address:
+                  statuscode:
+                    type: integer
+                    example: 3
+                  message:
+                    type: string
+                    example: Address already exist
+                  error:
+                    type: string
+                    example: Bad Request
+        '401':
+          description: Missing fields or max limit reached
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: all fields are required
+                  error:
+                    type: string
+                    example: Bad Request
+        '404':
+          description: Default address change failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 5
+                  message:
+                    type: string
+                    example: unable to change the default address
+                  error:
+                    type: string
+                    example: Database error
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 500
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: error.message
+
+  /patiofy/auth/user/address/{id}:
+    get:
+      summary: Get a specific address by ID
+      description: Retrieves a specific user address using the address ID and authenticated user's ID.
+      tags:
+        - Address
+      security:
+         - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the address to retrieve
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: true
+          description: Bearer access token
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Address retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  statuscode:
+                    type: integer
+                  message:
+                    type: string
+                  address_response:
                     $ref: '#/components/schemas/Address'
         '400':
           description: Invalid address ID format
@@ -1953,10 +2134,12 @@ paths:
                 properties:
                   success:
                     type: boolean
-                    example: false
+                  statuscode:
+                    type: integer
                   message:
                     type: string
-                    example: Invalid address ID format
+                  error:
+                    type: string
         '404':
           description: Address not found
           content:
@@ -1966,12 +2149,14 @@ paths:
                 properties:
                   success:
                     type: boolean
-                    example: false
+                  statuscode:
+                    type: integer
                   message:
                     type: string
-                    example: Address not found
+                  error:
+                    type: string
         '500':
-          description: Internal Server Error
+          description: Internal server error
           content:
             application/json:
               schema:
@@ -1979,16 +2164,14 @@ paths:
                 properties:
                   success:
                     type: boolean
-                    example: false
+                  statuscode:
+                    type: integer
                   message:
                     type: string
-                    example: Internal Server Error
                   error:
                     type: string
-                    example: Some error message
     delete:
-      summary: Delete Address by ID
-      description: Delete a user's shipping address using its unique ID.
+      summary: Delete a user's address
       tags:
         - Address
       security:
@@ -1997,12 +2180,13 @@ paths:
         - name: id
           in: path
           required: true
-          description: The unique identifier of the address to delete.
+          description: ID of the address to delete
           schema:
             type: string
+            example: 665d802e11fd8a96e45aa8d2
       responses:
-        200:
-          description: Successfully deleted the address.
+        '200':
+          description: Address deleted successfully
           content:
             application/json:
               schema:
@@ -2011,18 +2195,52 @@ paths:
                   success:
                     type: boolean
                     example: true
+                  statuscode:
+                    type: integer
+                    example: 4
                   message:
                     type: string
-                    example: "Address deleted"
-        400:
-          description: Bad request, invalid address ID format.
-        404:
-          description: Address not found.
-        500:
-          description: Internal Server Error.
+                    example: Address Deleted successfully
+        '404':
+          description: Address not found or unable to delete
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: address not Found
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 500
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: error.message
     put:
-      summary: Update an existing user address
-      description: Updates an address by its ID for the authenticated user.
+      summary: Update a user's address
       tags:
         - Address
       security:
@@ -2034,7 +2252,7 @@ paths:
           description: The ID of the address to update
           schema:
             type: string
-            example: 6629a0cfb5f7d02346f0f44e
+            example: 665d802e11fd8a96e45aa8d2
       requestBody:
         required: true
         content:
@@ -2044,22 +2262,34 @@ paths:
               properties:
                 firstname:
                   type: string
-                  example: Jane
+                  example: Ajay
                 lastname:
                   type: string
-                  example: Smith
+                  example: Kumar
                 address:
                   type: string
-                  example: 456 Elm Street
+                  example: 123 MG Road
+                house_number:
+                  type: string
+                  example: H-12
+                landmark:
+                  type: string
+                  example: Near Metro Station
                 city:
                   type: string
-                  example: Metropolis
+                  example: Hyderabad
                 state:
                   type: string
-                  example: NY
+                  example: Telangana
                 country:
                   type: string
-                  example: USA
+                  example: India
+                isDeafault:
+                  type: boolean
+                  example: true
+                isShipping:
+                  type: boolean
+                  example: true
       responses:
         '200':
           description: Address updated successfully
@@ -2071,39 +2301,16 @@ paths:
                   success:
                     type: boolean
                     example: true
+                  statuscode:
+                    type: integer
+                    example: 6
                   message:
                     type: string
                     example: Address updated successfully
                   data:
-                    type: object
-                    description: The updated address
-                    properties:
-                      _id:
-                        type: string
-                        example: 6629a0cfb5f7d02346f0f44e
-                      userId:
-                        type: string
-                        example: 661fabcde1234567890a1b2c
-                      firstname:
-                        type: string
-                        example: Jane
-                      lastname:
-                        type: string
-                        example: Smith
-                      address:
-                        type: string
-                        example: 456 Elm Street
-                      city:
-                        type: string
-                        example: Metropolis
-                      state:
-                        type: string
-                        example: NY
-                      country:
-                        type: string
-                        example: USA
+                    $ref: '#/components/schemas/UserAddress'
         '400':
-          description: Invalid Address ID
+          description: Invalid address ID
           content:
             application/json:
               schema:
@@ -2112,6 +2319,9 @@ paths:
                   success:
                     type: boolean
                     example: false
+                  statuscode:
+                    type: integer
+                    example: 1
                   message:
                     type: string
                     example: invalid Address ID
@@ -2119,7 +2329,7 @@ paths:
                     type: string
                     example: Bad Request
         '404':
-          description: Address not found
+          description: Address not found or update conflict
           content:
             application/json:
               schema:
@@ -2128,11 +2338,14 @@ paths:
                   success:
                     type: boolean
                     example: false
+                  statuscode:
+                    type: integer
+                    example: 5
                   message:
                     type: string
                     example: Address not found
         '500':
-          description: Internal Server Error
+          description: Internal server error
           content:
             application/json:
               schema:
@@ -2141,11 +2354,15 @@ paths:
                   success:
                     type: boolean
                     example: false
+                  statuscode:
+                    type: integer
+                    example: 500
                   message:
                     type: string
                     example: Internal Server Error
                   error:
-                    type: object
+                    type: string
+                    example: error.message
 
   /patiofy/auth/user/address/list:
     get:
