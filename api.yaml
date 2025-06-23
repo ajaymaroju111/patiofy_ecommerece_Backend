@@ -5114,8 +5114,6 @@ paths:
           description: Product or matrix not found
         '500':
           description: Internal Server Error
-
-  /patiofy/auth/admin/matrix/update:
     patch:
       tags:
         -  Admin Product Matrix
@@ -5186,7 +5184,7 @@ paths:
           description: Internal Server Error
 #✅✅✅✅✅✅✅✅✅✅✅ Admin Calls ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
-  patiofy/auth/admin/login:
+  /patiofy/auth/admin/login:
     post:
       tags:
         - Admin
@@ -5207,11 +5205,11 @@ paths:
                 email:
                   type: string
                   format: email
-                  example: ajay@example.com
+                  example: marojuajay111@gmail.com
                 password:
                   type: string
                   format: password
-                  example: SecurePass123
+                  example: Ajay@110125
       responses:
         '200':
           description: Login successful
@@ -5303,7 +5301,7 @@ paths:
                     type: string
                     example: Something went wrong
 
-  patiofy/auth/admin/update:
+  /patiofy/auth/admin/update:
      patch:
       tags:
         - Admin
@@ -5382,7 +5380,7 @@ paths:
                     type: string
                     example: Something went wrong    
 
-  patiofy/auth/admin/password/update:
+  /patiofy/auth/admin/password/update:
     patch:
       tags:
         - Admin
@@ -5475,7 +5473,7 @@ paths:
                     type: string
                     example: Some error message 
 
-  patiofy/auth/admin/profile:
+  /patiofy/auth/admin/profile:
     get:
       summary: Get user by ID
       description: |

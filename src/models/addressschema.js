@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const users = require("./userschema.js");
 
 const addressSchaema = new mongoose.Schema(
   {
@@ -24,6 +23,11 @@ const addressSchaema = new mongoose.Schema(
       type: String,
       required: [true, "address is required"],
     },
+    house_number: {
+      type: String,
+      required: [true, "House number details are required"],
+
+    },
     city: {
       type: String,
       required: [true, "city name is required"],
@@ -32,6 +36,16 @@ const addressSchaema = new mongoose.Schema(
       type: String,
       required: [true, "state is required"],
     },
+    landmark : {
+      type: String,
+      required: [true, "landmark is required"]
+    },
+    isDeafault: {
+      type: Boolean,
+    },
+    isShipping: {
+      type: Boolean
+    }
   },
   { timestamps: true }
 );

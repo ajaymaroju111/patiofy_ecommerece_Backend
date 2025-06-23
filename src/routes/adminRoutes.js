@@ -25,6 +25,7 @@ const {
   adminLogin,
   adminSignup,
   searchUsingInvoiceNumber,
+  viewallContactUsRequests,
 } = require('../controllers/adminControllers.js')
 const {
   authenticate,
@@ -70,10 +71,10 @@ router.delete('/product/:id', adminAuthenticate, isAdmin, deleteProduct);
 
 // ✅✅✅✅✅✅✅✅✅✅ Product matrix ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
-router.patch('/matrix/update', adminAuthenticate, isAdmin, updateProductMatrix);
+router.patch('/matrix/:id', adminAuthenticate, isAdmin, updateProductMatrix);
 router.post('/matrix/:id', adminAuthenticate, isAdmin, createProductMatrix);
-router.delete('/matrix/:id', adminAuthenticate, isAdmin, getProductMatrixById);
-router.get('/matrix/:id', adminAuthenticate, isAdmin, deleteProductMatrix);
+router.get('/matrix/:id', adminAuthenticate, isAdmin, getProductMatrixById);
+router.delete('/matrix/:id', adminAuthenticate, isAdmin, deleteProductMatrix);
 
 // ❌❌❌❌❌❌❌❌❌ product publish ❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌
 router.put('/product/publish/:id', adminAuthenticate, isAdmin,publishProduct );
@@ -83,6 +84,9 @@ router.put('/product/unpublish/:id', adminAuthenticate, isAdmin,unPublishProduct
 
 router.put('/product/discount/:id', adminAuthenticate, isAdmin, setDiscountOnProduct);
 router.put('/product/undiscount/:id', adminAuthenticate, isAdmin, removeDiscountOnProduct);
+
+// ✅✅✅✅✅✅✅✅✅✅✅ contact us requests ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
+router.get('/contactus/requests', adminAuthenticate, isAdmin, viewallContactUsRequests);
 
 // ✅✅✅✅✅✅✅✅✅✅✅✅✅ orders ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 

@@ -58,7 +58,7 @@ const adminSchema = new mongoose.Schema(
       default: "inactive",
       trim: true,
     },
-    jwtExpiry: {
+    verify_expiry: {
       type: Date,
     },
     accountType: {

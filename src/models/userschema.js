@@ -13,18 +13,17 @@ const userschema = new mongoose.Schema(
     },
     firstname: {
       type: String,
-      required: [true, "firstname is Mandatory"],
+      required: true,
       trim: true,
     },
     lastname: {
       type: String,
-      required: [true, "lastname is required"],
+      required: true,
       trim: true,
     },
     email: {
       type: String,
-      required: [true, "email is required"],
-      trim: true,
+      required: true,
       unique: [true, "email is already taken"],
       match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
       lowercase: true,
@@ -58,7 +57,7 @@ const userschema = new mongoose.Schema(
       default: "inactive",
       trim: true,
     },
-    jwtExpiry: {
+    verify_expiry: {
       type: Date,
     },
     isTermsAndConditions : {
@@ -88,7 +87,7 @@ userschema.pre("save", async function (next) {
   if(this.googleId === undefined){
     if (this.isModified("email")) {
       const encodedId = Buffer.from(this._id.toString(), "utf-8").toString("base64");
-      this.jwtExpiry = Date.now() + 30 * 60 * 1000;
+      this.verify_expiry = Date.now() + 30 * 60 * 1000;
       this.status = 'inactive';
       const fullname = this.firstname + this.lastname
       await sendEmail({

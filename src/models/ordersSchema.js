@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const { stringify } = require("yamljs");
 
 const orderSchema = new mongoose.Schema(
   {

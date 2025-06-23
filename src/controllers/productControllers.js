@@ -23,7 +23,6 @@ exports.createProduct = async (req, res) => {
       ProductStatus,
     } = req.body;
 
-    //checking for the body data :
     if (
       !name ||
       !description ||
@@ -36,26 +35,31 @@ exports.createProduct = async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
+        statuscode: 1,
         message: "all fields are required",
         error: "Bad Request",
       });
     }
     //validate fabric from the DB :
-    const isValidFabric = await fabrics.findOne({ fabric_name: fabric });
-    if (!isValidFabric) {
+    const isValidFabric_response = await fabrics.findOne({
+      fabric_name: fabric,
+    });
+    if (!isValidFabric_response) {
       return res.status(401).json({
         success: false,
+        statuscode: 2,
         message: `${fabric} is not a valid value`,
         error: "Bad Request",
       });
     }
     //validate category from the DB :
-    const isValidCategory = await categories.findOne({
+    const isValidCategory_response = await categories.findOne({
       categery_name: category,
     });
-    if (!isValidCategory) {
+    if (!isValidCategory_response) {
       return res.status(401).json({
         success: false,
+        statuscode: 3,
         message: `${category} is not a valid value`,
         error: "Bad Request",
       });
@@ -77,6 +81,7 @@ exports.createProduct = async (req, res) => {
       } catch (err) {
         return res.status(400).json({
           success: false,
+          statuscode: 4,
           message: "Invalid JSON format in viewIn",
           error: err.message,
         });
@@ -90,6 +95,7 @@ exports.createProduct = async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
+        statuscode: 5,
         message: "Invalid viewIn value(s)",
         error: "Allowed values: " + Array.from(allowedViews).join(", "),
       });
@@ -100,6 +106,7 @@ exports.createProduct = async (req, res) => {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
+        statuscode: 6,
         message: "Product images are required",
         error: "Bad Request",
       });
@@ -122,12 +129,14 @@ exports.createProduct = async (req, res) => {
     });
     return res.status(200).json({
       success: true,
+      statuscode: 7,
       message: "Product created successfully",
       data: product,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
+      statuscode: 500,
       message: "Internal Server Error",
       error: error.message,
     });
@@ -135,6 +144,95 @@ exports.createProduct = async (req, res) => {
 };
 
 //update product Product :
+// exports.updateProduct = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//       return res.status(400).json({
+//         success: false,
+//         statuscode: 1,
+//         message: "Invalid ID",
+//         error: "Bad Request",
+//       });
+//     }
+
+//     const allowedFields = [
+//       "name",
+//       "description",
+//       "tags",
+//       "viewIn",
+//       "fabric",
+//       "category",
+//       "stock",
+//       "ProductStatus",
+//     ];
+//     const allowedViews = [
+//       "new_collection",
+//       "best_seller",
+//       "trending",
+//       "all",
+//       "none",
+//     ];
+
+//     if (!allowedViews.includes(viewin)) {
+//       return res.status(400).json({
+//         success: false,
+//         statuscode: 2,
+//         message: `Invalid view type. Allowed values are: ${allowedViews.join(
+//           ", "
+//         )}`,
+//         error: "Bad Request",
+//       });
+//     }
+
+//     const newData = {};
+//     allowedFields.forEach((field) => {
+//       if (req.body[field] !== undefined) {
+//         if (field === "tags" && typeof req.body.tags === "string") {
+//           newData.tags = req.body.tags
+//             .split(",")
+//             .map((tag) => tag.trim().toLowerCase());
+//         } else {
+//           newData[field] = req.body[field];
+//         }
+//       }
+//     });
+
+//     const updatedproduct_response = await products.findByIdAndUpdate(
+//       id,
+//       newData,
+//       {
+//         new: true,
+//         runValidators: true,
+//       }
+//     );
+//     if (!updatedproduct_response) {
+//       return res.status(404).json({
+//         success: false,
+//         statuscode: 3,
+//         message: "Product not found",
+//         error: "Not Found",
+//       });
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       statuscode: 4,
+//       message: "Product updated successfully",
+//       data: updatedproduct_response,
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     return res.status(500).json({
+//       success: false,
+//       statuscode: 500,
+//       message: "Internal Server Error",
+//       error: error.message,
+//     });
+//   }
+// };
+
 exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -142,6 +240,7 @@ exports.updateProduct = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
+        statuscode: 1,
         message: "Invalid ID",
         error: "Bad Request",
       });
@@ -157,6 +256,7 @@ exports.updateProduct = async (req, res) => {
       "stock",
       "ProductStatus",
     ];
+
     const allowedViews = [
       "new_collection",
       "best_seller",
@@ -165,9 +265,14 @@ exports.updateProduct = async (req, res) => {
       "none",
     ];
 
-    if (!allowedViews.includes(viewin)) {
+    if (
+      req.body.viewIn &&
+      typeof req.body.viewIn === "string" &&
+      !allowedViews.includes(req.body.viewIn.toLowerCase())
+    ) {
       return res.status(400).json({
         success: false,
+        statuscode: 2,
         message: `Invalid view type. Allowed values are: ${allowedViews.join(
           ", "
         )}`,
@@ -188,13 +293,19 @@ exports.updateProduct = async (req, res) => {
       }
     });
 
-    const updatedproduct = await products.findByIdAndUpdate(id, newData, {
-      new: true,
-      runValidators: true,
-    });
-    if (!updatedproduct) {
+    const updatedproduct_response = await products.findByIdAndUpdate(
+      id,
+      newData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!updatedproduct_response) {
       return res.status(404).json({
         success: false,
+        statuscode: 3,
         message: "Product not found",
         error: "Not Found",
       });
@@ -202,26 +313,29 @@ exports.updateProduct = async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      statuscode: 4,
       message: "Product updated successfully",
-      data: updatedproduct,
+      data: updatedproduct_response,
     });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
       success: false,
+      statuscode: 500,
       message: "Internal Server Error",
       error: error.message,
     });
   }
 };
 
-//updating the product Images : 
+//updating the product Images :
 exports.updateImages = async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(401).json({
         success: false,
+        statuscode: 1,
         message: "invalid ID",
         error: "Bad Request",
       });
@@ -230,19 +344,21 @@ exports.updateImages = async (req, res) => {
     if (!req.files || req.files.length === 0) {
       return res.status(401).json({
         success: false,
+        statuscode: 2,
         message: "files should not be empty",
         error: "Bad Request",
       });
     }
-    const product = await products.findById(id);
-    if (!product) {
+    const product_response = await products.findById(id);
+    if (!product_response) {
       return res.status(404).json({
         success: false,
+        statuscode: 3,
         message: "product not found",
         error: "Not Found",
       });
     }
-    const oldImageKeys = product.imagesUrl.map((url) => {
+    const oldImageKeys = product_response.imagesUrl.map((url) => {
       return decodeURIComponent(new URL(url).pathname).substring(1); // remove leading '/'
     });
 
@@ -253,16 +369,17 @@ exports.updateImages = async (req, res) => {
     await deleteOldImages(oldImageKeys);
     // const newImageUrls = await uploadNewImages(req.files);
     const newImageUrls = req.files.map((file) => file.location);
-    product.imagesUrl = newImageUrls;
-    await product.save();
+    product_response.imagesUrl = newImageUrls;
+    await product_response.save();
     return res.status(200).json({
       success: true,
+      statuscode: 4,
       message: "product images updated successfully",
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
+      statuscode: 500,
       message: "Internal Server",
       error: error.message,
     });
@@ -282,9 +399,7 @@ exports.getProductById = async (req, res) => {
     const product = await products
       .findById(id)
       .select("-userId, -ProductStatus, -createdAt, -updatedAt")
-      .populate({
-        path: "product_Matrix",
-      })
+      .populate("product_Matrix")
       .exec();
     // .populate("rating", "finfinalRating");
     if (!product) {
@@ -328,12 +443,22 @@ exports.getAllProducts = async (req, res) => {
     if (allproducts.length === 0 || !allproducts) {
       return res.status(404).json({
         success: false,
+        statuscode: 1,
         messsage: "products not found",
       });
     }
     const total = await products.countDocuments({ ProductStatus: "published" });
+    if (!total) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 2,
+        message: "Count not Found",
+        error: "Database error",
+      });
+    }
     return res.status(200).json({
       success: true,
+      statuscode: 3,
       page,
       data: allproducts,
       totalPages: Math.ceil(total / limit),
@@ -341,6 +466,7 @@ exports.getAllProducts = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
+      statuscode: 500,
       message: "Internal Server Error",
       error: error.message,
     });
@@ -354,18 +480,21 @@ exports.deleteProduct = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(401).json({
         success: false,
+        statuscode: 1,
         message: "invalid ID",
+        error: "Bad Request",
       });
     }
-    const isproduct = await products.findById(id);
-    if (!isproduct) {
+    const isproduct_response = await products.findById(id);
+    if (!isproduct_response) {
       return res.status(404).json({
         success: false,
+        statuscode: 2,
         message: "product not available",
         errror: "Not Found",
       });
     }
-    const oldImageKeys = (isproduct.imagesUrl || []).map((url) => {
+    const oldImageKeys = (isproduct_response.imagesUrl || []).map((url) => {
       const urlParts = url.split("/");
       return urlParts.slice(3).join("/");
     });
@@ -373,34 +502,38 @@ exports.deleteProduct = async (req, res) => {
     //delete the meta data of that product :
     await ProductMatrix.deleteMany({ productId: id });
     const isSingleCategory = await products.find({
-      categery_name: isproduct.category,
+      categery_name: isproduct_response.category,
     });
     const isSingleFabric = await products.find({
-      categery_name: isproduct.fabric,
+      categery_name: isproduct_response.fabric,
     });
     if (isSingleCategory.length === 1) {
-      await categories.deleteOne({ categery_name: isproduct.category });
+      await categories.deleteOne({
+        categery_name: isproduct_response.category,
+      });
     }
     if (isSingleFabric.length === 1) {
-      await fabrics.deleteOne({ fabric_name: isproduct.fabric });
+      await fabrics.deleteOne({ fabric_name: isproduct_response.fabric });
     }
     await reviews.deleteOne({ productId: id });
-    const product = await products.findByIdAndDelete(id);
-    if (!product) {
+    const product_response = await products.findByIdAndDelete(id);
+    if (!product_response) {
       return res.status(404).json({
         success: false,
+        statuscode: 3,
         message: "product not found",
         error: "Not Found",
       });
     }
     return res.status(200).json({
       success: true,
+      statuscode: 4,
       message: "Product deleted successfully",
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
+      statuscode: 500,
       message: "Internal Server Error",
       error: error.message,
     });
@@ -412,18 +545,29 @@ exports.deleteProduct = async (req, res) => {
 //get catogeries, size and fabric :
 exports.getFilterNames = async (req, res) => {
   try {
-    const uniquecategories = await products.distinct("category");
-    if (!uniquecategories) {
+    const uniquecategories_response = await categories.find();
+    if (!uniquecategories_response) {
       return res.status(404).json({
         success: false,
+        statuscode: 1,
         message: "categories are empty",
         error: "Not Found",
       });
     }
-    const uniquesizes = await products.distinct("size");
-    if (!uniquesizes) {
+    const uniquesizes_response = await ProductMatrix.distinct("size");
+    if (!uniquesizes_response) {
       return res.status(404).json({
         success: false,
+        statuscode: 2,
+        message: "sizes are empty",
+        error: "Not Found",
+      });
+    }
+
+    if (!uniquesizes_response) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 3,
         message: "sizes are empty",
         error: "Not Found",
       });
@@ -432,12 +576,14 @@ exports.getFilterNames = async (req, res) => {
     if (!uniquefabrics) {
       return res.status(404).json({
         success: false,
+        statuscode: 4,
         message: "fabrics are empty",
         error: "Not Found",
       });
     }
     return res.status(200).json({
       success: true,
+      statuscode: 5,
       catogeries: uniquecategories,
       size: uniquesizes,
       fabric: uniquefabrics,
@@ -445,222 +591,430 @@ exports.getFilterNames = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
+      statuscode: 500,
       message: "Internal Server Error",
       error: error.message,
     });
   }
 };
 
-//search for products : ( NAN )
+//search for products :
+// exports.filterProducts = async (req, res) => {
+//   try {
+//     const { categories, price, size, fabric, Discount, stock } = req.query;
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+//     const skip = (page - 1) * limit;
+
+//     let filter = {};
+//     //initializing the filter condition :
+//     if (categories) {
+//       filter.category = { $regex: categories, $options: "i" };
+//     }
+//     if (stock) {
+//       const allstockProducts = await products
+//         .find({ stock: stock })
+//         .skip(skip)
+//         .limit(limit)
+//         .populate('product_Matrix')
+//         .exec();
+//       if (!allstockProducts) {
+//         return res.status(404).json({
+//           success: false,
+//           message: "No matching products found.",
+//           error: "Not Found",
+//         });
+//       }
+
+//       return res.status(200).json({
+//         succcess: true,
+//         message: `${stock} products are retrieved successfully!`,
+//         count: allstockProducts.length,
+//         totalPages: Math.ceil(allstockProducts.length / 10),
+//         products: allstockProducts,
+//       });
+//     }
+
+//     if (Discount) {
+//       const [min, max] = Discount.split("_").map(Number);
+//       if (!isNaN(min) && !isNaN(max)) {
+//         filter.discount = { $gte: min, $lte: max };
+//       } else if (!isNaN(min)) {
+//         filter.discount = { $gte: min };
+//       }
+//     }
+
+//     // if (price) {
+//     //   const [min, max] = price.split("_").map(Number);
+//     //   if (!isNaN(min) && !isNaN(max)) {
+//     //     filter.price = { $gte: min, $lte: max };
+//     //   } else if (isNaN(min)) {
+//     //     filter.price = { $gte: min };
+//     //   }
+//     // }
+
+//     if (size) {
+//       filter.size = size;
+//     }
+//     if (fabric) {
+//       filter.fabric = fabric;
+//     }
+//     //newly added :
+//     // Handle price filter through ProductMatrix without changing the rest of the logic
+//     // if (price) {
+//     //   const [min, max] = price.split("_").map(Number);
+//     //   let matrixFilter = {};
+
+//     //   if (!isNaN(min) && !isNaN(max)) {
+//     //     matrixFilter.selling_price = { $gte: min, $lte: max };
+//     //   } else if (!isNaN(min)) {
+//     //     matrixFilter.selling_price = { $gte: min };
+//     //   }
+
+//     //   if (Object.keys(matrixFilter).length > 0) {
+//     //     const matchedMatrices = await ProductMatrix.find(matrixFilter, { productId: 1 }).lean();
+//     //     const matchingProductIds = matchedMatrices.map((m) => m.productId);
+
+//     //     if (matchingProductIds.length === 0) {
+//     //       return res.status(404).json({
+//     //         success: false,
+//     //         message: "No products found in this price range",
+//     //       });
+//     //     }
+
+//     //     filter._id = { $in: matchingProductIds };
+//     //   }
+//     // }
+
+//     if (price) {
+//       const [min, max] = price.split("_").map(Number);
+//       let matrixFilter = {};
+
+//       if (!isNaN(min) && !isNaN(max)) {
+//         matrixFilter.selling_price = { $gte: min, $lte: max };
+//       } else if (!isNaN(min)) {
+//         matrixFilter.selling_price = { $gte: min };
+//       }
+
+//       if (Object.keys(matrixFilter).length > 0) {
+//         const matchedMatrices = await ProductMatrix.find(matrixFilter, {
+//           productId: 1,
+//         }).lean();
+//         const matchingProductIds = matchedMatrices.map((m) => m.productId);
+
+//         if (matchingProductIds.length === 0) {
+//           return res.status(404).json({
+//             success: false,
+//             message: "No products found in this price range",
+//           });
+//         }
+
+//         //Convert productIds into full product documents
+//         const productsFound = await products
+//           .find({ _id: { $in: matchingProductIds } })
+//           .populate('product_Matrix')
+//           .lean();
+
+//         return res.status(200).json({
+//           success: true,
+//           products: productsFound,
+//         });
+//       }
+//     }
+
+//     //usage of aggregations pipelines :
+//     const filterproduct = await products
+//       .aggregate([
+//         { $match: filter }, // apply any dynamic filters
+//         { $sort: { price: 1 } },
+//         {
+//           $facet: {
+//             products: [
+//               {
+//                 $project: {
+//                   name: 1,
+//                   imagesUrl: 1,
+//                   category: 1,
+//                   price: 1,
+//                   size: 1,
+//                   fabric: 1,
+//                 },
+//               },
+//               { $skip: skip },
+//               { $limit: limit },
+//             ],
+//             instockProducts: [
+//               { $match: { stock: "instock" } },
+//               {
+//                 $project: {
+//                   name: 1,
+//                   imagesUrl: 1,
+//                   category: 1,
+//                   price: 1,
+//                   size: 1,
+//                   fabric: 1,
+//                 },
+//               },
+//             ],
+//             outstockProducts: [
+//               { $match: { stock: "outstock" } },
+//               {
+//                 $project: {
+//                   name: 1,
+//                   imagesUrl: 1,
+//                   category: 1,
+//                   size: 1,
+//                   fabric: 1,
+//                 },
+//               },
+//             ],
+//           },
+//         },
+//       ])
+//       .skip(skip)
+//       .limit(limit)
+//       .populate('product_Matrix')
+//       .exec();
+//     if (!filterproduct || filterproduct.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Products not found",
+//       });
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       page: page,
+//       totalProducts: filterproduct[0].products.length,
+//       totalpages: Math.ceil((filterproduct[0].products.length || 0) / limit),
+//       filterproduct,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//       error: error.message,
+//     });
+//   }
+// };
+
+
 exports.filterProducts = async (req, res) => {
   try {
-    const { categories, price, size, fabric, Discount, stock } = req.query;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    const { category, stock, fabric, price, size, discount } = req.query;
 
-    let filter = {};
-    //initializing the filter condition :
-    if (categories) {
-      filter.category = { $regex: categories, $options: "i" };
-    }
-    if (stock) {
-      const allstockProducts = await products
-        .find({ stock: stock })
-        .skip(skip)
-        .limit(limit)
-        .exec();
-      if (!allstockProducts) {
-        return res.status(404).json({
-          success: false,
-          message: "No matching products found.",
-          error: "Not Found",
-        });
-      }
+    // Prepare filters
+    const matchProduct = {};
+    const matchMatrix = {};
 
-      return res.status(200).json({
-        succcess: true,
-        message: `${stock} products are retrieved successfully!`,
-        count: allstockProducts.length,
-        totalPages: Math.ceil(allstockProducts.length / 10),
-        products: allstockProducts,
-      });
-    }
+    if (category) matchProduct.category = category;
+    if (stock) matchProduct.stock = stock;
+    if (fabric) matchProduct.fabric = fabric;
 
-    if (Discount) {
-      const [min, max] = Discount.split("_").map(Number);
-      if (!isNaN(min) && !isNaN(max)) {
-        filter.discount = { $gte: min, $lte: max };
-      } else if (!isNaN(min)) {
-        filter.discount = { $gte: min };
-      }
-    }
-
-    // if (price) {
-    //   const [min, max] = price.split("_").map(Number);
-    //   if (!isNaN(min) && !isNaN(max)) {
-    //     filter.price = { $gte: min, $lte: max };
-    //   } else if (isNaN(min)) {
-    //     filter.price = { $gte: min };
-    //   }
-    // }
-
-    if (size) {
-      filter.size = size;
-    }
-    if (fabric) {
-      filter.fabric = fabric;
-    }
-    //newly added :
-    // Handle price filter through ProductMatrix without changing the rest of the logic
-    // if (price) {
-    //   const [min, max] = price.split("_").map(Number);
-    //   let matrixFilter = {};
-
-    //   if (!isNaN(min) && !isNaN(max)) {
-    //     matrixFilter.selling_price = { $gte: min, $lte: max };
-    //   } else if (!isNaN(min)) {
-    //     matrixFilter.selling_price = { $gte: min };
-    //   }
-
-    //   if (Object.keys(matrixFilter).length > 0) {
-    //     const matchedMatrices = await ProductMatrix.find(matrixFilter, { productId: 1 }).lean();
-    //     const matchingProductIds = matchedMatrices.map((m) => m.productId);
-
-    //     if (matchingProductIds.length === 0) {
-    //       return res.status(404).json({
-    //         success: false,
-    //         message: "No products found in this price range",
-    //       });
-    //     }
-
-    //     filter._id = { $in: matchingProductIds };
-    //   }
-    // }
-
+    // Price range (e.g., price=100_500)
     if (price) {
       const [min, max] = price.split("_").map(Number);
-      let matrixFilter = {};
-
-      if (!isNaN(min) && !isNaN(max)) {
-        matrixFilter.selling_price = { $gte: min, $lte: max };
-      } else if (!isNaN(min)) {
-        matrixFilter.selling_price = { $gte: min };
-      }
-
-      if (Object.keys(matrixFilter).length > 0) {
-        const matchedMatrices = await ProductMatrix.find(matrixFilter, {
-          productId: 1,
-        }).lean();
-        const matchingProductIds = matchedMatrices.map((m) => m.productId);
-
-        if (matchingProductIds.length === 0) {
-          return res.status(404).json({
-            success: false,
-            message: "No products found in this price range",
-          });
-        }
-
-        //Convert productIds into full product documents
-        const productsFound = await products
-          .find({ _id: { $in: matchingProductIds } })
-          .lean();
-
-        return res.status(200).json({
-          success: true,
-          products: productsFound,
-        });
-      }
+      if (!isNaN(min))
+        matchMatrix.selling_price = { ...matchMatrix.selling_price, $gte: min };
+      if (!isNaN(max))
+        matchMatrix.selling_price = { ...matchMatrix.selling_price, $lte: max };
     }
 
-    //usage of aggregations pipelines :
-    const filterproduct = await products
-      .aggregate([
-        { $match: filter }, // apply any dynamic filters
-        { $sort: { price: 1 } },
-        {
-          $facet: {
-            products: [
-              {
-                $project: {
-                  name: 1,
-                  imagesUrl: 1,
-                  category: 1,
-                  price: 1,
-                  size: 1,
-                  fabric: 1,
-                  inStock: 1,
-                  discount: 1,
-                  discountPrice: 1,
-                  savedPrice: 1,
-                  rating: 1,
-                },
+    // Size
+    if (size) {
+      matchMatrix.size = size;
+    }
+
+    // Discount range (e.g., discount=10_50)
+    if (discount) {
+      const [min, max] = discount.split("_").map(Number);
+      if (!isNaN(min))
+        matchMatrix.discount = { ...matchMatrix.discount, $gte: min };
+      if (!isNaN(max))
+        matchMatrix.discount = { ...matchMatrix.discount, $lte: max };
+    }
+
+    const filteredProducts = await products.aggregate([
+      { $match: matchProduct },
+      {
+        $lookup: {
+          from: "productmatrices", // collection name in lowercase plural
+          localField: "product_Matrix",
+          foreignField: "_id",
+          as: "matrixDetails",
+        },
+      },
+      {
+        $addFields: {
+          filteredMatrix: {
+            $filter: {
+              input: "$matrixDetails",
+              as: "matrix",
+              cond: {
+                $and: Object.entries(matchMatrix).map(([key, value]) => {
+                  if (
+                    typeof value === "object" &&
+                    ("$gte" in value || "$lte" in value)
+                  ) {
+                    const conds = [];
+                    if ("$gte" in value)
+                      conds.push({ $gte: [`$$matrix.${key}`, value["$gte"]] });
+                    if ("$lte" in value)
+                      conds.push({ $lte: [`$$matrix.${key}`, value["$lte"]] });
+                    return { $and: conds };
+                  } else {
+                    return { $eq: [`$$matrix.${key}`, value] };
+                  }
+                }),
               },
-              { $skip: skip },
-              { $limit: limit },
-            ],
-            instockProducts: [
-              { $match: { stock: "instock" } },
-              {
-                $project: {
-                  name: 1,
-                  imagesUrl: 1,
-                  category: 1,
-                  price: 1,
-                  size: 1,
-                  fabric: 1,
-                  discount: 1,
-                  discountPrice: 1,
-                  savedPrice: 1,
-                  rating: 1,
-                },
-              },
-            ],
-            outstockProducts: [
-              { $match: { stock: "outstock" } },
-              {
-                $project: {
-                  name: 1,
-                  imagesUrl: 1,
-                  category: 1,
-                  price: 1,
-                  size: 1,
-                  fabric: 1,
-                  discount: 1,
-                  discountPrice: 1,
-                  savedPrice: 1,
-                  rating: 1,
-                },
-              },
-            ],
+            },
           },
         },
-      ])
-      .skip(skip)
-      .limit(limit)
-      .exec();
-    if (!filterproduct || filterproduct.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Products not found",
-      });
-    }
+      },
+      {
+        $match: {
+          "filteredMatrix.0": { $exists: true }, // Only include products with at least one matching matrix
+        },
+      },
+      {
+        $project: {
+          matrixDetails: 0,
+          filteredMatrix: 0,
+        },
+      },
+    ]);
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      page: page,
-      totalProducts: filterproduct[0].products.length,
-      totalpages: Math.ceil((filterproduct[0].products.length || 0) / limit),
-      filterproduct,
+      products: filteredProducts,
     });
   } catch (error) {
-    return res.status(500).json({
+    console.error("Filter Error:", error);
+    res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: "Internal server error",
       error: error.message,
     });
   }
 };
+
+// exports.filterProducts = async (req, res) => {
+//   try {
+//     const { categories, price, size, fabric, stock } = req.query;
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+//     const skip = (page - 1) * limit;
+
+//     // Build filters for base product fields
+//     const productMatch = {};
+//     if (categories) {
+//       productMatch.category = { $regex: categories, $options: "i" };
+//     }
+//     if (fabric) {
+//       productMatch.fabric = fabric;
+//     }
+//     if (stock) {
+//       productMatch.stock = stock;
+//     }
+
+//     // Build filters for matrix (variants like price and size)
+//     const matrixFilter = [];
+//     if (price) {
+//       const [min, max] = price.split("_").map(Number);
+//       if (!isNaN(min)) {
+//         matrixFilter.push({ $gte: ["$$matrix.selling_price", min] });
+//       }
+//       if (!isNaN(max)) {
+//         matrixFilter.push({ $lte: ["$$matrix.selling_price", max] });
+//       }
+//     }
+//     if (size) {
+//       matrixFilter.push({ $eq: ["$$matrix.size", size] });
+//     }
+
+//     // Aggregation pipeline
+//     const productsData = await products.aggregate([
+//       { $match: productMatch },
+//       {
+//         $lookup: {
+//           from: "productmatrices",
+//           localField: "product_Matrix",
+//           foreignField: "_id",
+//           as: "matrixDetails",
+//         },
+//       },
+//       {
+//         $addFields: {
+//           matchingMatrix: {
+//             $filter: {
+//               input: "$matrixDetails",
+//               as: "matrix",
+//               cond: {
+//                 $and:
+//                   matrixFilter.length > 0
+//                     ? matrixFilter
+//                     : [{ $ne: ["$$matrix._id", null] }],
+//               },
+//             },
+//           },
+//         },
+//       },
+//       {
+//         $match: {
+//           "matchingMatrix.0": { $exists: true },
+//         },
+//       },
+//       {
+//         $facet: {
+//           paginatedResults: [
+//             { $skip: skip },
+//             { $limit: limit },
+//             {
+//               $project: {
+//                 name: 1,
+//                 imagesUrl: 1,
+//                 category: 1,
+//                 fabric: 1,
+//                 stock: 1,
+//                 matchingMatrix: 1,
+//               },
+//             },
+//           ],
+//           totalCount: [{ $count: "total" }],
+//         },
+//       },
+//     ]);
+
+//     const result = productsData[0];
+//     const productsList = result.paginatedResults;
+//     const total = result.totalCount.length > 0 ? result.totalCount[0].total : 0;
+
+//     if (!productsList || productsList.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "No matching products found.",
+//         totalProducts: 0,
+//         products: [],
+//       });
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Filtered products fetched successfully",
+//       page,
+//       totalProducts: total,
+//       totalPages: Math.ceil(total / limit),
+//       products: productsList,
+//     });
+//   } catch (error) {
+//     console.error("Filter error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//       error: error.message,
+//     });
+//   }
+// };
 
 //check the insock and out stock products :
 exports.viewProductsStock = async (req, res) => {
@@ -709,7 +1063,6 @@ exports.viewProductsStock = async (req, res) => {
   }
 };
 
-
 exports.newCollections = async (req, res) => {
   try {
     const newCollections = await products
@@ -740,7 +1093,6 @@ exports.newCollections = async (req, res) => {
     });
   }
 };
-
 
 exports.trendingCollections = async (req, res) => {
   try {
@@ -844,7 +1196,7 @@ exports.searchProducts = async (req, res) => {
   }
 };
 
-//*****************         PRODUCT CART ROUTES               ***********************/
+//*****************        PRODUCT CART ROUTES               ***********************/
 
 // ✅✅✅✅✅✅✅✅✅✅  carts  ✅✅✅✅✅✅✅✅✅✅✅✅
 
@@ -917,7 +1269,7 @@ exports.addToCart = async (req, res) => {
           error: "Bad Request",
         });
       }
-      await carts.create({
+      const cart_response = await carts.create({
         cartImages: product.imagesUrl,
         quantity: quantity,
         size: size,
@@ -925,6 +1277,14 @@ exports.addToCart = async (req, res) => {
         productId: product._id,
         selling_price: productMatrix.selling_price,
       });
+      if (!cart_response) {
+        return res.status(400).json({
+          success: false,
+          statuscode: 1,
+          message: "unable to create the product",
+          error: "DataBase Error",
+        });
+      }
       return res.status(200).json({
         success: true,
         message: "product added to cart successfully",
@@ -938,35 +1298,9 @@ exports.addToCart = async (req, res) => {
         error: "Bad Request",
       });
     }
-    const cartUpdate = await carts.findByIdAndUpdate(
-      isCartExist._id,
-      {
-        $set: {
-          quantity: final_quantity,
-        },
-      },
-      {
-        new: true,
-      }
-    );
-    if (!cartUpdate) {
-      return res.status(400).json({
-        success: false,
-        message: "Product update failed due to a bad request.",
-        error: "Invalid input or missing data.",
-      });
-    }
-
-    // const data = await (
-    //   await cartUpdate.populate("userId")
-    // ).populate({
-    //   path: "items.productId", // 1st level: cart -> product
-    //   populate: {
-    //     path: "product_Matrix", // 2nd level: product -> matrix
-    //     model: "ProductMatrix", // MUST match what you used in mongoose.model()
-    //   },
-    // });
-
+    const cartUpdate = await carts.findByIdAndUpdate(isCartExist._id);
+    cartUpdate.quantity = final_quantity;
+    await cartUpdate.save();
     return res.status(200).json({
       success: true,
       message: " cart quantity updated successfully",
@@ -1137,7 +1471,7 @@ exports.deleteCart = async (req, res) => {
 
 // ✅✅✅✅✅✅✅✅✅✅✅  Product matrix  ✅✅✅✅✅✅✅✅✅✅✅
 
-//create a product matrix : 
+//create a product matrix :
 
 // exports.createProductMatrix = async (req, res) => {
 //   try {
@@ -1274,7 +1608,7 @@ exports.createProductMatrix = async (req, res) => {
         return res.status(409).json({
           success: false,
           message: `Product matrix already exists for size "${size}"`,
-          error: "Conflict",
+          error: "Already exist",
         });
         // continue;
       }
@@ -1311,7 +1645,7 @@ exports.createProductMatrix = async (req, res) => {
   }
 };
 
-//update product matrix : 
+//update product matrix :
 exports.updateProductMatrix = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1435,7 +1769,7 @@ exports.updateProductMatrix = async (req, res) => {
 //read product_matrix :
 exports.getProductMatrixById = async (req, res) => {
   try {
-    const id = req.params;
+    const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -1477,7 +1811,8 @@ exports.getProductMatrixById = async (req, res) => {
 //delete pproduct_matrix :
 exports.deleteProductMatrix = async (req, res) => {
   try {
-    const id = req.params;
+    const { id } = req.params;
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(401).json({
         success: true,
@@ -1485,26 +1820,39 @@ exports.deleteProductMatrix = async (req, res) => {
         error: "Not Found",
       });
     }
-    const matrix = await ProductMatrix.findById(id);
-    if (!matrix) {
+
+    const matrix_response = await ProductMatrix.findById(id);
+    if (!matrix_response) {
       return res.status(404).json({
         success: true,
         message: "product matrix not found",
         error: "Bad Request",
       });
     }
-    const product = await products.findById(matrix.productId);
-    if (!product) {
+
+    const product_response = await products.findById(matrix_response.productId);
+    if (!product_response) {
       return res.status(404).json({
         success: true,
+        statuscode: 3,
         message: "product not found",
         error: "Not Found",
       });
     }
 
-    await ProductMatrix.findByIdAndDelete(id);
-    return res.status(400).json({
+    const deleted_response = await ProductMatrix.findByIdAndDelete(id);
+    if (!deleted_response) {
+      return res.status(401).json({
+        success: false,
+        statuscode: 1,
+        message: "pricing not deleted",
+        error: "Database Error",
+      });
+    }
+
+    return res.status(200).json({
       success: true,
+      statuscode: 2,
       message: "product matrix deleted successfully",
     });
   } catch (error) {
@@ -1550,20 +1898,20 @@ exports.deleteProductMatrix = async (req, res) => {
 //   }
 // };
 
-
-//get all ratings of a product : 
+//get all ratings of a product :
 exports.getallReviewsByProduct = async (req, res) => {
   try {
     const { productId } = req.params;
 
-    const allreviews = await reviews.find({ productId })
-      .populate('userId', 'firstname lastname email') // Optional: include user details
+    const allreviews = await reviews
+      .find({ productId })
+      .populate("userId", "firstname lastname email") // Optional: include user details
       .sort({ createdAt: -1 }); // Latest first
 
     if (!reviews.length) {
       return res.status(404).json({
         success: false,
-        message: 'No reviews found for this product',
+        message: "No reviews found for this product",
       });
     }
 
@@ -1575,23 +1923,22 @@ exports.getallReviewsByProduct = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: 'Error while fetching reviews',
+      message: "Error while fetching reviews",
       error: error.message,
     });
   }
 };
 
-//rating a product : 
+//rating a product :
 exports.createReview = async (req, res) => {
   try {
-
     const { productId } = req.params;
-    const {message, rating } = req.body;
+    const { message, rating } = req.body;
 
     if (!productId || !userId || !rating) {
       return res.status(400).json({
         success: false,
-        message: 'productId, userId and rating are required',
+        message: "productId, userId and rating are required",
       });
     }
 
@@ -1599,19 +1946,19 @@ exports.createReview = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: 'Review posted successfully',
+      message: "Review posted successfully",
       data: review,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: 'Error while posting review',
+      message: "Error while posting review",
       error: error.message,
     });
   }
 };
 
-//giving rating : 
+//giving rating :
 // exports.ratingProduct = async (req, res) => {
 //   try {
 //     const { id } = req.params;
@@ -1705,8 +2052,7 @@ exports.createReview = async (req, res) => {
 //   }
 // };
 
-
-//get a sinfle rating of a product : 
+//get a sinfle rating of a product :
 exports.getReviewsByProduct = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -1714,13 +2060,14 @@ exports.getReviewsByProduct = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(productId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid product ID',
+        message: "Invalid product ID",
       });
     }
 
     // Fetch reviews
-    const allreview = await reviews.find({productId: productId})
-      .populate('userId', 'firstname lastname email')
+    const allreview = await reviews
+      .find({ productId: productId })
+      .populate("userId", "firstname lastname email")
       .sort({ createdAt: -1 });
 
     // Calculate average rating
@@ -1728,9 +2075,9 @@ exports.getReviewsByProduct = async (req, res) => {
       { $match: { productId: new mongoose.Types.ObjectId(productId) } },
       {
         $group: {
-          _id: '$productId',
-          averageRating: { $avg: '$rating' },
-          totalRatings: { $sum: 1 }
+          _id: "$productId",
+          averageRating: { $avg: "$rating" },
+          totalRatings: { $sum: 1 },
         },
       },
     ]);
@@ -1749,10 +2096,8 @@ exports.getReviewsByProduct = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: 'Error while fetching reviews',
+      message: "Error while fetching reviews",
       error: error.message,
     });
   }
 };
-
-

@@ -3,6 +3,7 @@ const users = require("../models/userschema");
 const products = require("../models/productschema");
 const orders = require("../models/ordersschema.js");
 const admins = require("../models/adminSchema.js");
+const queryForm = require("../models/contactschema.js");
 const { generateUserToken } = require("../middlewares/authUser.js");
 const { deleteOldImages } = require("../middlewares/S3_bucket.js");
 
@@ -14,6 +15,7 @@ exports.adminSignup = async (req, res) => {
     if (!firstname || !lastname || !email || !password) {
       return res.status(401).json({
         success: false,
+        statuscode: 1,
         message: "All fields are required",
         error: "Bad Request",
       });
@@ -22,33 +24,45 @@ exports.adminSignup = async (req, res) => {
     if (!email || !emailRegex.test(email)) {
       return res.status(400).json({
         success: false,
+        statuscode: 2,
         message: "Invalid or missing email address",
       });
     }
-    const existed = await admins.findOne({ email: email });
-    if (existed) {
+    const existed_response = await admins.findOne({ email: email });
+    if (existed_response) {
       return res.status(401).json({
         success: false,
+        statuscode: 3,
         message: "email already exist, try another",
         error: "Bad Request",
       });
     }
 
-    const User = await admins.create({
+    const User_response = await admins.create({
       firstname,
       lastname,
       email,
       password,
       status: "active",
     });
+    if(!User_response){
+      return res.status(404).json({
+        success: false,
+        statuscode: 4,
+        message: "unable to create account, please contact Patiofy Team",
+        error: "Database error"
+      })
+    }
 
     return res.status(200).json({
       success: true,
+      statuscode: 5,
       message: "Admin account created successfully",
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
+      statuscode: 500,
       message: "Internal Server Error",
       error: error.message,
     });
@@ -61,74 +75,85 @@ exports.adminLogin = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
+        statuscode: 1,
         message: "All fileds are required",
         error: "Bad Request",
       });
     }
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
       return res.status(400).json({
         success: false,
+        statuscode: 2,
         message: "Invalid or missing email address",
       });
     }
-    const user = await admins
+
+    const user_response = await admins
       .findOne({
         email: email,
       })
       .select("password firstname lastname accountType");
-    if (!user) {
+    if (!user_response) {
       return res.status(401).json({
         success: false,
+        statuscode: 3,
         message: "Incorrect Email",
         error: "Bad Request",
       });
     }
-    if (user.accountType !== "admin") {
+    if (user_response.accountType !== "admin") {
       return res.status(401).json({
         success: false,
+        statuscode: 4,
         message: "You are not Authorized",
         error: "Not Authorized",
       });
     }
-    if (user.password === undefined || !user.password) {
+    if (user_response.password === undefined || !user_response.password) {
       return res.status(401).json({
         success: false,
+        statuscode: 5,
         message: "password not set",
         error: "Bad Request",
       });
     }
-    const isValidPassword = await user.comparePassword(password);
+    const isValidPassword = await user_response.comparePassword(password);
     if (!isValidPassword) {
       return res.status(402).json({
         success: false,
+        statuscode: 6,
         message: "password doesn't match",
         error: "UnAuthorized",
       });
     }
 
-    if (user.status === "inactive") {
+    if (user_response.status === "inactive") {
       return res.status(402).json({
         success: false,
+        statuscode: 7,
         message: "Account is Inactive please verify",
         error: "Bad Request",
       });
     }
-    const token = generateUserToken(user);
-    user.jwtExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
-    await user.save();
+
+    const token = generateUserToken(user_response);
+    user_response.verify_expiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await user_response.save();
     return res.status(200).json({
       success: true,
+      statuscode: 8,
       message: "login successfully",
       JWTtoken: token,
-      username: user.firstname + " " + user.lastname,
-      userID: user._id,
-      role: user.accountType,
+      username: user_response.firstname + " " + user_response.lastname,
+      userID: user_response._id,
+      role: user_response.accountType,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
+      statuscode: 500,
       message: "Internal Server Error",
       error: error.message,
     });
@@ -143,23 +168,23 @@ exports.changePassword = async (req, res) => {
         error: "all fields are required",
       });
     }
-    const user = await admins.findById(req.user._id).select("password");
-    if (!user) {
+    const user_response = await admins.findById(req.user._id).select("password");
+    if (!user_response) {
       return res.status(404).json({
         success: false,
         message: "user does not exist",
       });
     }
-    const isPassword = await user.comparePassword(oldpassword);
-    if (!isPassword) {
+    const isPassword_response = await user_response.comparePassword(oldpassword);
+    if (!isPassword_response) {
       return res.status(401).json({
         success: false,
         message: "incorrect password",
         error: "Bad Request",
       });
     }
-    user.password = newpassword;
-    await user.save();
+    user_response.password = newpassword;
+    await user_response.save();
     return res
       .status(204)
       .json({ message: "password updated successfully, Please Login" });
@@ -181,7 +206,7 @@ exports.adminProfileUpdate = async (req, res) => {
         updatedData[field] = req.body[field];
       }
     });
-    const updatedUser = await admins.findByIdAndUpdate(
+    const updatedUser_response = await admins.findByIdAndUpdate(
       req.user._id,
       updatedData,
       {
@@ -189,14 +214,23 @@ exports.adminProfileUpdate = async (req, res) => {
         runValidators: true,
       }
     );
+    if(!updatedUser_response){
+      return res.status(404).json({
+        success: false,
+        statuscode: 1,
+        message: "account not found or updated",
+        error: "Not Found",
+      })
+    }
     return res.status(200).json({
       success: true,
+      statuscode: 2,
       message: "Profile updated successfully",
-      updatedUser,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
+      statuscode: 500,
       message: "Internal Server Error",
       error: error.message,
     });
@@ -208,25 +242,27 @@ exports.uploadadminProfilePic = async (req, res) => {
     if (!req.file) {
       return res.status(401).json({
         success: false,
+        statuscode: 1,
         message: "profile image is required",
         error: "Bad Request",
       });
     }
     const profilePic = req.file.location;
-    const user = await admins.findById(req.user._id);
-    if (!user) {
+    const user_response = await admins.findById(req.user._id);
+    if (!user_response) {
       return res.status(404).json({
         success: false,
+        statuscode: 2,
         message: "User not Found",
         error: "Not Found",
       });
     }
-    if (user.profileUrl) {
+    if (user_response.profileUrl) {
       const key = decodeURIComponent(new URL(url).pathname).substring(1);
       await deleteOldImages(key);
     }
-    user.profileUrl = profilePic;
-    await user.save();
+    user_response.profileUrl = profilePic;
+    await user_response.save();
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -238,52 +274,61 @@ exports.uploadadminProfilePic = async (req, res) => {
 
 // ✅✅✅✅✅✅✅✅✅✅ Action on  User ✅✅✅✅✅✅✅✅✅✅✅
 
-//set a user account inactive:
+//set a user account inactive : 
 exports.setUserInactive = async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(401).json({
         success: false,
+        statuscode: 1,
         message: "Invalid Id",
+        error: "Bad Request"
       });
     }
     if (req.user._id === id) {
       return res.status(401).json({
         success: false,
-        message: "toy are not permitted",
+        statuscode: 2,
+        message: "you are not permitted",
         error: "Unauthorized",
       });
     }
-    const user = await users.findById(id);
-    if (!user) {
+    const user_response = await users.findById(id);
+    if (!user_response) {
       return res.status(404).json({
         success: false,
+        statuscode: 3,
         message: "user not found",
+        error: "Not Found"
       });
     }
-    if (user.status === "Blocked") {
+    if (user_response.status === "Blocked") {
       res.status(204).json({
         success: false,
+        statuscode: 4,
         message: "account already in Blocked state",
         error: "No Content",
       });
     }
-    (user.status = "Blocked"), await user.save();
+    (user_response.status = "Blocked"), 
+    await user_response.save();
     return res.status(200).json({
       success: true,
+      statuscode: 5,
       message: "user account set terminate successfully",
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
+      statuscode: 500,
       message: "Internal Server Error",
       error: error.message,
     });
   }
 };
 
-//view all users :
+//view all users : 
 exports.viewAllUsers = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -348,7 +393,7 @@ exports.viewUser = async (req, res) => {
       error: error.message,
     });
   }
-}; 
+};
 
 // ✅✅✅✅✅✅✅✅✅✅ Products  ✅✅✅✅✅✅✅✅✅✅✅✅✅
 
@@ -396,28 +441,29 @@ exports.getProductByIdForAdmin = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
+        statuscode: 1,
         message: "Invalid product ID format",
       });
     }
 
-    const product = await products.findById(id).populate({
-      path: "product_Matrix",
-    });
-    if (!product) {
+    const product_response = await products.findById(id).populate("product_Matrix").exec();
+    if (!product_response) {
       return res.status(404).json({
         success: false,
+        statuscode: 2,
         message: "product not found",
         error: "Not Found",
       });
     }
-
     return res.status(200).json({
       success: true,
-      data: product,
+      statuscode: 3,
+      data: product_response,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
+      statuscode: 500,
       message: "Internal Server Error",
       error: error.message,
     });
@@ -505,6 +551,7 @@ exports.publishProduct = async (req, res) => {
     });
   }
 };
+
 
 exports.setViewinProduct = async (req, res) => {
   try {
@@ -810,6 +857,7 @@ exports.viewAllPendingOrders = async (req, res) => {
 
 // ✅✅✅✅✅✅✅✅✅ Action on User-Orders ✅✅✅✅✅✅✅✅✅✅
 
+//getting user order by id : 
 exports.getUserOrderById = async (req, res) => {
   try {
     const id = req.params;
@@ -888,38 +936,38 @@ exports.updateUserOrderById = async (req, res) => {
   }
 };
 
-exports.searchUsingInvoiceNumber = async(req, res) => {
+exports.searchUsingInvoiceNumber = async (req, res) => {
   try {
     const OrderInvoice = req.body;
-    if(!OrderInvoice){
+    if (!OrderInvoice) {
       return res.status(400).json({
         success: false,
         message: "Invoice is Required",
-        error: "Bad Request"
-      })
+        error: "Bad Request",
+      });
     }
     const allOrders = await orders.find({
       invoice: OrderInvoice,
     });
 
-    if(!allOrders || allOrders.length === 0){
+    if (!allOrders || allOrders.length === 0) {
       return res.status(400).json({
         succecss: false,
         message: "No Orders Found",
         error: "Not Found",
-      })
+      });
     }
     return res.status(200).json({
       success: true,
       message: "Orders found successfully",
-      allOrders
-    })
+      allOrders,
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Intenal Server Error",
-      error: error.message
-    })
+      error: error.message,
+    });
   }
 };
 
@@ -996,5 +1044,48 @@ exports.viewAllUnSuccessPaymentOrders = async (req, res) => {
       message: "Internal Server Error",
       error: error.message,
     });
+  }
+};
+
+// ✅✅✅✅✅✅✅✅✅ Contact Us ✅✅✅✅✅✅✅✅✅✅✅✅✅
+
+exports.viewallContactUsRequests = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const contactUsRequests_response = await queryForm
+      .find()
+      .sort({ _id: -1 })
+      .skip(skip)
+      .limit(limit)
+      .exec();
+    if (
+      !contactUsRequests_response ||
+      contactUsRequests_response.length === 0
+    ) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 1,
+        message: "Requests are empty",
+        error: "Not Found",
+      });
+    }
+    const total =  contactUsRequests_response.length;
+    return res.status(200).json({
+      succcess: true,
+      statuscode: 2,
+      page,
+      data: contactUsRequests_response,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      statuscode: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    })
   }
 };

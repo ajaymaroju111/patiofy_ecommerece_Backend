@@ -6,7 +6,7 @@ const ProductMatrix = require("../models/productmatrixschema.js");
 const carts = require("../models/cartschema.js");
 const crypto = require("crypto");
 require("dotenv").config();
-const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require("uuid");
 const rawUUID = uuidv4();
 const Razorpay = require("razorpay");
 const razorpay = new Razorpay({
@@ -305,12 +305,12 @@ exports.makeOrder = async (req, res) => {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!email || !emailRegex.test(email)) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid or missing email address",
-    });
-  }
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or missing email address",
+      });
+    }
 
     const totalPay = Number(total_pay);
     // let total_cost = Math.ceil(total_pay * 100) / 100;
@@ -352,6 +352,8 @@ exports.makeOrder = async (req, res) => {
         });
       }
 
+      const productcart_response = await carts.create({});
+
       const matrix = await ProductMatrix.findOne({
         productId: product._id,
         size: size,
@@ -362,6 +364,24 @@ exports.makeOrder = async (req, res) => {
           message: "product matrix details not found",
           error: "Not Found",
         });
+      }
+
+      const cart_response = await carts.create({
+        cartImages: product.imagesUrl,
+        quantity: quantity,
+        size: size,
+        userId: req.user._id,
+        productId: product._id,
+        selling_price: matrix.selling_price,
+      });
+
+      if(!cart_response){
+        return res.status(400).json({
+          success:false,
+          statuscode: 1,
+          message: "unable to create the cart",
+          error: "DataBase Error"
+        })
       }
 
       if (quantity > matrix.stock || !matrix.stock) {
@@ -418,7 +438,7 @@ exports.makeOrder = async (req, res) => {
         payment_mode: payment_mode,
         final_cost: finalCost,
         size: matrix.size,
-        selling_cost : matrix.selling_price,
+        selling_cost: matrix.selling_price,
         original_cost: matrix.original_price,
         paymentInfo: {
           razorpay_order_id:
@@ -558,7 +578,6 @@ exports.makeOrder = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -567,7 +586,7 @@ exports.makeOrder = async (req, res) => {
   }
 };
 
-//cancel order : 
+//cancel order :
 exports.cancelOrder = async (req, res) => {
   try {
     const { id } = req.params;
@@ -590,19 +609,19 @@ exports.cancelOrder = async (req, res) => {
         message: "you are not authorized",
         error: "UnAuthorized",
       });
-
     }
-    if(order.status === "requested_for_cancel"){
+    if (order.status === "requested_for_cancel") {
       return res.status(401).json({
         success: false,
-        message: "Already requested for order cancellation"
-      })
+        message: "Already requested for order cancellation",
+      });
     }
     order.status = "requested_for_cancel";
     await order.save();
     return res.status(200).json({
       success: true,
-      message: "Your order cancellation request has been submitted successfully.",
+      message:
+        "Your order cancellation request has been submitted successfully.",
     });
   } catch (error) {
     return res.status(500).json({
@@ -859,7 +878,7 @@ exports.getOrderById = async (req, res) => {
         error: "UnAuthorized",
       });
     }
-    const myOrder = await orders.findById(id).populate('productId').exec();
+    const myOrder = await orders.findById(id).populate("productId").exec();
     if (!myOrder) {
       return res.status(404).json({
         success: true,
@@ -922,7 +941,11 @@ exports.verifyPayment = async (req, res) => {
     const isUser = await orders.find({
       "paymentInfo.razorpay_order_id": razorpay_order_id,
     });
-    const invoiceNumber = `PATINV-${rawUUID.split('-').slice(0, 3).join('').toUpperCase()}`;
+    const invoiceNumber = `PATINV-${rawUUID
+      .split("-")
+      .slice(0, 3)
+      .join("")
+      .toUpperCase()}`;
     for (const order of isUser) {
       if (order.userId.toString() !== req.user._id.toString()) {
         return res.status(403).json({
