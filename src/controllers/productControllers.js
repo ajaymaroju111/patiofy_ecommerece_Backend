@@ -436,7 +436,6 @@ exports.getAllProducts = async (req, res) => {
       .populate({
         path: "product_Matrix",
       })
-      // .populate('rating')
       .skip(skip)
       .limit(limit)
       .exec();
@@ -598,212 +597,14 @@ exports.getFilterNames = async (req, res) => {
   }
 };
 
-//search for products :
-// exports.filterProducts = async (req, res) => {
-//   try {
-//     const { categories, price, size, fabric, Discount, stock } = req.query;
-//     const page = parseInt(req.query.page) || 1;
-//     const limit = parseInt(req.query.limit) || 10;
-//     const skip = (page - 1) * limit;
-
-//     let filter = {};
-//     //initializing the filter condition :
-//     if (categories) {
-//       filter.category = { $regex: categories, $options: "i" };
-//     }
-//     if (stock) {
-//       const allstockProducts = await products
-//         .find({ stock: stock })
-//         .skip(skip)
-//         .limit(limit)
-//         .populate('product_Matrix')
-//         .exec();
-//       if (!allstockProducts) {
-//         return res.status(404).json({
-//           success: false,
-//           message: "No matching products found.",
-//           error: "Not Found",
-//         });
-//       }
-
-//       return res.status(200).json({
-//         succcess: true,
-//         message: `${stock} products are retrieved successfully!`,
-//         count: allstockProducts.length,
-//         totalPages: Math.ceil(allstockProducts.length / 10),
-//         products: allstockProducts,
-//       });
-//     }
-
-//     if (Discount) {
-//       const [min, max] = Discount.split("_").map(Number);
-//       if (!isNaN(min) && !isNaN(max)) {
-//         filter.discount = { $gte: min, $lte: max };
-//       } else if (!isNaN(min)) {
-//         filter.discount = { $gte: min };
-//       }
-//     }
-
-//     // if (price) {
-//     //   const [min, max] = price.split("_").map(Number);
-//     //   if (!isNaN(min) && !isNaN(max)) {
-//     //     filter.price = { $gte: min, $lte: max };
-//     //   } else if (isNaN(min)) {
-//     //     filter.price = { $gte: min };
-//     //   }
-//     // }
-
-//     if (size) {
-//       filter.size = size;
-//     }
-//     if (fabric) {
-//       filter.fabric = fabric;
-//     }
-//     //newly added :
-//     // Handle price filter through ProductMatrix without changing the rest of the logic
-//     // if (price) {
-//     //   const [min, max] = price.split("_").map(Number);
-//     //   let matrixFilter = {};
-
-//     //   if (!isNaN(min) && !isNaN(max)) {
-//     //     matrixFilter.selling_price = { $gte: min, $lte: max };
-//     //   } else if (!isNaN(min)) {
-//     //     matrixFilter.selling_price = { $gte: min };
-//     //   }
-
-//     //   if (Object.keys(matrixFilter).length > 0) {
-//     //     const matchedMatrices = await ProductMatrix.find(matrixFilter, { productId: 1 }).lean();
-//     //     const matchingProductIds = matchedMatrices.map((m) => m.productId);
-
-//     //     if (matchingProductIds.length === 0) {
-//     //       return res.status(404).json({
-//     //         success: false,
-//     //         message: "No products found in this price range",
-//     //       });
-//     //     }
-
-//     //     filter._id = { $in: matchingProductIds };
-//     //   }
-//     // }
-
-//     if (price) {
-//       const [min, max] = price.split("_").map(Number);
-//       let matrixFilter = {};
-
-//       if (!isNaN(min) && !isNaN(max)) {
-//         matrixFilter.selling_price = { $gte: min, $lte: max };
-//       } else if (!isNaN(min)) {
-//         matrixFilter.selling_price = { $gte: min };
-//       }
-
-//       if (Object.keys(matrixFilter).length > 0) {
-//         const matchedMatrices = await ProductMatrix.find(matrixFilter, {
-//           productId: 1,
-//         }).lean();
-//         const matchingProductIds = matchedMatrices.map((m) => m.productId);
-
-//         if (matchingProductIds.length === 0) {
-//           return res.status(404).json({
-//             success: false,
-//             message: "No products found in this price range",
-//           });
-//         }
-
-//         //Convert productIds into full product documents
-//         const productsFound = await products
-//           .find({ _id: { $in: matchingProductIds } })
-//           .populate('product_Matrix')
-//           .lean();
-
-//         return res.status(200).json({
-//           success: true,
-//           products: productsFound,
-//         });
-//       }
-//     }
-
-//     //usage of aggregations pipelines :
-//     const filterproduct = await products
-//       .aggregate([
-//         { $match: filter }, // apply any dynamic filters
-//         { $sort: { price: 1 } },
-//         {
-//           $facet: {
-//             products: [
-//               {
-//                 $project: {
-//                   name: 1,
-//                   imagesUrl: 1,
-//                   category: 1,
-//                   price: 1,
-//                   size: 1,
-//                   fabric: 1,
-//                 },
-//               },
-//               { $skip: skip },
-//               { $limit: limit },
-//             ],
-//             instockProducts: [
-//               { $match: { stock: "instock" } },
-//               {
-//                 $project: {
-//                   name: 1,
-//                   imagesUrl: 1,
-//                   category: 1,
-//                   price: 1,
-//                   size: 1,
-//                   fabric: 1,
-//                 },
-//               },
-//             ],
-//             outstockProducts: [
-//               { $match: { stock: "outstock" } },
-//               {
-//                 $project: {
-//                   name: 1,
-//                   imagesUrl: 1,
-//                   category: 1,
-//                   size: 1,
-//                   fabric: 1,
-//                 },
-//               },
-//             ],
-//           },
-//         },
-//       ])
-//       .skip(skip)
-//       .limit(limit)
-//       .populate('product_Matrix')
-//       .exec();
-//     if (!filterproduct || filterproduct.length === 0) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Products not found",
-//       });
-//     }
-
-//     return res.status(200).json({
-//       success: true,
-//       page: page,
-//       totalProducts: filterproduct[0].products.length,
-//       totalpages: Math.ceil((filterproduct[0].products.length || 0) / limit),
-//       filterproduct,
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//       error: error.message,
-//     });
-//   }
-// };
-
-
 exports.filterProducts = async (req, res) => {
   try {
     const { category, stock, fabric, price, size, discount } = req.query;
 
-    // Prepare filters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const matchProduct = {};
     const matchMatrix = {};
 
@@ -814,10 +615,9 @@ exports.filterProducts = async (req, res) => {
     // Price range (e.g., price=100_500)
     if (price) {
       const [min, max] = price.split("_").map(Number);
-      if (!isNaN(min))
-        matchMatrix.selling_price = { ...matchMatrix.selling_price, $gte: min };
-      if (!isNaN(max))
-        matchMatrix.selling_price = { ...matchMatrix.selling_price, $lte: max };
+      matchMatrix.selling_price = {};
+      if (!isNaN(min)) matchMatrix.selling_price.$gte = min;
+      if (!isNaN(max)) matchMatrix.selling_price.$lte = max;
     }
 
     // Size
@@ -828,17 +628,17 @@ exports.filterProducts = async (req, res) => {
     // Discount range (e.g., discount=10_50)
     if (discount) {
       const [min, max] = discount.split("_").map(Number);
-      if (!isNaN(min))
-        matchMatrix.discount = { ...matchMatrix.discount, $gte: min };
-      if (!isNaN(max))
-        matchMatrix.discount = { ...matchMatrix.discount, $lte: max };
+      matchMatrix.discount = {};
+      if (!isNaN(min)) matchMatrix.discount.$gte = min;
+      if (!isNaN(max)) matchMatrix.discount.$lte = max;
     }
 
-    const filteredProducts = await products.aggregate([
+    // First get the count of all matching products
+    const countAggregate = await products.aggregate([
       { $match: matchProduct },
       {
         $lookup: {
-          from: "productmatrices", // collection name in lowercase plural
+          from: "productmatrixes",
           localField: "product_Matrix",
           foreignField: "_id",
           as: "matrixDetails",
@@ -851,21 +651,47 @@ exports.filterProducts = async (req, res) => {
               input: "$matrixDetails",
               as: "matrix",
               cond: {
-                $and: Object.entries(matchMatrix).map(([key, value]) => {
-                  if (
-                    typeof value === "object" &&
-                    ("$gte" in value || "$lte" in value)
-                  ) {
-                    const conds = [];
-                    if ("$gte" in value)
-                      conds.push({ $gte: [`$$matrix.${key}`, value["$gte"]] });
-                    if ("$lte" in value)
-                      conds.push({ $lte: [`$$matrix.${key}`, value["$lte"]] });
-                    return { $and: conds };
-                  } else {
-                    return { $eq: [`$$matrix.${key}`, value] };
-                  }
-                }),
+                $and: [
+                  ...(matchMatrix.size
+                    ? [{ $eq: ["$$matrix.size", matchMatrix.size] }]
+                    : []),
+                  ...(matchMatrix.selling_price?.$gte
+                    ? [
+                        {
+                          $gte: [
+                            "$$matrix.selling_price",
+                            matchMatrix.selling_price.$gte,
+                          ],
+                        },
+                      ]
+                    : []),
+                  ...(matchMatrix.selling_price?.$lte
+                    ? [
+                        {
+                          $lte: [
+                            "$$matrix.selling_price",
+                            matchMatrix.selling_price.$lte,
+                          ],
+                        },
+                      ]
+                    : []),
+                  ...(matchMatrix.discount
+                    ? [
+                        {
+                          $gte: [
+                            "$$matrix.discount",
+                            matchMatrix.discount.$gte || 0,
+                          ],
+                        },
+                        {
+                          $lte: [
+                            "$$matrix.discount",
+                            matchMatrix.discount.$lte || 100,
+                          ],
+                        },
+                      ]
+                    : []),
+                ].filter(Boolean), // Remove any undefined conditions
               },
             },
           },
@@ -873,23 +699,101 @@ exports.filterProducts = async (req, res) => {
       },
       {
         $match: {
-          "filteredMatrix.0": { $exists: true }, // Only include products with at least one matching matrix
+          "filteredMatrix.0": { $exists: true },
+        },
+      },
+      { $count: "total" },
+    ]);
+
+    const total = countAggregate[0]?.total || 0;
+
+    // Then get the paginated results
+    const filterProducts_response = await products.aggregate([
+      { $match: matchProduct },
+      {
+        $lookup: {
+          from: "productmatrixes",
+          localField: "product_Matrix",
+          foreignField: "_id",
+          as: "matrixDetails",
+        },
+      },
+      {
+        $addFields: {
+          product_Matrix: {
+            $filter: {
+              input: "$matrixDetails",
+              as: "matrix",
+              cond: {
+                $and: [
+                  ...(matchMatrix.size
+                    ? [{ $eq: ["$$matrix.size", matchMatrix.size] }]
+                    : []),
+                  ...(matchMatrix.selling_price?.$gte
+                    ? [
+                        {
+                          $gte: [
+                            "$$matrix.selling_price",
+                            matchMatrix.selling_price.$gte,
+                          ],
+                        },
+                      ]
+                    : []),
+                  ...(matchMatrix.selling_price?.$lte
+                    ? [
+                        {
+                          $lte: [
+                            "$$matrix.selling_price",
+                            matchMatrix.selling_price.$lte,
+                          ],
+                        },
+                      ]
+                    : []),
+                  ...(matchMatrix.discount
+                    ? [
+                        {
+                          $gte: [
+                            "$$matrix.discount",
+                            matchMatrix.discount.$gte || 0,
+                          ],
+                        },
+                        {
+                          $lte: [
+                            "$$matrix.discount",
+                            matchMatrix.discount.$lte || 100,
+                          ],
+                        },
+                      ]
+                    : []),
+                ].filter(Boolean),
+              },
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          "product_Matrix.0": { $exists: true },
         },
       },
       {
         $project: {
           matrixDetails: 0,
-          filteredMatrix: 0,
         },
       },
+      { $skip: skip },
+      { $limit: limit },
     ]);
 
     res.status(200).json({
       success: true,
-      products: filteredProducts,
+      statuscode: 2,
+      products: filterProducts_response,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      totalProducts: total,
     });
   } catch (error) {
-    console.error("Filter Error:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -1901,28 +1805,37 @@ exports.deleteProductMatrix = async (req, res) => {
 //get all ratings of a product :
 exports.getallReviewsByProduct = async (req, res) => {
   try {
-    const { productId } = req.params;
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        statuscode: 1,
+        message: "invalid Product ID",
+        message: "Bad Request",
+      });
+    }
+    const allreviews_response = await reviews
+      .find({ productId: id })
+      .sort({ createdAt: -1 });
 
-    const allreviews = await reviews
-      .find({ productId })
-      .populate("userId", "firstname lastname email") // Optional: include user details
-      .sort({ createdAt: -1 }); // Latest first
-
-    if (!reviews.length) {
+    if (!allreviews_response.length) {
       return res.status(404).json({
         success: false,
+        statuscode: 2,
         message: "No reviews found for this product",
       });
     }
 
     return res.status(200).json({
       success: true,
+      statuscode: 3,
       count: reviews.length,
       reviews,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
+      statuscode: 500,
       message: "Error while fetching reviews",
       error: error.message,
     });
@@ -1932,147 +1845,116 @@ exports.getallReviewsByProduct = async (req, res) => {
 //rating a product :
 exports.createReview = async (req, res) => {
   try {
-    const { productId } = req.params;
-    const { message, rating } = req.body;
-
-    if (!productId || !userId || !rating) {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
+        statuscode: 1,
+        message: "invalid ID",
+        error: "Bad Request",
+      });
+    }
+    const { message, rating } = req.body;
+
+    if (!rating) {
+      return res.status(400).json({
+        success: false,
+        statuscode: 2,
         message: "productId, userId and rating are required",
       });
     }
 
-    const review = await reviews.create({ productId, userId, message, rating });
+    if (!req.user._id) {
+      return res.status(401).json({
+        success: false,
+        statuscode: 2,
+        message: "please Login",
+        error: "Not Authorized",
+      });
+    }
+
+    const product_response = await products.findById(id);
+    if (!product_response) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 3,
+        message: "Product not found",
+        error: "Not Found"
+      });
+    }
+
+    const review_response = await reviews.create({
+      productId: id,
+      userId: req.user._id,
+      message,
+      rating,
+    });
+    if (!review_response) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 4,
+        message: "unable to create the review",
+        error: "Database error",
+      });
+    }
 
     return res.status(201).json({
       success: true,
+      statuscode: 5,
       message: "Review posted successfully",
-      data: review,
+      data: review_response,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
+      statuscode: 500,
       message: "Error while posting review",
       error: error.message,
     });
   }
 };
 
-//giving rating :
-// exports.ratingProduct = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     if (!mongoose.Types.ObjectId.isValid(id)) {
-//       return res.status(401).json({
-//         success: false,
-//         message: "Invalid product ID",
-//         error: "Bad Request",
-//       });
-//     }
-//     const { rating, message } = req.body;
-//     if (!rating || rating < 1 || rating > 5) {
-//       return res.status(400).json({
-//         success: false,
-//         error: "Please provide a valid rating (1 - 5)",
-//       });
-//     }
-//     const product = await products.findById(id);
-//     if (!product) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "product not found",
-//         error: "Not Found",
-//       });
-//     }
-//     const rate = await reviews.findOne({ productId: id });
-//     if (!rate) {
-//       await reviews.create({
-//         productId: id,
-//         userId: [req.user._id],
-//         [`r${rating}`]: {
-//           data: {
-//             count: 1,
-//           },
-//         },
-//         finalRating: rating,
-//       });
-//     } else {
-//       if (rate.userId.includes(req.user._id)) {
-//         return res.status(400).json({
-//           success: false,
-//           error: "You have already rated this product",
-//         });
-//       }
-
-//       // Add user to userId list
-//       rate.userId.push(req.user._id);
-
-//       const ratingKey = `r${rating}`;
-
-//       // Initialize rating block if it doesn't exist
-//       if (!rate[ratingKey]) {
-//         rate[ratingKey] = {
-//           data: {
-//             messages: [],
-//             count: 0,
-//           },
-//         };
-//       }
-
-//       // Add message and increment count
-//       rate[ratingKey].data.count += 1;
-
-//       // Recalculate average rating
-//       const totalScore = [1, 2, 3, 4, 5].reduce((sum, r) => {
-//         const count = rate[`r${r}`]?.data?.count || 0;
-//         return sum + r * count;
-//       }, 0);
-
-//       const totalCount = [1, 2, 3, 4, 5].reduce((sum, r) => {
-//         return sum + (rate[`r${r}`]?.data?.count || 0);
-//       }, 0);
-
-//       rate.finalRating =
-//         totalCount > 0 ? Math.round((totalScore / totalCount) * 10) / 10 : 0;
-//     }
-//     product.rating = rate.finalRating;
-//     await product.save();
-//     // await rate.save();
-//     return res.status(200).json({
-//       success: true,
-//       message: "Review posted successfully",
-//       rating,
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//       error,
-//     });
-//   }
-// };
-
 //get a sinfle rating of a product :
 exports.getReviewsByProduct = async (req, res) => {
   try {
-    const { productId } = req.params;
+    const { id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
+        statuscode: 1,
         message: "Invalid product ID",
+        error: "Bad Request"
       });
     }
 
-    // Fetch reviews
-    const allreview = await reviews
-      .find({ productId: productId })
-      .populate("userId", "firstname lastname email")
-      .sort({ createdAt: -1 });
+    const product_response = await products.findById(id);
+    if(!product_response){
+      return res.status(404).json({
+        success: false,
+        statuscode: 4,
+        message: "product not found",
+        error: "Not Found"
+      })
+    }
 
+    // Fetch reviews
+    const allreview_response = await reviews
+      .find({ productId: id })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!allreview_response) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 2,
+        message: "reviews are empty",
+        error: "Not Found",
+      });
+    }
     // Calculate average rating
     const aggregation = await reviews.aggregate([
-      { $match: { productId: new mongoose.Types.ObjectId(productId) } },
+      { $match: { productId: new mongoose.Types.ObjectId(id) } },
       {
         $group: {
           _id: "$productId",
@@ -2082,12 +1964,23 @@ exports.getReviewsByProduct = async (req, res) => {
       },
     ]);
 
+    if (!aggregation || aggregation.length === 0) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 4,
+        message: "Cannot get product review",
+        error: "No reviews found",
+      });
+    }
+
     const avgRating = aggregation[0]?.averageRating || 0;
     const totalRatings = aggregation[0]?.totalRatings || 0;
+    product_response.rating = Number(avgRating.toFixed(1));
+    await product_response.save();
 
     return res.status(200).json({
       success: true,
-      productId,
+      statuscode: 5,
       count: reviews.length,
       averageRating: Number(avgRating.toFixed(1)),
       totalRatings,
@@ -2096,6 +1989,7 @@ exports.getReviewsByProduct = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
+      statuscode: 500,
       message: "Error while fetching reviews",
       error: error.message,
     });

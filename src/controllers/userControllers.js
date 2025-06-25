@@ -18,6 +18,9 @@ const { default: mongoose, mongo } = require("mongoose");
 const carts = require("../models/cartschema.js");
 const orders = require("../models/ordersschema.js");
 const { deleteOldImages } = require("../middlewares/S3_bucket.js");
+const categories = require("../models/categoriesschema.js");
+const fabrics = require("../models/fabricschema.js");
+const ProductMatrix = require("../models/productmatrixschema.js");
 
 //set password after google oauth signup :
 exports.setNewPassword = async (req, res) => {
@@ -88,6 +91,15 @@ exports.signUp = async (req, res) => {
       error: "Bad Request",
     });
   }
+  const regex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  if (!regex.test(password)) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Password must contain at least 8 characters, including one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&).",
+    });
+  }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!email || !emailRegex.test(email)) {
@@ -102,20 +114,20 @@ exports.signUp = async (req, res) => {
   try {
     const existed_response = await users.findOne({ email: email });
     if (existed_response) {
-
-      if(existed_response.status === "inactive"){
+      if (existed_response.status === "inactive") {
         return res.status(401).json({
-        success: false,
-        statuscode: 4,
-        message: "User already exist and user is not verified, please verify",
-        error: "Bad Request",
-      });
+          success: false,
+          statuscode: 4,
+          message:
+            "Account already exist and user is not verified, please verify",
+          error: "Bad Request",
+        });
       }
 
       return res.status(401).json({
         success: false,
         statuscode: 5,
-        message: "user already exist and verified, please login",
+        message: "Account already exist and verified, please login",
         error: "Bad Request",
       });
     }
@@ -179,7 +191,7 @@ exports.resend = async (req, res) => {
       subject: "Account verification",
       text: conformSignup(fullname, encodedId),
     });
-    user_response.verify_expiry = Date.now() + 30 * 60 * 1000;
+    user_response.verify_expiry = Date.now() + 24 * 60 * 60 * 1000;
     await user_response.save();
     return res.status(200).json({
       success: true,
@@ -199,6 +211,14 @@ exports.resend = async (req, res) => {
 //user account verification :
 exports.verify = async (req, res) => {
   const { verificationKey } = req.query;
+  if (!verificationKey) {
+    return res.status(401).json({
+      success: false,
+      statuscode: 5,
+      message: "verification key is required",
+      error: "Bad Request",
+    });
+  }
   try {
     const decodedId = Buffer.from(verificationKey, "base64").toString("utf-8");
     if (!decodedId) {
@@ -273,7 +293,7 @@ exports.signIn = async (req, res) => {
       .findOne({
         email: email,
       })
-      .select("password firstname lastname accountType");
+      .select("password firstname lastname accountType phone email");
     if (!user_respose) {
       return res.status(401).json({
         success: false,
@@ -329,6 +349,8 @@ exports.signIn = async (req, res) => {
       username: user_respose.firstname + " " + user_respose.lastname,
       userID: user_respose._id,
       role: user_respose.accountType,
+      user_email: user_respose.email,
+      user_phone: user_respose.phone,
     });
   } catch (error) {
     return res.status(500).json({
@@ -352,8 +374,7 @@ exports.getById = async (req, res) => {
         error: "Bad Request",
       });
     }
-    const user_response = await users
-      .findById(id)
+    const user_response = await users.findById(id);
     if (!user_response) {
       return res.status(404).json({
         success: false,
@@ -544,7 +565,7 @@ exports.update = async (req, res) => {
       success: true,
       statuscode: 2,
       message: "Profile updated successfully",
-      updatedUser,
+      updatedUser_response,
     });
   } catch (error) {
     return res.status(500).json({
@@ -578,8 +599,10 @@ exports.uploadUserProfilePic = async (req, res) => {
       });
     }
     if (user_response.profileUrl) {
-      const key = decodeURIComponent(new URL(url).pathname).substring(1);
-      await deleteOldImages(key);
+      const key = decodeURIComponent(
+        new URL(user_response.profileUrl).pathname
+      ).substring(1);
+      await deleteOldImages(key); // Ensure this is a valid async function
     }
     user_response.profileUrl = profilePic;
     await user_response.save();
@@ -739,8 +762,9 @@ exports.addAddress = async (req, res) => {
     country,
     house_number,
     landmark,
-    isDeafault,
-    isShipping
+    isDefault,
+    isBilling,
+    pincode,
   } = req.body;
   if (
     !firstname ||
@@ -750,8 +774,8 @@ exports.addAddress = async (req, res) => {
     !state ||
     !country ||
     !house_number ||
-    !landmark,
-    !isShipping
+    !landmark ||
+    !pincode
   ) {
     return res.status(401).json({
       success: false,
@@ -760,14 +784,15 @@ exports.addAddress = async (req, res) => {
       error: "Bad Request",
     });
   }
-  const total_addresses = await userAddresses.find({userId: req.user._id});
-  if(total_addresses.length >= 3){
+
+  const total_addresses = await userAddresses.find({ userId: req.user._id });
+  if (total_addresses.length >= 3) {
     return res.status(401).json({
       success: false,
       message: "Only three addresses are allowed for a user, limit exceeded",
       statuscode: 2,
       error: "Bad Request",
-    })
+    });
   }
   try {
     const isExisted_response = await userAddresses.findOne({
@@ -779,6 +804,7 @@ exports.addAddress = async (req, res) => {
       city: city,
       state: state,
       country: country,
+      pincode: pincode,
     });
 
     if (isExisted_response) {
@@ -800,6 +826,7 @@ exports.addAddress = async (req, res) => {
       city,
       state,
       country,
+      pincode,
     });
 
     if (!address_response) {
@@ -811,43 +838,25 @@ exports.addAddress = async (req, res) => {
       });
     }
 
-    if (isDeafault === true) {
+    if (isDefault === true) {
       const updateResult = await userAddresses.updateMany(
-        { userId: req.user._id, isDeafault: true },
-        { $set: { isDeafault: false } }
+        { userId: req.user._id, isDefault: true },
+        { $set: { isDefault: false } },
+        { runValidators: true }
       );
 
-      if (updateResult.modifiedCount === 0) {
-        return res.status(404).json({
-          success: false,
-          statuscode: 5,
-          message: "unable to change the default address",
-          error: "Database error",
-        });
-      }
-
-      // Now set the new address as default
-      address_response.isDeafault = true;
+      address_response.isDefault = true;
       await address_response.save();
     }
 
-    if (isShipping === true) {
+    // isBilling logic
+    if (isBilling === true) {
       const updateResult = await userAddresses.updateMany(
-        { userId: req.user._id, isShipping: true },
-        { $set: { isShipping: false } }
+        { userId: req.user._id, isBilling: true },
+        { $set: { isBilling: false } }
       );
 
-      if (updateResult.modifiedCount === 0) {
-        return res.status(404).json({
-          success: false,
-          statuscode: 6,
-          message: "unable to change the default address",
-          error: "Database error",
-        });
-      }
-
-      // Now set the new address as default
-      address_response.isDeafault = true;
+      address_response.isBilling = true;
       await address_response.save();
     }
 
@@ -869,29 +878,32 @@ exports.addAddress = async (req, res) => {
 exports.updateAddress = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Validate address ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         statuscode: 1,
-        message: "invalid Address ID",
+        message: "Invalid Address ID",
         error: "Bad Request",
       });
     }
-    const address_response = await userAddresses.findOne(
-      { _id: id },
-      { userId: req.user._id }
-    );
+
+    // Check if address exists and belongs to the user
+    const address_response = await userAddresses.findOne({
+      _id: id,
+      userId: req.user._id,
+    });
 
     if (!address_response) {
       return res.status(404).json({
         success: false,
         statuscode: 2,
-        message: "Address not found",
+        message: "Address not found or doesn't belong to user",
       });
     }
 
     const updateData = {};
-    // Merge nested Shipping_Adderss
     const shippingFields = [
       "firstname",
       "lastname",
@@ -901,54 +913,36 @@ exports.updateAddress = async (req, res) => {
       "city",
       "state",
       "country",
-      "isDeafault",
-      "isShipping",
+      "isDefault", // Fixed typo here
+      "isBilling",
+      "pincode",
     ];
 
+    // Build update object
     shippingFields.forEach((field) => {
       if (req.body[field] !== undefined) {
         updateData[field] = req.body[field];
       }
     });
 
-    //check for the shipping address should be unique : 
-    if (updateData.isShipping !== undefined) {
-      if (updateData.isShipping === true) {
-        const updateResult = await userAddresses.updateMany(
-          { userId: req.user._id, isShipping: true },
-          { $set: { isShipping: false } }
-        );
-
-        if (updateResult.modifiedCount === 0) {
-          return res.status(404).json({
-            success: false,
-            statuscode: 3,
-            message: "unable to change the default address",
-            error: "Database error",
-          });
-        }
-      }
+    // Handle shipping address uniqueness
+    if (updateData.isBilling === true) {
+      await userAddresses.updateMany(
+        { userId: req.user._id, isBilling: true, _id: { $ne: id } },
+        { $set: { isBilling: false } }
+      );
     }
 
-    //check for the default address should be unique : 
-    if (updateData.isDeafault !== undefined) {
-      if (updateData.isDeafault === true) {
-        const updateResult = await userAddresses.updateMany(
-          { userId: req.user._id, isDeafault: true },
-          { $set: { isDeafault: false } }
-        );
-
-        if (updateResult.modifiedCount === 0) {
-          return res.status(404).json({
-            success: false,
-            statuscode: 4,
-            message: "unable to change the default address",
-            error: "Database error",
-          });
-        }
-      }
+    // Handle default address uniqueness
+    if (updateData.isDefault === true) {
+      // Fixed typo here
+      await userAddresses.updateMany(
+        { userId: req.user._id, isDefault: true, _id: { $ne: id } },
+        { $set: { isDefault: false } }
+      );
     }
 
+    // Perform the update
     const updated = await userAddresses.findByIdAndUpdate(
       id,
       { $set: updateData },
@@ -959,7 +953,7 @@ exports.updateAddress = async (req, res) => {
       return res.status(404).json({
         success: false,
         statuscode: 5,
-        message: "Address not found",
+        message: "Address not found after update attempt",
       });
     }
 
@@ -970,6 +964,7 @@ exports.updateAddress = async (req, res) => {
       data: updated,
     });
   } catch (error) {
+    console.error("Update Address Error:", error);
     return res.status(500).json({
       success: false,
       statuscode: 500,
@@ -991,7 +986,7 @@ exports.getAddress = async (req, res) => {
       });
     }
     const address_response = await userAddresses.findOne({
-      $and: [{userId: req.user._id}, {_id: id}]
+      $and: [{ userId: req.user._id }, { _id: id }],
     });
     if (!address_response) {
       return res.status(404).json({
@@ -1021,7 +1016,7 @@ exports.deleteAddress = async (req, res) => {
   try {
     const { id } = req.params;
     const User_response = await userAddresses.findOne({
-      $and: [{userId: req.user._id}, {_id: id}]
+      $and: [{ userId: req.user._id }, { _id: id }],
     });
     if (!User_response) {
       return res.status(404).json({
@@ -1046,7 +1041,6 @@ exports.deleteAddress = async (req, res) => {
       statuscode: 4,
       message: "Address Deleted successfully",
     });
-
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -1073,9 +1067,6 @@ exports.viewAllAddresses = async (req, res) => {
     return res.status(200).json({
       success: true,
       statuscode: 2,
-      currentpage: page,
-      limit: limit,
-      total: alladdresses_response.length,
       data: alladdresses_response,
     });
   } catch (error) {
@@ -1091,7 +1082,7 @@ exports.viewAllAddresses = async (req, res) => {
 
 exports.contactUs = async (req, res) => {
   try {
-    const { firstname, lastname, email, phone, message } = req.body;
+    const { firstname, lastname, email, number, message } = req.body;
     if (!message || message === null) {
       return res.status(400).json({
         success: false,
@@ -1099,8 +1090,19 @@ exports.contactUs = async (req, res) => {
         error: "message is required",
       });
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        statuscode: 3,
+        message: "Invalid or missing email address",
+        error: "Bad request",
+      });
+    }
+
     if (!req.user) {
-      if (!firstname || !lastname || !email || !phone || !message) {
+      if (!firstname || !lastname || !email || !number || !message) {
         return res.status(400).json({
           success: false,
           statuscode: 2,
@@ -1112,7 +1114,7 @@ exports.contactUs = async (req, res) => {
         firstname: firstname,
         lastname: lastname,
         email: email,
-        phone: phone,
+        phone: number,
         message,
       });
       if (!userContactForm_response) {
@@ -1128,7 +1130,7 @@ exports.contactUs = async (req, res) => {
         firstname: firstname || req.user.firstname,
         lastname: lastname || req.user.lastname,
         email: email || req.user.email,
-        phone: phone,
+        phone: number,
         message,
       });
       if (!userContactForm_response) {
@@ -1143,6 +1145,55 @@ exports.contactUs = async (req, res) => {
       success: true,
       statuscode: 2,
       message: "query submitted successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      statuscode: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+// ✅✅✅✅✅✅✅✅ Displaying all names in the filter like catogeries :  ✅✅✅✅✅✅✅✅✅
+
+exports.getallfilternames = async (req, res) => {
+  try {
+    const allcatogeries = await categories.find();
+    if (!allcatogeries || allcatogeries.length === 0) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 1,
+        message: "categories not found",
+        error: "Not Found",
+      });
+    }
+    const allfabrics = await fabrics.find();
+    if (!allfabrics || allfabrics.length === 0) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 2,
+        message: "fabrics not found",
+        error: "Not Found",
+      });
+    }
+
+    const allSizes = await ProductMatrix.distinct("size");
+    if (!allSizes || allSizes.length === 0) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 3,
+        message: "sizes not found",
+        error: "Not Found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "values retrieved successfully",
+      allcatogeries,
+      allSizes,
+      allfabrics,
     });
   } catch (error) {
     return res.status(500).json({

@@ -264,26 +264,28 @@ exports.makeOrder = async (req, res) => {
     const {
       email,
       phone,
-      country,
-      firstname,
-      lastname,
-      address,
-      pincode,
-      city,
-      state,
-      Bcountry,
       Bfirstname,
+      Bcountry,
       Blastname,
       Baddress,
+      Bpincode,
+      Bhouse_number,
       Bcity,
       Bstate,
-      Bphone,
-      Bpincode,
+      Blandmark,
+      Sfirstname,
+      Scountry,
+      Slastname,
+      Saddress,
+      Spincode,
+      Shouse_number,
+      Scity,
+      Sstate,
+      Slandmark,
       quantity,
       total_pay,
       size,
       payment_mode,
-      saveNextTime,
     } = req.body;
 
     if (!phone) {
@@ -293,9 +295,6 @@ exports.makeOrder = async (req, res) => {
         error: "Bad Request",
       });
     }
-    const Shphone = Number(phone.slice(-10));
-    const Biphone = Number(Bphone.slice(-10));
-
     if (!total_pay) {
       return res.status(400).json({
         success: false,
@@ -313,7 +312,6 @@ exports.makeOrder = async (req, res) => {
     }
 
     const totalPay = Number(total_pay);
-    // let total_cost = Math.ceil(total_pay * 100) / 100;
 
     if (isNaN(totalPay)) {
       return res.status(401).json({
@@ -323,18 +321,39 @@ exports.makeOrder = async (req, res) => {
       });
     }
 
-    let newAddress;
-    if (country && firstname && lastname && address && city && state) {
-      newAddress = await userAddresses.create({
-        userId: req.user._id,
-        country,
-        firstname,
-        lastname,
-        address,
-        city,
-        state,
+    if (
+      !Bfirstname ||
+      !Bcountry ||
+      !Blastname ||
+      !Baddress ||
+      !Bpincode ||
+      !Bhouse_number ||
+      !Bcity ||
+      !Bstate ||
+      !Blandmark
+    ) {
+      return res.status(403).json({
+        success: false,
+        statuscode: 2,
+        message: "all fields are required in the Billing Address",
       });
-      await newAddress.save();
+    }
+    if (
+      !Sfirstname ||
+      !Scountry ||
+      !Slastname ||
+      !Saddress ||
+      !Spincode ||
+      !Shouse_number ||
+      !Scity ||
+      !Sstate ||
+      !Slandmark
+    ) {
+      return res.status(403).json({
+        success: false,
+        statuscode: 3,
+        message: "all fields are required in the shipping Address",
+      });
     }
 
     const isSingleProduct =
@@ -352,8 +371,6 @@ exports.makeOrder = async (req, res) => {
         });
       }
 
-      const productcart_response = await carts.create({});
-
       const matrix = await ProductMatrix.findOne({
         productId: product._id,
         size: size,
@@ -365,23 +382,28 @@ exports.makeOrder = async (req, res) => {
           error: "Not Found",
         });
       }
-
-      const cart_response = await carts.create({
-        cartImages: product.imagesUrl,
-        quantity: quantity,
-        size: size,
-        userId: req.user._id,
-        productId: product._id,
-        selling_price: matrix.selling_price,
+      const isAlreadyCart_response = await carts.findOne({
+        $and: [{ productId: product._id }, { size: size }, {userId: req.user._id}],
       });
 
-      if(!cart_response){
-        return res.status(400).json({
-          success:false,
-          statuscode: 1,
-          message: "unable to create the cart",
-          error: "DataBase Error"
-        })
+      if (!isAlreadyCart_response) {
+        const cart_response = await carts.create({
+          cartImages: product.imagesUrl,
+          quantity: quantity,
+          size: size,
+          userId: req.user._id,
+          productId: product._id,
+          selling_price: matrix.selling_price,
+        });
+
+        if (!cart_response) {
+          return res.status(400).json({
+            success: false,
+            statuscode: 1,
+            message: "unable to create the cart",
+            error: "Database Error",
+          });
+        }
       }
 
       if (quantity > matrix.stock || !matrix.stock) {
@@ -410,28 +432,30 @@ exports.makeOrder = async (req, res) => {
           message: "final cost should be a number",
         });
       }
-      const newOrder = await orders.create({
+      const newOrder_response = await orders.create({
         userId: req.user._id,
         productId: product._id,
         shipping_address: {
-          firstname: firstname,
-          lastname: lastname,
-          country: country,
-          address: address,
-          pincode: pincode,
-          city: city,
-          state: state,
-          phone: Shphone,
+          country: Scountry,
+          firstname: Sfirstname,
+          lastname: Slastname,
+          address: Saddress,
+          pincode: Spincode,
+          house_number: Shouse_number,
+          city: Scity,
+          state: Sstate,
+          landmark: Slandmark,
         },
         billing_address: {
+          country: Bcountry,
           firstname: Bfirstname,
           lastname: Blastname,
-          country: Bcountry,
           address: Baddress,
-          pincode: pincode,
+          pincode: Bpincode,
+          house_number: Bhouse_number,
           city: Bcity,
           state: Bstate,
-          phone: Biphone,
+          landmark: Blandmark,
         },
         email,
         quantity: quantity,
@@ -445,21 +469,21 @@ exports.makeOrder = async (req, res) => {
             payment_mode === "online" ? razorpayOrder.id : undefined,
         },
       });
-
-      if (!saveNextTime) {
-        await userAddresses.deleteMany({ userId: req.user._id });
+      if (!newOrder_response) {
+        return res.status(403).json({
+          success: false,
+          statuscode: 2,
+          message: "unable to place the order",
+          error: "Database error",
+        });
       }
-      await userAddresses.deleteMany({
-        userId: req.user._id, // assuming you store user reference
-        _id: { $ne: newAddress._id },
-      });
 
       return res.status(200).json({
         success: true,
         message: `Your product order was placed successfully`,
-        order_id: newOrder._id,
+        order_id: newOrder_response._id,
         razorpay_orderId: razorpayOrder.id,
-        data: newOrder,
+        data: newOrder_response,
       });
     } else {
       const allOrders = [];
@@ -516,29 +540,31 @@ exports.makeOrder = async (req, res) => {
           continue;
         }
 
-        const newOrder = await orders.create({
+        const newOrder_response = await orders.create({
           userId: req.user._id,
           productId: cart.productId,
           shipping_address: {
-            firstname,
-            lastname,
-            country,
-            address,
-            city,
-            pincode,
-            state,
-            phone: Shphone,
-          },
-          billing_address: {
-            firstname: Bfirstname,
-            lastname: Blastname,
-            country: Bcountry,
-            pincode: Bpincode,
-            address: Baddress,
-            city: Bcity,
-            state: Bstate,
-            phone: Biphone,
-          },
+          country: Scountry,
+          firstname: Sfirstname,
+          lastname: Slastname,
+          address: Saddress,
+          pincode: Spincode,
+          house_number: Shouse_number,
+          city: Scity,
+          state: Sstate,
+          landmark: Slandmark,
+        },
+        billing_address: {
+          country: Bcountry,
+          firstname: Bfirstname,
+          lastname: Blastname,
+          address: Baddress,
+          pincode: Bpincode,
+          house_number: Bhouse_number,
+          city: Bcity,
+          state: Bstate,
+          landmark: Blandmark,
+        },
           email,
           quantity,
           size: matrix.size,
@@ -551,23 +577,19 @@ exports.makeOrder = async (req, res) => {
               payment_mode === "online" ? razorpayOrder.id : undefined,
           },
         });
+        if (!newOrder_response) {
+          failedItems.push({
+            cartId,
+            reason: "unable to create database error",
+          });
+          continue;
+        }
 
-        // Deduct stock (optional - or do it later in bulk)
         matrix.stock -= quantity;
         await matrix.save();
 
-        await carts.deleteOne({ _id: cart._id });
-        allOrders.push(newOrder);
+        allOrders.push(newOrder_response);
       }
-
-      if (!saveNextTime) {
-        await userAddresses.deleteMany({ userId: req.user._id });
-      }
-
-      await userAddresses.deleteMany({
-        userId: req.user._id,
-        _id: { $ne: newAddress?._id },
-      });
 
       return res.status(200).json({
         success: true,
@@ -810,14 +832,11 @@ exports.getOrderById = async (req, res) => {
         error: "Bad Request",
       });
     }
-    const order = await orders.findById(id);
-    if (order.userId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "you are not authorized",
-        error: "UnAuthorized",
-      });
-    }
+    const order = await orders
+      .findOne({
+        $and: [{ userId: req.user._id }, { _id: id }],
+      })
+      .exec();
     if (!order) {
       return res.status(404).json({
         success: false,
@@ -938,7 +957,7 @@ exports.verifyPayment = async (req, res) => {
         error: "Invalid Signature",
       });
     }
-    const isUser = await orders.find({
+    const allOrders_response = await orders.find({
       "paymentInfo.razorpay_order_id": razorpay_order_id,
     });
     const invoiceNumber = `PATINV-${rawUUID
@@ -946,15 +965,6 @@ exports.verifyPayment = async (req, res) => {
       .slice(0, 3)
       .join("")
       .toUpperCase()}`;
-    for (const order of isUser) {
-      if (order.userId.toString() !== req.user._id.toString()) {
-        return res.status(403).json({
-          success: false,
-          message: "You are not authorized to access this order.",
-          error: "Unauthorized",
-        });
-      }
-    }
     const updatedResult = await orders.updateMany(
       { "paymentInfo.razorpay_order_id": razorpay_order_id },
       {
@@ -976,6 +986,37 @@ exports.verifyPayment = async (req, res) => {
       });
     }
 
+    const deletedCarts = [];
+    const undeletedCarts = [];
+    for (const order of allOrders_response) {
+      if (order.userId.toString() !== req.user._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to access this order.",
+          error: "Unauthorized",
+        });
+      }
+
+      //delete the cart  :
+      const isCart_response = await carts.findOne({
+        userId: req.user._id,
+        productId: order.productId,
+      });
+      if (!isCart_response) {
+        undeletedCarts.push({ order, reason: "cart not found" });
+      }
+      const deletecart_response = await carts.deleteOne({
+        userId: req.user._id,
+        productId: order.productId,
+      });
+      if (!deletecart_response) {
+        undeletedCarts.push({
+          order,
+          reason: "cart not found or numable to delete the cart",
+        });
+      }
+      deletedCarts.push({ order, reason: "cart deleted successfully" });
+    }
     return res.status(200).json({
       success: true,
       message: "Payment verified and orders updated successfully",

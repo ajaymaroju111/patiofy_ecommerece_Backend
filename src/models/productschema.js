@@ -48,10 +48,14 @@ const productschema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
          ref: "ProductMatrix"
        }],
-    rating: {
+    rating_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "reviews"
     },
+    rating: {
+      type: Number,
+      default: 0,
+    }
   },
   { timestamps: true }
 );

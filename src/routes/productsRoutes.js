@@ -26,11 +26,13 @@ const {
   getReviewsByProduct,
   getallReviewsByProduct,
 } = require('../controllers/productControllers.js');
+const { getallfilternames } = require('../controllers/userControllers.js');
 
 // product Routes : 
+router.get('/filternames', getallfilternames);
 router.get("/filter", filterProducts); 
 router.get("/search", searchProducts);
-router.get("/filternames", getFilterNames); 
+// router.get("/filternames", getFilterNames); 
 router.get("/stock", viewProductsStock);
 router.get('/bestsellers', findBestSellerProducts);       
 router.get('/trending', trendingCollections);       

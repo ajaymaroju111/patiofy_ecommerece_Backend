@@ -540,10 +540,10 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required:
+              image:
                 - profilePic
               properties:
-                profilePic:
+                image:
                   type: string
                   format: binary
                   description: User profile image file
@@ -1962,7 +1962,7 @@ paths:
                 - country
                 - house_number
                 - landmark
-                - isShipping
+                - isBilling
               properties:
                 firstname:
                   type: string
@@ -1991,7 +1991,7 @@ paths:
                 isDeafault:
                   type: boolean
                   example: true
-                isShipping:
+                isBilling:
                   type: boolean
                   example: true
       responses:
@@ -2287,7 +2287,7 @@ paths:
                 isDeafault:
                   type: boolean
                   example: true
-                isShipping:
+                isBilling:
                   type: boolean
                   example: true
       responses:
@@ -3102,6 +3102,7 @@ paths:
                     example: Internal Server Error
                   error:
                     type: string  
+
 
   /patiofy/auth/admin/users:
   # get all users
@@ -6062,7 +6063,7 @@ paths:
       summary: Post a review for a product
       description: Creates a review for a specific product by a user.
       parameters:
-        - name: productId
+        - name: id
           in: path
           required: true
           schema:
@@ -6070,19 +6071,13 @@ paths:
             example: 665e3a31e4c4ddf92c7712c3
           description: The ID of the product to review
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               type: object
               required:
-                - userId
                 - rating
               properties:
-                userId:
-                  type: string
-                  example: 665d221ac719c577154af78f
-                  description: ID of the user posting the review
                 message:
                   type: string
                   example: "Fantastic product! Highly recommended."
@@ -6166,7 +6161,7 @@ paths:
       summary: Get reviews for a product
       description: Fetches all reviews for a given product, including average rating and total number of ratings.
       parameters:
-        - name: productId
+        - name: id
           in: path
           required: true
           description: The ID of the product
@@ -6184,7 +6179,7 @@ paths:
                   success:
                     type: boolean
                     example: true
-                  productId:
+                  id:
                     type: string
                     example: 665e3a31e4c4ddf92c7712c3
                   count:
@@ -6261,7 +6256,7 @@ paths:
                     type: string
                     example: Internal Server Error
 
-  /patiofy/auth/products/review/all{id}:
+  /patiofy/auth/products/reviews/all/{id}:
     get:
       tags:
         - Reviews
@@ -6270,7 +6265,7 @@ paths:
       summary: Get all reviews for a specific product
       description: Fetches all reviews for a given product, including user info and sorted by latest.
       parameters:
-        - name: productId
+        - name: id
           in: path
           required: true
           schema:

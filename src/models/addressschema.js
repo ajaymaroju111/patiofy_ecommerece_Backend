@@ -23,6 +23,10 @@ const addressSchaema = new mongoose.Schema(
       type: String,
       required: [true, "address is required"],
     },
+    pincode: {
+      type: Number,
+      required: [true, "pincode is required"],
+    },
     house_number: {
       type: String,
       required: [true, "House number details are required"],
@@ -40,11 +44,13 @@ const addressSchaema = new mongoose.Schema(
       type: String,
       required: [true, "landmark is required"]
     },
-    isDeafault: {
+    isDefault: {
       type: Boolean,
+      default: false,
     },
-    isShipping: {
-      type: Boolean
+    isBilling: {
+      type: Boolean,
+      default: false,
     }
   },
   { timestamps: true }

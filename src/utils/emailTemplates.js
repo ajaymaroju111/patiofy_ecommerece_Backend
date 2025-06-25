@@ -1,103 +1,281 @@
+// exports.conformSignup = (username, securityKey) => {
+//   return `
+//  <!DOCTYPE html>
+// <html lang="en">
+// <head>
+//     <meta charset="UTF-8">
+//     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+//     <title>Verify Your Account</title>
+//     <style>
+//         * {
+//             margin: 0;
+//             padding: 0;
+//             box-sizing: border-box;
+//             font-family: Arial, sans-serif;
+//         }
+
+//         body {
+//             display: flex;
+//             justify-content: center;
+//             align-items: center;
+//             height: 100vh;
+//             background-color: #f4f4f4;
+//             flex-direction: column;
+//             text-align: center;
+//         }
+
+//         .container {
+//             background: #fff;
+//             padding: 30px;
+//             border-radius: 10px;
+//             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+//             text-align: center;
+//             max-width: 400px;
+//             width: 90%;
+//             margin-bottom: 20px;
+//         }
+
+//         h2 {
+//             color: #333;
+//             margin-bottom: 10px;
+//         }
+
+//         .username {
+//             font-size: 18px;
+//             font-weight: bold;
+//             color: #007BFF;
+//             margin-bottom: 10px;
+//         }
+
+//         p {
+//             color: #666;
+//             margin-bottom: 20px;
+//             font-size: 14px;
+//         }
+
+//         .verify-btn {
+//             display: inline-block;
+//             padding: 12px 20px;
+//             background: #007BFF;
+//             color: #fff;
+//             font-size: 16px;
+//             border: none;
+//             border-radius: 5px;
+//             text-decoration: none;
+//             transition: background 0.3s ease;
+//         }
+
+//         .verify-btn:hover {
+//             background: #0056b3;
+//         }
+
+//         .company-info {
+//             background: #fff;
+//             padding: 20px;
+//             border-radius: 10px;
+//             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+//             text-align: center;
+//             max-width: 400px;
+//             width: 90%;
+//         }
+
+//         .company-info h3 {
+//             color: #333;
+//             margin-bottom: 10px;
+//         }
+
+//         .company-info p {
+//             color: #666;
+//             font-size: 14px;
+//             margin-bottom: 5px;
+//         }
+
+//         @media (max-width: 480px) {
+//             .container, .company-info {
+//                 padding: 20px;
+//             }
+
+//             .verify-btn {
+//                 font-size: 14px;
+//                 padding: 10px 18px;
+//             }
+//         }
+//     </style>
+// </head>
+// <body>
+
+//     <div class="container">
+//         <h2>Verify Your Account</h2>
+//         <p class="username">Hello, <span id="user-name">${username}</span>!</p>
+//         <p>Click the button below to verify your email and activate your account.</p>
+//         <a href="http://192.168.1.38:5173/verify-mail?verificationKey=${securityKey}" class="verify-btn">Verify Account</a>
+//     </div>
+//     <div class="company-info">
+//         <h3>About Our Company</h3>
+//         <p><strong>Patiofy:</strong> Tech Solutions Inc.</p>
+//         <p><strong>Contact:</strong> support@Patiofy.com</p>
+//         <p><strong>Website:</strong> <a href="https://patiofy.comfortbikes.in/" style="color: #007BFF; text-decoration: none;">https://patiofy.comfortbikes.in/</a></p>
+//     </div>
+// </body>
+// </html>
+//   `;
+// };
+
 exports.conformSignup = (username, securityKey) => {
   return `
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Your Account</title>
+    <title>Account Verification | Patiofy</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
         }
 
         body {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
+            min-height: 100vh;
+            background-color: #f8fafc;
             flex-direction: column;
             text-align: center;
+            line-height: 1.6;
+            color: #334155;
         }
 
         .container {
-            background: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             text-align: center;
-            max-width: 400px;
+            max-width: 500px;
             width: 90%;
+            margin-bottom: 25px;
+            border-top: 4px solid #10b981;
+        }
+
+        .logo {
             margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 700;
+            color: #10b981;
         }
 
         h2 {
-            color: #333;
-            margin-bottom: 10px;
+            color: #0f172a;
+            margin-bottom: 15px;
+            font-size: 24px;
         }
 
         .username {
             font-size: 18px;
-            font-weight: bold;
-            color: #007BFF;
-            margin-bottom: 10px;
+            font-weight: 600;
+            color: #047857;
+            margin-bottom: 15px;
         }
 
         p {
-            color: #666;
+            color: #475569;
             margin-bottom: 20px;
-            font-size: 14px;
+            font-size: 15px;
         }
 
         .verify-btn {
             display: inline-block;
-            padding: 12px 20px;
-            background: #007BFF;
+            padding: 12px 30px;
+            background: #10b981;
             color: #fff;
             font-size: 16px;
+            font-weight: 600;
             border: none;
-            border-radius: 5px;
+            border-radius: 6px;
             text-decoration: none;
-            transition: background 0.3s ease;
+            transition: all 0.3s ease;
+            margin: 15px 0;
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
         }
 
         .verify-btn:hover {
-            background: #0056b3;
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .steps {
+            text-align: left;
+            margin: 25px 0;
+            padding-left: 20px;
+        }
+
+        .steps li {
+            margin-bottom: 10px;
+            color: #475569;
         }
 
         .company-info {
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             text-align: center;
-            max-width: 400px;
+            max-width: 500px;
             width: 90%;
+            border-top: 4px solid #10b981;
         }
 
         .company-info h3 {
-            color: #333;
-            margin-bottom: 10px;
+            color: #0f172a;
+            margin-bottom: 15px;
+            font-size: 20px;
         }
 
         .company-info p {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 5px;
+            color: #475569;
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .contact-link {
+            color: #10b981;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .contact-link:hover {
+            text-decoration: underline;
+        }
+
+        .footer-text {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 25px 0;
         }
 
         @media (max-width: 480px) {
             .container, .company-info {
-                padding: 20px;
+                padding: 25px;
+            }
+
+            h2 {
+                font-size: 22px;
             }
 
             .verify-btn {
-                font-size: 14px;
-                padding: 10px 18px;
+                font-size: 15px;
+                padding: 10px 25px;
             }
         }
     </style>
@@ -105,17 +283,39 @@ exports.conformSignup = (username, securityKey) => {
 <body>
 
     <div class="container">
-        <h2>Verify Your Account</h2>
-        <p class="username">Hello, <span id="user-name">${username}</span>!</p>
-        <p>Click the button below to verify your email and activate your account.</p>
-        <a href="https://patiofy.comfortbikes.in/verify-mail?verificationKey=${securityKey}" class="verify-btn">Verify Account</a>
+        <div class="logo">Patiofy</div>
+        <h2>Complete Your Account Verification</h2>
+        <p class="username">Hello, ${username}!</p>
+        <p>Thank you for joining Patiofy. To start using your account, please verify your email address by clicking the button below:</p>
+        
+        <a href="https://patiofy.comfortbikes.in/verify-mail?verificationKey=${securityKey}" class="verify-btn">Verify My Account</a>
+        
+        <p>This link will expire in 24 hours. If you didn't request this, please ignore this email.</p>
+        
+        <div class="divider"></div>
+        
+        <h3>Getting Started Guide</h3>
+        <ul class="steps">
+            <li>Verify your email to activate your account</li>
+            <li>Complete your profile setup</li>
+            <li>Explore our product catalog</li>
+        </ul>
     </div>
-
+    
     <div class="company-info">
-        <h3>About Our Company</h3>
-        <p><strong>Patiofy:</strong> Tech Solutions Inc.</p>
-        <p><strong>Contact:</strong> support@Patiofy.com</p>
-        <p><strong>Website:</strong> <a href="https://patiofy.comfortbikes.in/" style="color: #007BFF; text-decoration: none;">https://patiofy.comfortbikes.in/</a></p>
+        <h3>About Patiofy</h3>
+        <p>Patiofy is a leading e-commerce platform offering premium products with exceptional customer service.</p>
+        
+        <div class="divider"></div>
+        
+        <p><strong>Email Support:</strong> <a href="mailto:support@patiofy.com" class="contact-link">support@patiofy.com</a></p>
+        <p><strong>Website:</strong> <a href="https://patiofy.comfortbikes.in/" class="contact-link">https://patiofy.comfortbikes.in/</a></p>
+        <p><strong>Business Hours:</strong> Mon-Fri, 9AM-6PM</p>
+        
+        <p class="footer-text">
+            © 2023 Patiofy Tech Solutions Inc. All rights reserved.<br>
+            [1-17/25, RG colony], [Rajasthan], [India]
+        </p>
     </div>
 </body>
 </html>

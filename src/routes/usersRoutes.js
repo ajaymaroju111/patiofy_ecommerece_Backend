@@ -2,7 +2,9 @@ const express = require("express");
 const router = express.Router();
 const users = require("../models/userschema.js");
 const jwt = require('jsonwebtoken');
-const productPicsUpload = require("../middlewares/multer.js");
+const upload = require("../middlewares/multer.js");
+const userImage = upload.single('image');
+
 const {
   setNewPassword,
   signUp,
@@ -119,7 +121,7 @@ router.get("/verify", verify);
 router.post("/resend", resend);
 router.post("/signin", signIn);
 router.put("/update", authenticate, update);
-router.post("/profilepic", authenticate, uploadUserProfilePic);
+router.post("/profilepic", authenticate, userImage, uploadUserProfilePic);
 router.get("/me/:id", authenticate, getById);
 router.post("/password/forget", forgetPassword);
 router.post("/password/change", authenticate, changePassword);
