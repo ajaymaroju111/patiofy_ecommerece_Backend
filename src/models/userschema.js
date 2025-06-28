@@ -18,8 +18,9 @@ const userschema = new mongoose.Schema(
     },
     lastname: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
+      dafault: ''
     },
     email: {
       type: String,
@@ -68,6 +69,9 @@ const userschema = new mongoose.Schema(
       type: String,
       enum: ['user', 'admin'],
       default: 'user'
+    },
+    set_password_expiry: {
+      type: Date,
     },
     password_attempts: {
       type: Number,

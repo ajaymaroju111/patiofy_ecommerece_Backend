@@ -9,6 +9,7 @@ require("dotenv").config();
 const { v4: uuidv4 } = require("uuid");
 const rawUUID = uuidv4();
 const Razorpay = require("razorpay");
+const users = require("../models/userschema.js");
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_SECRET,
@@ -295,6 +296,22 @@ exports.makeOrder = async (req, res) => {
         error: "Bad Request",
       });
     }
+
+    const user_response = await users.findById(req.user._id);
+    if(!user_response){
+      return res.status(404).json({
+        success: false,
+        statuscode: 3,
+        message: "session expired, please login",
+        error: "UnAuthorized"
+      })
+    }
+
+    if(!user_response.phone || user_response.phone === undefined){
+      user_response.phone = phone;
+      await user_response.save();
+    }
+
     if (!total_pay) {
       return res.status(400).json({
         success: false,
@@ -310,6 +327,8 @@ exports.makeOrder = async (req, res) => {
         message: "Invalid or missing email address",
       });
     }
+
+    
 
     const totalPay = Number(total_pay);
 
@@ -458,6 +477,7 @@ exports.makeOrder = async (req, res) => {
           landmark: Blandmark,
         },
         email,
+        phone: phone,
         quantity: quantity,
         payment_mode: payment_mode,
         final_cost: finalCost,
@@ -566,6 +586,7 @@ exports.makeOrder = async (req, res) => {
           landmark: Blandmark,
         },
           email,
+          phone: phone,
           quantity,
           size: matrix.size,
           selling_cost: matrix.selling_price,

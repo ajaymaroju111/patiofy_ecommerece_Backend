@@ -27,7 +27,7 @@ components:
 security:
   - BearerAuth: []
 
-info:
+info: 
   title: Patiofy website Api
   description: API for patiofy website
   contact:
@@ -324,6 +324,119 @@ paths:
                   error:
                     type: string
                     example: Some server error details
+
+  /patiofy/auth/user/resendset:
+    post:
+      tags:
+        - users
+      summary: Resend password set link
+      description: Sends a password setup email to the user if their password is not already set.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+      responses:
+        '200':
+          description: Link sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statuscode:
+                    type: integer
+                    example: 4
+                  message:
+                    type: string
+                    example: link send to the email successfully
+        '400':
+          description: Email not provided
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: Email is required
+                  error:
+                    type: string
+                    example: Bad Request
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 2
+                  message:
+                    type: string
+                    example: user not found
+                  error:
+                    type: string
+                    example: Not Found
+        '402':
+          description: Password already set
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 3
+                  message:
+                    type: string
+                    example: Password has already been set, please login
+                  error:
+                    type: string
+                    example: Invalid Action
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 500
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Error message details
 
   /patiofy/auth/user/signin:
     post:
@@ -751,6 +864,105 @@ paths:
                   error:
                     type: string
                     example: Error message details
+
+  /patiofy/auth/user/password/setforget:
+    post:
+      tags:
+        - users
+      summary: Set or update a new password
+      description: Allows a user to set a new password using their email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - newpassword
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                newpassword:
+                  type: string
+                  format: password
+                  example: MyNewSecurePassword123!
+      responses:
+        '200':
+          description: Password updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statuscode:
+                    type: integer
+                    example: 4
+                  message:
+                    type: string
+                    example: password updated successfully, please login
+        '400':
+          description: Required fields missing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: all fields are required
+                  error:
+                    type: string
+                    example: Bad Request
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 2
+                  message:
+                    type: string
+                    example: User not found
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 500
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Detailed error message
 
   /patiofy/auth/user/password/change:
     post:
@@ -4459,6 +4671,115 @@ paths:
                     type: string
                     example: Error message
     
+  /patiofy/auth/admin/orders/requested/confirm/{id}:
+    put:
+      summary: Confirm order cancellation if it was requested by the user
+      tags:
+        - Admin - (Orders statistics)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the order to cancel
+          schema:
+            type: string
+            example: 665c7b129fd2ad59e0a1b2f3
+      responses:
+        '200':
+          description: Order cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statuscode:
+                    type: integer
+                    example: 4
+                  message:
+                    type: string
+                    example: order cancelled successfully
+        '400':
+          description: Invalid order ID format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: Invalid ID
+                  error:
+                    type: string
+                    example: Bad Request
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 2
+                  message:
+                    type: string
+                    example: order not found
+                  error:
+                    type: string
+                    example: Not Found
+        '402':
+          description: User did not request cancellation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succcess:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 3
+                  message:
+                    type: string
+                    example: user doesnot requested for cancel
+                  error:
+                    type: string
+                    example: Not Authorized
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 500
+                  message:
+                    type: string
+                    example: Intenal Server Error
+                  error:
+                    type: string
+                    example: Detailed error message
+
 #✅✅✅✅✅✅✅✅✅✅ user order calls ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
   /patiofy/auth/user/order/{id}:
@@ -4850,7 +5171,7 @@ paths:
                   message:
                     type: string
                     example: "Detailed error message"
-         
+
   /patiofy/auth/user/order/cancel/{id}:
     put:
       summary: Cancel an order by ID
@@ -5894,6 +6215,129 @@ paths:
                     type: string
                     example: Unexpected error occurred
 
+  /patiofy/auth/admin/category/{id}:
+    put:
+      summary: Update a category and update all related products using that category
+      tags:
+        - Category
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The MongoDB ObjectId of the category to update
+          schema:
+            type: string
+            example: 60f5a3c54f1a2c3d24e9bc4a
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - category_name
+              properties:
+                category_name:
+                  type: string
+                  description: New category name
+                  example: "Women Tops"
+      responses:
+        '200':
+          description: Category and associated products updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statuscode:
+                    type: integer
+                    example: 6
+                  message:
+                    type: string
+                    example: category updated successfully
+        '400':
+          description: Invalid ID or missing category name
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 2
+                  message:
+                    type: string
+                    example: category name is required
+                  error:
+                    type: string
+                    example: Bad Request
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 3
+                  message:
+                    type: string
+                    example: category does not exist
+                  error:
+                    type: string
+                    example: Not Found
+        '402':
+          description: Products update failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 5
+                  message:
+                    type: string
+                    example: products updation failed
+                  error:
+                    type: string
+                    example: Database error
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 500
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Some error message
+
+
 # ✅✅✅✅✅✅✅✅✅ Fabrics ✅✅✅✅✅✅✅✅✅✅
 
   /patiofy/auth/admin/fabric:
@@ -6052,6 +6496,254 @@ paths:
                     type: string
                     example: Unexpected error occurred
 
+  /patiofy/auth/admin/fabric/{id}:
+    put:
+      summary: Update fabric name and associated products
+      tags:
+        - Fabric
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the fabric to update
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fabric_name
+              properties:
+                fabric_name:
+                  type: string
+                  example: Cotton Premium
+      responses:
+        '200':
+          description: Fabric updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statuscode:
+                    type: integer
+                    example: 5
+                  message:
+                    type: string
+                    example: fabric updated successfully
+        '400':
+          description: Invalid ID or missing fabric name
+        '404':
+          description: Fabric not found
+        '402':
+          description: Product update failed
+        '500':
+          description: Internal Server Error
+
+# ✅✅✅✅✅✅✅✅ Blogs ✅✅✅✅✅✅✅✅✅
+  /patiofy/auth/user/blog/{id}:
+    get:
+      summary: Get blog by ID
+      tags:
+        - User - Blogs
+      
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the blog to retrieve
+          schema:
+            type: string
+            example: 665c7b129fd2ad59e0a1b2f3
+      responses:
+        '200':
+          description: Blog retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statuscode:
+                    type: integer
+                    example: 3
+                  message:
+                    type: string
+                    example: blog retrieved successfully
+                  data:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                        example: 665c7b129fd2ad59e0a1b2f3
+                      heading:
+                        type: string
+                        example: How to style your patio
+                      content:
+                        type: string
+                        example: Here are 5 quick tips...
+                      blogimage:
+                        type: string
+                        example: https://your-bucket.s3.amazonaws.com/blog-image.jpg
+                      userId:
+                        type: object
+                        description: The user who created the blog
+                        properties:
+                          _id:
+                            type: string
+                            example: 665c78919fd2ad59e0a1b111
+                          firstname:
+                            type: string
+                            example: John
+                          lastname:
+                            type: string
+                            example: Doe
+                          email:
+                            type: string
+                            example: john@example.com
+        '400':
+          description: Invalid blog ID format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: invalid ID
+                  error:
+                    type: string
+                    example: Bad Request
+        '404':
+          description: Blog not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 2
+                  message:
+                    type: string
+                    example: blog not found
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 500
+                  message:
+                    type: string
+                    example: Internal server error
+                  error:
+                    type: string
+                    example: Detailed error message
+
+  /patiofy/auth/user/blog/all:
+    get:
+      summary: Get all blogs
+      ttags:
+        - User - BlogS
+      responses:
+        '200':
+          description: List of all blogs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: blogs fetched successfully
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: 665c7b129fd2ad59e0a1b2f3
+                        heading:
+                          type: string
+                          example: Tips to Design a Cozy Patio
+                        content:
+                          type: string
+                          example: "Start with comfy cushions..."
+                        blogimage:
+                          type: string
+                          example: https://s3.amazonaws.com/mybucket/blog1.jpg
+                        userId:
+                          type: string
+                          example: 665c78919fd2ad59e0a1b111
+        '404':
+          description: No blogs found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: Blogs are empty
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Internal server error
+                  error:
+                    type: string
+                    example: Error message
+    
 # ✅✅✅✅✅✅✅ ratings ✅✅✅✅✅✅✅✅✅✅
 
   /patiofy/auth/products/review/{id}:
@@ -6349,12 +7041,423 @@ paths:
                     type: string
                     example: Internal Server Error
 
+# ✅✅✅✅✅✅✅✅ Blogs ✅✅✅✅✅✅✅✅✅✅
 
+  /patiofy/auth/admin/blog/create:
+    post:
+      summary: Create a new blog post
+      tags:
+        - Admin - Blogs
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - heading
+                - content
+                - blogimage
+              properties:
+                heading:
+                  type: string
+                  example: "How to style your patio for summer"
+                content:
+                  type: string
+                  example: "Here are 5 quick tips to style your outdoor space..."
+                blogimage:
+                  type: string
+                  format: binary
+                  description: Upload blog image (file)
+      responses:
+        '200':
+          description: Blog created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: blog created successfully
+        '400':
+          description: Missing fields or image
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: all fields are required
+                  error:
+                    type: string
+                    example: Bad Request
+        '405':
+          description: Database error while creating blog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 2
+                  message:
+                    type: string
+                    example: unable to create blog
+                  error:
+                    type: string
+                    example: Database error
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 500
+                  message:
+                    type: string
+                    example: Internal Server error
+                  error:
+                    type: string
+                    example: Some error message
 
-
-
-
-
+  /patiofy/auth/admin/blog/:id:
+    patch:
+      summary: Update blog by ID (heading/content only)
+      tags:
+        - Admin - Blogs
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the blog to update
+          schema:
+            type: string
+            example: 665c7b129fd2ad59e0a1b2f3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                heading:
+                  type: string
+                  example: "Updated Blog Title"
+                content:
+                  type: string
+                  example: "This is the updated blog content."
+      responses:
+        '200':
+          description: Blog updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: blog updated successfully
+        '400':
+          description: Invalid blog ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: invalid ID
+                  error:
+                    type: string
+                    example: Bad Request
+        '404':
+          description: Blog not found or update failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 2
+                  message:
+                    type: string
+                    example: blog not found or error in updation
+                  error:
+                    type: string
+                    example: Database error
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 500
+                  message:
+                    type: string
+                    example: Internal Server Error
+                  error:
+                    type: string
+                    example: Error message
+    delete:
+      summary: Delete blog by ID
+      tags:
+        - Admin - Blogs
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the blog to delete
+          schema:
+            type: string
+            example: 665c7b129fd2ad59e0a1b2f3
+      responses:
+        '200':
+          description: Blog deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statuscode:
+                    type: integer
+                    example: 3
+                  message:
+                    type: string
+                    example: blog deleted successfully
+                  data:
+                    type: object
+                    description: Deleted blog object
+        '400':
+          description: Invalid blog ID format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: invalid ID
+                  error:
+                    type: string
+                    example: Bad Request
+        '404':
+          description: Blog not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 2
+                  message:
+                    type: string
+                    example: blog not found
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 500
+                  message:
+                    type: string
+                    example: Internal server error
+                  error:
+                    type: string
+                    example: Error message
+    put:
+      summary: Update blog image by ID
+      tags:
+        - Admin - Blogs
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the blog to update the image for
+          schema:
+            type: string
+            example: 665c7b129fd2ad59e0a1b2f3
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - blogimage
+              properties:
+                blogimage:
+                  type: string
+                  format: binary
+                  description: The new image file to upload
+      responses:
+        '200':
+          description: Blog image updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statuscode:
+                    type: integer
+                    example: 3
+                  message:
+                    type: string
+                    example: blog image updated successfully
+                  data:
+                    type: object
+                    description: The updated blog object
+        '400':
+          description: Invalid blog ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: invalid ID
+                  error:
+                    type: string
+                    example: Bad Request
+        '401':
+          description: Blog image file is missing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: blog image is required
+                  error:
+                    type: string
+                    example: Bad Request
+        '404':
+          description: Blog not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 2
+                  message:
+                    type: string
+                    example: blog not found
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 500
+                  message:
+                    type: string
+                    example: Internal server error
+                  error:
+                    type: string
+                    example: Error details
+  
+  
 
 
 

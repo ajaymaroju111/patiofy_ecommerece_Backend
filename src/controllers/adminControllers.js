@@ -818,6 +818,56 @@ exports.viewAllCancelRequestedOrders = async (req, res) => {
   }
 };
 
+exports.confirmCancelOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return res.status(400).json({
+        success: false,
+        statuscode: 1,
+        message: "Invalid ID",
+        error: 'Bad Request',
+      })
+    }
+
+    const order_response = await orders.findById(id);
+    if(!order_response){
+      return res.status(404).json({
+        success: false,
+        statuscode: 2,
+        message: "order not found",
+        error: "Not Found"
+      })
+    }
+
+    if(order_response.status !== "requested_for_cancel"){
+      return res.status(402).json({
+        succcess: false,
+        statuscode: 3,
+        message: "user doesnot requested for cancel",
+        error: "Not Authorized"
+      })
+    }
+
+    order_response.status = "cancelled";
+    await order_response.save();
+
+    return res.status(200).json({
+      success: false,
+      statuscode: 4,
+      message: "order cancelled successfully",
+
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      statuscode: 500,
+      message: "Intenal Server Error",
+      error: error.message
+    })
+  }
+}
+
 //view all completed orders:
 exports.viewAllPendingOrders = async (req, res) => {
   try {
@@ -895,7 +945,7 @@ exports.getUserOrderById = async (req, res) => {
 
 exports.updateUserOrderById = async (req, res) => {
   try {
-    const id = req.params;
+    const { id } = req.params;
     const { quantity, status } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {

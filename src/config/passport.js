@@ -62,12 +62,7 @@
 //   }
 // });
 
-
-
 // module.exports = passport;
-
-
-
 
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
@@ -85,20 +80,17 @@ passport.use(
     async (accessToken, refreshToken, profile, done) => {
       try {
         let user = await users.findOne({
-          $or: [
-            { googleId: profile.id },
-            { email: profile.emails[0].value },
-          ],
+          $or: [{ googleId: profile.id }, { email: profile.emails[0].value }],
         });
 
         if (!user) {
-          const nameParts = profile.displayName.split(" ");
-          const firstName = nameParts[0];
-          const lastName = nameParts.slice(1).join(" ");
+          const nameParts = profile.displayName?.trim()?.split(" ") || [];
+          const firstName = nameParts[0] ;
+          const lastName = nameParts.slice(1).join(" ") || "";
 
           user = await users.create({
             googleId: profile.id,
-            email: profile.emails[0].value,
+            email: profile.emails?.[0]?.value || "",
             firstname: firstName,
             lastname: lastName,
             status: "active",
@@ -113,7 +105,7 @@ passport.use(
           { expiresIn: "1d" }
         );
 
-        return done(null, {user, token}); //pass token with the user 
+        return done(null, { user, token }); //pass token with the user
       } catch (error) {
         console.log("OAuth Error", error);
         return done(error, null);
@@ -139,11 +131,10 @@ passport.deserializeUser(async (obj, done) => {
 
     // Attach token back to the user object if needed
     const token = obj.token;
-    done(null, {user, token});
+    done(null, { user, token });
   } catch (err) {
     done(err);
   }
 });
-
 
 module.exports = passport;

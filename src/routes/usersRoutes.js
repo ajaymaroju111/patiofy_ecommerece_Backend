@@ -26,6 +26,7 @@ const {
   contactUs,
   resend,
   uploadUserProfilePic,
+  passwordsetresend,
 } = require("../controllers/userControllers.js");
 // const { ratingProduct } = require("../controllers/productsAuth.js");
 const {
@@ -33,6 +34,7 @@ const {
   authenticateifNeeded,
 } = require("../middlewares/authUser.js");
 const passport = require("passport");
+const { getBlogById, getallBlogs } = require("../controllers/blogscontrollers.js");
 
 //  Step 1: Google OAuth Login Route
 router.get(
@@ -117,13 +119,14 @@ router.get("/failed", (req, res) => {
 router.put("/google/:id", setNewPassword);
 router.post("/signup", signUp);
 router.get("/verify", verify);
-router.get("/verify", verify);
+router.get("/resendset", passwordsetresend);
 router.post("/resend", resend);
 router.post("/signin", signIn);
 router.put("/update", authenticate, update);
 router.post("/profilepic", authenticate, userImage, uploadUserProfilePic);
 router.get("/me/:id", authenticate, getById);
 router.post("/password/forget", forgetPassword);
+router.put("/password/setforget", setNewPassword);
 router.post("/password/change", authenticate, changePassword);
 router.put("/password/setnew", setPassword);
 router.delete("/delete", authenticate, deleteUser);
@@ -138,5 +141,9 @@ router.delete("/address/:id", authenticate, deleteAddress);
 
 //Contact_Us :
 router.post("/query", authenticateifNeeded, contactUs);
+
+// ✅✅✅✅✅✅✅✅ Blogs  ✅✅✅✅✅✅✅✅✅
+router.get('/blog/:id',  getBlogById);
+router.get('/blog/all', getallBlogs);
 
 module.exports = router;

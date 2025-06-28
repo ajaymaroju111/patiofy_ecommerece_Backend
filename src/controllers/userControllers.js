@@ -13,6 +13,7 @@ const {
   getSuccessMark,
   sessionExpired,
   userNotFound,
+  setNewPasswordTemplate,
 } = require("../utils/emailTemplates.js");
 const { default: mongoose, mongo } = require("mongoose");
 const carts = require("../models/cartschema.js");
@@ -24,30 +25,21 @@ const ProductMatrix = require("../models/productmatrixschema.js");
 
 //set password after google oauth signup :
 exports.setNewPassword = async (req, res) => {
-  const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(401).json({
-      success: false,
-      statuscode: 1,
-      message: "Invalid ID",
-      error: "Bad Request",
-    });
-  }
-  const { newpassword } = req.body;
-  if (!newpassword) {
+  const { newpassword, email } = req.body; 
+  if (!newpassword || !email) {
     return res.status(400).json({
       success: false,
-      statuscode: 2,
-      message: "password is required",
+      statuscode: 1,
+      message: "all fields are required",
       error: "Bad Request",
     });
   }
   try {
-    const user_response = await users.findById(id);
+    const user_response = await users.findOne({ email }).select('password email');
     if (!user_response) {
       return res.status(404).json({
         success: false,
-        statuscode: 3,
+        statuscode: 2,
         message: "User not found",
         error: "Not Found",
       });
@@ -57,7 +49,7 @@ exports.setNewPassword = async (req, res) => {
     return res.status(200).json({
       success: true,
       statuscode: 4,
-      message: "password updated successfully",
+      message: "password updated successfully, please login",
     });
   } catch (error) {
     return res.status(500).json({
@@ -148,7 +140,7 @@ exports.signUp = async (req, res) => {
     return res.status(200).json({
       success: true,
       message:
-        "A verification email has been sent. Please check your inbox to verify your email address.",
+        "A verification email has been sent. Please check your inbox.",
       statuscode: 7,
     });
   } catch (error) {
@@ -196,6 +188,61 @@ exports.resend = async (req, res) => {
     return res.status(200).json({
       success: true,
       statuscode: 3,
+      message: "link send to the email successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      statuscode: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+//resend verification link for the set a new password :
+exports.passwordsetresend = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({
+      success: false,
+      statuscode: 1,
+      message: "Email is required",
+      error: "Bad Request",
+    });
+  }
+  try {
+    const user_response = await users.findOne({ email: email }).select('password set_password_expiry googleId');
+    if (!user_response) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 2,
+        message: "user not found",
+        error: "Not Found",
+      });
+    }
+    if(user_response.password){
+      return res.status(402).json({
+        success: false,
+        statuscode: 3,
+        message: "Password has already been set, please login",
+        error: "Invalid Action"
+      })
+    }
+    const decodedGoogleId = Buffer.from(
+      user_response.googleId.toString(),
+      "utf-8"
+    ).toString("base64");
+    await sendEmail({
+      to: user_response.email,
+      subject: "Set Password link ",
+      text: setNewPasswordTemplate(decodedGoogleId, user_response.firstname),
+    });
+    user_response.set_password_expiry = Date.now() + 24 * 60 * 60 * 1000;
+    await user_response.save();
+    return res.status(200).json({
+      success: true,
+      statuscode: 4,
       message: "link send to the email successfully",
     });
   } catch (error) {
@@ -268,7 +315,7 @@ exports.verify = async (req, res) => {
   }
 };
 
-//user sign in
+//user sign in :
 exports.signIn = async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -293,12 +340,12 @@ exports.signIn = async (req, res) => {
       .findOne({
         email: email,
       })
-      .select("password firstname lastname accountType phone email");
+      .select("password firstname lastname accountType phone email googleId status");
     if (!user_respose) {
       return res.status(401).json({
         success: false,
         statuscode: 3,
-        message: "Incorrect Email",
+        message: "Account not found, please register",
         error: "Bad Request",
       });
     }
@@ -312,38 +359,57 @@ exports.signIn = async (req, res) => {
       });
     }
 
-    if (user_respose.password === undefined || !user_respose.password) {
+    if (user_respose.status !== "active") {
       return res.status(401).json({
         success: false,
         statuscode: 5,
+        message: "Account not verified, please verify",
+        error: "Not Authorized",
+      });
+    }
+
+    if (user_respose.password === undefined || !user_respose.password) {
+      if (user_respose.googleId !== undefined) {
+        const decodedGoogleId = Buffer.from(
+          user_respose.googleId.toString(),
+          "utf-8"
+        ).toString("base64");
+        await sendEmail({
+          to: user_respose.email,
+          subject: "Set Password link ",
+          text: setNewPasswordTemplate(decodedGoogleId, user_respose.firstname),
+        });
+        user_respose.set_password_expiry = Date.now() + 24 * 60 * 60 * 1000;
+        await user_respose.save();
+        return res.status(404).json({
+          success: false,
+          statuscode: 6,
+          message: "Password not set, please check your inbox !",
+        });
+      }
+      return res.status(401).json({
+        success: false,
+        statuscode: 7,
         message: "password not set",
-        error: "Bad Request",
+        error: "UnAuthorized",
       });
     }
     const isValidPassword = await user_respose.comparePassword(password);
     if (!isValidPassword) {
       return res.status(401).json({
         success: false,
-        statuscode: 6,
+        statuscode: 8,
         message: "password doesn't match",
         error: "Bad Request",
       });
     }
 
-    if (user_respose.status === "inactive") {
-      return res.status(402).json({
-        success: false,
-        statuscode: 7,
-        message: "Account is Inactive please verify",
-        error: "Bad Request",
-      });
-    }
     const token = generateUserToken(user_respose);
     user_respose.verify_expiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
     await user_respose.save();
     return res.status(200).json({
       success: true,
-      statuscode: 8,
+      statuscode: 10,
       message: "login successfully",
       JWTtoken: token,
       username: user_respose.firstname + " " + user_respose.lastname,
@@ -452,8 +518,9 @@ exports.forgetPassword = async (req, res) => {
 //set a new password after forget password link :
 exports.setPassword = async (req, res) => {
   try {
-    const { email, newpassword } = req.body;
-    if (!email || !newpassword) {
+    const { decodedGoogleId } = req.query;
+    const { newpassword } = req.body;
+    if (!decodedGoogleId || !newpassword) {
       return res.status(400).json({
         success: false,
         statuscode: 1,
@@ -461,9 +528,19 @@ exports.setPassword = async (req, res) => {
         error: "Bad Request",
       });
     }
+    const decodedId = Buffer.from(decodedGoogleId, "base64").toString("utf-8");
+    if (!decodedId) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 1,
+        message: "Authentication code not found",
+        error: "Not Found",
+      });
+    }
+
     const user_response = await users
-      .findOne({ email })
-      .select("password, _id");
+      .findOne({ googleId: decodedId })
+      .select("password _id set_password_expiry");
     if (!user_response) {
       return res.status(404).json({
         success: false,
@@ -472,12 +549,20 @@ exports.setPassword = async (req, res) => {
         error: "Not Found",
       });
     }
+    if(Date.now() > user_response.set_password_expiry){
+      return res.status(400).json({
+        success: false,
+        statuscode: 3,
+        message: "time expired, please resend link",
+        error: "Bad Request"
+      })
+    }
     user_response.password = newpassword;
     await user_response.save();
     return res.status(200).json({
       success: true,
-      statuscode: 3,
-      message: "Your password has been updated. Please log in.",
+      statuscode: 4,
+      message: "Your password updated, please login !",
     });
   } catch (error) {
     return res.status(500).json({
@@ -805,6 +890,7 @@ exports.addAddress = async (req, res) => {
       state: state,
       country: country,
       pincode: pincode,
+      _id: req.user._id,
     });
 
     if (isExisted_response) {
@@ -1027,6 +1113,23 @@ exports.deleteAddress = async (req, res) => {
       });
     }
 
+    const deleted_response1 = await userAddresses.findById(id);
+    if (!deleted_response1) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 3,
+        message: "address not found",
+      });
+    }
+
+    if(deleted_response1.isDefault === true){
+      return res.status(403).json({
+        success: false,
+        statuscode: 4,
+        message: "default address cannot be deleted",
+        error: "Not Authorized"
+      })
+    }
     const deleted_response = await userAddresses.findByIdAndDelete(id);
     if (!deleted_response) {
       return res.status(404).json({

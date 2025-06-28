@@ -1062,36 +1062,38 @@ exports.findBestSellerProducts = async (req, res) => {
 };
 
 //search products - name
+// search products - name (case-sensitive)
 exports.searchProducts = async (req, res) => {
   try {
-    const query = req.query.q;
-    const output = await products
+    const query = req.query.q || '';
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape regex chars
+
+    const output_response = await products
       .find({
         $or: [
-          { name: { $regex: query, $options: "i" } },
-          // { description : {$regex : query, $options : 'i'}},
-          // {category : {$regex : query, $options : 'i'}},
-          // {tags : {$regex : query, $options : 'i'}}
+          { name: { $regex: escapedQuery, $options: "i" } } // removed $options: "i" for case-sensitive match
         ],
       })
       .populate({
         path: "product_Matrix",
       })
       .exec();
-    if (!output || (await output).length === 0) {
+
+    if (!output_response || output_response.length === 0) {
       return res.status(404).json({
         success: false,
         message: "products not found",
         error: "Not Found",
       });
     }
+
     return res.status(200).json({
       success: true,
-      message: "search products recieved successfully",
-      data: output,
+      message: "search products received successfully",
+      data: output_response,
     });
+
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -1099,6 +1101,7 @@ exports.searchProducts = async (req, res) => {
     });
   }
 };
+
 
 //*****************        PRODUCT CART ROUTES               ***********************/
 
@@ -1805,6 +1808,10 @@ exports.deleteProductMatrix = async (req, res) => {
 //get all ratings of a product :
 exports.getallReviewsByProduct = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -1816,7 +1823,11 @@ exports.getallReviewsByProduct = async (req, res) => {
     }
     const allreviews_response = await reviews
       .find({ productId: id })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .populate('userId','firstname lastname')
+      .limit(limit)
+      .skip(skip)
+      .exec();
 
     if (!allreviews_response.length) {
       return res.status(404).json({
@@ -1826,11 +1837,15 @@ exports.getallReviewsByProduct = async (req, res) => {
       });
     }
 
+    const total = allreviews_response.length;
+
     return res.status(200).json({
       success: true,
       statuscode: 3,
+      page,
+      totalPages: Math.ceil(total / limit),
       count: reviews.length,
-      reviews,
+      allreviews_response,
     });
   } catch (error) {
     return res.status(500).json({

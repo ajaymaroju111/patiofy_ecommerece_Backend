@@ -23,11 +23,14 @@ const orderSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: [
-        "pending",
+        "in_progress",
         "confirmed",
-        "cancelled",
+        "shipped",
         "requested_for_cancel",
-        "returned",
+        "out_for_delivery",
+        "delivered",
+        "cancelled",
+        "pending"
       ],
       default: "pending",
     },
@@ -114,6 +117,9 @@ const orderSchema = new mongoose.Schema(
       type: Number,
     },
     selling_cost: {
+      type: Number,
+    },
+    phone: {
       type: Number,
     },
     final_cost: {

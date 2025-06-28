@@ -26,6 +26,7 @@ const {
   adminSignup,
   searchUsingInvoiceNumber,
   viewallContactUsRequests,
+  confirmCancelOrder,
 } = require('../controllers/adminControllers.js')
 const {
   authenticate,
@@ -48,8 +49,9 @@ const {
   getProductMatrixById,
   deleteProductMatrix,
 } = require('../controllers/productControllers.js');
-const { createCategory, getAllCategories } = require('../controllers/categoryControllers.js');
-const { getallFabrices, createFabric } = require('../controllers/fabricControllers.js');
+const { createCategory, getAllCategories, updateCategory } = require('../controllers/categoryControllers.js');
+const { getallFabrices, createFabric, updateFabrics } = require('../controllers/fabricControllers.js');
+const { createBlog, updateBlogbyId, getBlogById, deleteBlogById, getallBlogs, updateblogPicture } = require('../controllers/blogscontrollers.js');
 
 
 // ✅✅✅✅✅✅✅✅✅✅✅✅✅ users ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
@@ -94,6 +96,7 @@ router.post('/orders/invoice', adminAuthenticate, isAdmin, searchUsingInvoiceNum
 router.get('/orders/recent', adminAuthenticate, isAdmin, viewAllRecentOrders);
 router.get('/orders/refund', adminAuthenticate, isAdmin, viewAllRefundedOrders);
 router.get('/orders/all', adminAuthenticate, isAdmin, viewAllUsersOrders);
+router.put('/orders/requested/confirm/:id', adminAuthenticate, isAdmin, confirmCancelOrder);
 router.get('/orders/requested/cancel', adminAuthenticate, isAdmin, viewAllCancelRequestedOrders);
 router.get('/orders/pending', adminAuthenticate, isAdmin, viewAllPendingOrders);
 
@@ -115,10 +118,17 @@ router.get('/view',  adminAuthenticate, isAdmin, getById);
 
 router.post('/category',adminAuthenticate, isAdmin, createCategory);
 router.get('/category',adminAuthenticate, isAdmin, getAllCategories);
+router.put('/category/:id',adminAuthenticate, isAdmin, updateCategory);
 
 // ✅✅✅✅✅✅✅✅✅✅ Fabrics ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 router.post('/fabric',adminAuthenticate, isAdmin, createFabric);
 router.get('/fabric',adminAuthenticate, isAdmin, getallFabrices);
+router.put('/fabric/:id',adminAuthenticate, isAdmin, updateFabrics);
 
+// ✅✅✅✅✅✅✅✅✅ blogs ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
+router.post('/blog/create',adminAuthenticate, isAdmin,createBlog);
+router.patch('/blog/:id',adminAuthenticate, isAdmin, updateBlogbyId);
+router.delete('/blog/:id', adminAuthenticate, isAdmin, deleteBlogById);
+router.put('/blog/:id', adminAuthenticate, isAdmin, updateblogPicture);
 
 module.exports = router;

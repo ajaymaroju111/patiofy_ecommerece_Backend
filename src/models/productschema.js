@@ -26,7 +26,7 @@ const productschema = new mongoose.Schema(
     tags: {
       type: [String],
       required: true,
-      lowercase: true,
+      set: tags => tags.map(tag => tag.toLowerCase()),
     },
     stock: {
       type: String,
