@@ -532,6 +532,9 @@ exports.updateUser = async (req, res) => {
 exports.filterUsers = async (req, res) => {
   try {
     const { value } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
     if (!value || value.trim() === "") {
       return res.status(400).json({
@@ -560,7 +563,12 @@ exports.filterUsers = async (req, res) => {
       orConditions.push({ status: searchValue.toLowerCase() });
     }
 
-    const userList = await users.find({ $or: orConditions }).sort({ createdAt: -1 });
+    const userList = await users
+      .find({ $or: orConditions })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .exec();
 
     if (!userList || userList.length === 0) {
       return res.status(404).json({
@@ -570,9 +578,11 @@ exports.filterUsers = async (req, res) => {
         error: "Not Found",
       });
     }
-
+    const total = await users.countDocuments();
     return res.status(200).json({
       success: true,
+      page: page,
+      totalPages: Math.ceil(total/limit),
       message: "Users fetched successfully",
       count: userList.length,
       data: userList,
@@ -585,7 +595,6 @@ exports.filterUsers = async (req, res) => {
     });
   }
 };
-
 
 // ✅✅✅✅✅✅✅✅✅✅ Products : ✅✅✅✅✅✅✅✅✅✅✅✅✅
 
@@ -1055,10 +1064,10 @@ exports.confirmCancelOrder = async (req, res) => {
       order_response.status = "cancelled";
       await order_response.save();
       return res.status(200).json({
-      success: false,
-      statuscode: 4,
-      message: "request accepted successfully",
-    });
+        success: false,
+        statuscode: 4,
+        message: "request accepted successfully",
+      });
     }
 
     order_response.status = "confirmed";
@@ -1159,6 +1168,9 @@ exports.viewAllPendingOrders = async (req, res) => {
 exports.searchOrders = async (req, res) => {
   try {
     const { value } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
     if (!value || value.trim() === "") {
       return res.status(400).json({
@@ -1191,7 +1203,7 @@ exports.searchOrders = async (req, res) => {
       "out_for_delivery",
       "delivered",
       "cancelled",
-      "pending"
+      "pending",
     ];
 
     if (allowedPaymentModes.includes(searchValue.toLowerCase())) {
@@ -1202,9 +1214,16 @@ exports.searchOrders = async (req, res) => {
       orConditions.push({ status: searchValue.toLowerCase() });
     }
 
-    const ordersList_response = await orders.find({
-      $or: orConditions,
-    }).sort({ createdAt: -1 });
+    const ordersList_response = await orders
+      .find({
+        $or: orConditions,
+      })
+      .populate("productId")
+      .populate("userId")
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip(skip)
+      .exec();
 
     if (!ordersList_response || ordersList_response.length === 0) {
       return res.status(404).json({
@@ -1214,9 +1233,11 @@ exports.searchOrders = async (req, res) => {
         error: "Not Found",
       });
     }
-
+    const total = await orders.countDocuments();
     return res.status(200).json({
       success: true,
+      page: page,
+      totalPages: Math.ceil(total/limit),
       message: "Orders fetched successfully",
       data: ordersList_response,
     });
@@ -1228,8 +1249,6 @@ exports.searchOrders = async (req, res) => {
     });
   }
 };
-
-
 
 // ✅✅✅✅✅✅✅✅✅ Action on User-Orders ✅✅✅✅✅✅✅✅✅✅
 
