@@ -1,6 +1,7 @@
 const { default: mongoose } = require("mongoose");
 const fabrics = require("../models/fabricschema");
 const products = require('../models/productschema');
+
 //create a new fabric : 
 exports.createFabric = async(req, res) => {
   try {
@@ -132,4 +133,4 @@ exports.updateFabrics = async(req, res) => {
       error: error.message,
     })
   }
-}
+};

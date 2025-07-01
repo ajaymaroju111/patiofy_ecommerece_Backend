@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../middlewares/multer.js');
-const productmages = upload.array('images', 10);
+const {ProductsImages, profileImages, blogImages} = require('../middlewares/multer.js');
+const productmages = ProductsImages.array('images', 10);
+const profileImage = profileImages.single('image');
+const blogImage = blogImages.single('image');
+
 const {
   setDiscountOnProduct,
   setUserInactive,
@@ -27,6 +30,12 @@ const {
   searchUsingInvoiceNumber,
   viewallContactUsRequests,
   confirmCancelOrder,
+  uploadadminProfilePic,
+  adminGetById,
+  updateUser,
+  CancelOrder,
+  searchOrders,
+  filterUsers,
 } = require('../controllers/adminControllers.js')
 const {
   authenticate,
@@ -43,11 +52,13 @@ const {
   updateProduct,
   deleteProduct,
   filterProducts,
-  updateImages,
   createProductMatrix,
   updateProductMatrix,
   getProductMatrixById,
   deleteProductMatrix,
+  addImagesToProduct,
+  deleteSingleImage,
+  replaceImages,
 } = require('../controllers/productControllers.js');
 const { createCategory, getAllCategories, updateCategory } = require('../controllers/categoryControllers.js');
 const { getallFabrices, createFabric, updateFabrics } = require('../controllers/fabricControllers.js');
@@ -56,8 +67,10 @@ const { createBlog, updateBlogbyId, getBlogById, deleteBlogById, getallBlogs, up
 
 // ✅✅✅✅✅✅✅✅✅✅✅✅✅ users ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 router.get('/users',adminAuthenticate, isAdmin, viewAllUsers);
-router.put('/user/:id',authenticate, isAdmin, setUserInactive);
-router.get('/user/:id',authenticate, isAdmin, viewUser);
+router.get('/users/search',adminAuthenticate, isAdmin, filterUsers);
+router.put('/user/:id',adminAuthenticate, isAdmin, setUserInactive);
+router.get('/user/:id',adminAuthenticate, isAdmin, viewUser);
+router.patch('/user/:id',adminAuthenticate, isAdmin, updateUser);
 
 
 // ✅✅✅✅✅✅✅✅✅✅✅ products ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
@@ -68,7 +81,10 @@ router.get('/allproducts', adminAuthenticate, isAdmin, getAllProductsForAdmim);
 router.get('/products/filter', adminAuthenticate, isAdmin, filterProducts);
 router.get('/product/:id', adminAuthenticate, isAdmin, getProductByIdForAdmin);
 router.patch('/product/:id', adminAuthenticate, isAdmin, updateProduct);
-router.put('/product/:id', adminAuthenticate, isAdmin, productmages, updateImages);
+// router.put('/product/replaceall/:id', adminAuthenticate, isAdmin, productmages, updateImages);
+router.patch('/product/image/replace/:Id', adminAuthenticate, isAdmin, productmages, replaceImages);
+router.delete('/product/image/delete/:Id', adminAuthenticate, isAdmin, deleteSingleImage);
+router.post('/product/image/:Id', adminAuthenticate, isAdmin, productmages, addImagesToProduct);
 router.delete('/product/:id', adminAuthenticate, isAdmin, deleteProduct);
 
 // ✅✅✅✅✅✅✅✅✅✅ Product matrix ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
@@ -97,22 +113,25 @@ router.get('/orders/recent', adminAuthenticate, isAdmin, viewAllRecentOrders);
 router.get('/orders/refund', adminAuthenticate, isAdmin, viewAllRefundedOrders);
 router.get('/orders/all', adminAuthenticate, isAdmin, viewAllUsersOrders);
 router.put('/orders/requested/confirm/:id', adminAuthenticate, isAdmin, confirmCancelOrder);
+router.put('/orders/cancel/:id', adminAuthenticate, isAdmin, CancelOrder);
 router.get('/orders/requested/cancel', adminAuthenticate, isAdmin, viewAllCancelRequestedOrders);
 router.get('/orders/pending', adminAuthenticate, isAdmin, viewAllPendingOrders);
+router.get('/orders/search', adminAuthenticate, isAdmin, searchOrders);
 
 // ✅✅✅✅✅✅✅✅✅✅✅✅✅ payments ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
 router.get('/payment/success', adminAuthenticate, isAdmin, viewAllSuccessPaymentOrders);
 router.get('/payment/pending', adminAuthenticate, isAdmin, viewAllUnSuccessPaymentOrders);
 
-//✅✅✅✅✅✅✅✅✅✅✅✅ Admin useres ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
+//✅✅✅✅✅✅✅✅✅✅✅✅ Admin profile ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
 router.get('/myProducts',adminAuthenticate, isAdmin, myProducts);
 router.post('/signup', adminSignup);
 router.post('/login',  adminLogin);
 router.patch('/update',  adminAuthenticate, isAdmin, adminProfileUpdate);
 router.put('/password/update',  adminAuthenticate, isAdmin, changePassword);
-router.get('/view',  adminAuthenticate, isAdmin, getById);
+router.get('/view',  adminAuthenticate, isAdmin, adminGetById);
+router.post('/profile', adminAuthenticate, isAdmin, profileImage, uploadadminProfilePic)
 
 // ✅✅✅✅✅✅✅✅✅✅ categories ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
@@ -126,9 +145,11 @@ router.get('/fabric',adminAuthenticate, isAdmin, getallFabrices);
 router.put('/fabric/:id',adminAuthenticate, isAdmin, updateFabrics);
 
 // ✅✅✅✅✅✅✅✅✅ blogs ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
-router.post('/blog/create',adminAuthenticate, isAdmin,createBlog);
+router.post('/blog/create',adminAuthenticate, isAdmin, blogImage, createBlog);
+router.get('/blog/all',adminAuthenticate, isAdmin, getallBlogs);
 router.patch('/blog/:id',adminAuthenticate, isAdmin, updateBlogbyId);
+router.get('/blog/:id',adminAuthenticate, isAdmin, getBlogById);
 router.delete('/blog/:id', adminAuthenticate, isAdmin, deleteBlogById);
-router.put('/blog/:id', adminAuthenticate, isAdmin, updateblogPicture);
+router.put('/blog/:id', adminAuthenticate, isAdmin, blogImage, updateblogPicture);
 
 module.exports = router;

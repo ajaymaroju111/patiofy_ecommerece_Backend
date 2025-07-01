@@ -669,6 +669,7 @@ exports.cancelOrder = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
+      statuscode: 500,
       message: "Internal Server Error",
       error: error.message,
     });

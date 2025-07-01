@@ -16,6 +16,18 @@ const blogsSchema = new mongoose.Schema({
   content: {
     type : String,
     required: true,
+  },
+  facebook: {
+    type: String,
+    default: null
+  },
+  twitter: {
+    type: String,
+    default: null
+  },
+  instagram: {
+    type: String,
+    default: null
   }
 },{timestamps: true});
 

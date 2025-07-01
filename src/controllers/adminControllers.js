@@ -45,13 +45,13 @@ exports.adminSignup = async (req, res) => {
       password,
       status: "active",
     });
-    if(!User_response){
+    if (!User_response) {
       return res.status(404).json({
         success: false,
         statuscode: 4,
         message: "unable to create account, please contact Patiofy Team",
-        error: "Database error"
-      })
+        error: "Database error",
+      });
     }
 
     return res.status(200).json({
@@ -168,26 +168,31 @@ exports.changePassword = async (req, res) => {
         error: "all fields are required",
       });
     }
-    const user_response = await admins.findById(req.user._id).select("password");
+    const user_response = await admins
+      .findById(req.user._id)
+      .select("password");
     if (!user_response) {
       return res.status(404).json({
         success: false,
         message: "user does not exist",
       });
     }
-    const isPassword_response = await user_response.comparePassword(oldpassword);
+    const isPassword_response = await user_response.comparePassword(
+      oldpassword
+    );
     if (!isPassword_response) {
       return res.status(401).json({
         success: false,
-        message: "incorrect password",
+        message: "old password doesnot match",
         error: "Bad Request",
       });
     }
     user_response.password = newpassword;
     await user_response.save();
-    return res
-      .status(204)
-      .json({ message: "password updated successfully, Please Login" });
+    return res.status(200).json({
+      success: true,
+      message: "password updated successfully, Please Login",
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -199,13 +204,14 @@ exports.changePassword = async (req, res) => {
 
 exports.adminProfileUpdate = async (req, res) => {
   try {
-    const allowed = ["firstname", "lastname", "phone", "Address"];
+    const allowed = ["firstname", "lastname", "phone"];
     const updatedData = {};
     allowed.forEach((field) => {
       if (req.body[field] !== undefined) {
         updatedData[field] = req.body[field];
       }
     });
+
     const updatedUser_response = await admins.findByIdAndUpdate(
       req.user._id,
       updatedData,
@@ -214,14 +220,16 @@ exports.adminProfileUpdate = async (req, res) => {
         runValidators: true,
       }
     );
-    if(!updatedUser_response){
+
+    if (!updatedUser_response) {
       return res.status(404).json({
         success: false,
         statuscode: 1,
         message: "account not found or updated",
         error: "Not Found",
-      })
+      });
     }
+
     return res.status(200).json({
       success: true,
       statuscode: 2,
@@ -258,11 +266,17 @@ exports.uploadadminProfilePic = async (req, res) => {
       });
     }
     if (user_response.profileUrl) {
-      const key = decodeURIComponent(new URL(url).pathname).substring(1);
+      const key = decodeURIComponent(
+        new URL(user_response.profileUrl).pathname
+      ).substring(1);
       await deleteOldImages(key);
     }
     user_response.profileUrl = profilePic;
     await user_response.save();
+    return res.status(200).json({
+      success: true,
+      message: "Profile image updated successfully",
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -272,9 +286,45 @@ exports.uploadadminProfilePic = async (req, res) => {
   }
 };
 
+exports.adminGetById = async (req, res) => {
+  try {
+    const id = req.user._id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        statuscode: 1,
+        message: "Invalid user ID format",
+        error: "Bad Request",
+      });
+    }
+    const user_response = await admins.findById(req.user._id);
+    if (!user_response) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 2,
+        message: "user does not exist",
+        error: "Not Found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      statuscode: 3,
+      message: "user retrieved successfully",
+      user_response,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      statuscode: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
 // ✅✅✅✅✅✅✅✅✅✅ Action on  User ✅✅✅✅✅✅✅✅✅✅✅
 
-//set a user account inactive : 
+//set a user account inactive :
 exports.setUserInactive = async (req, res) => {
   try {
     const { id } = req.params;
@@ -283,9 +333,10 @@ exports.setUserInactive = async (req, res) => {
         success: false,
         statuscode: 1,
         message: "Invalid Id",
-        error: "Bad Request"
+        error: "Bad Request",
       });
     }
+    const { blocked } = req.body;
     if (req.user._id === id) {
       return res.status(401).json({
         success: false,
@@ -300,23 +351,38 @@ exports.setUserInactive = async (req, res) => {
         success: false,
         statuscode: 3,
         message: "user not found",
-        error: "Not Found"
+        error: "Not Found",
       });
     }
-    if (user_response.status === "Blocked") {
+    if (blocked === true) {
+      if (user_response.status === "Blocked") {
+        res.status(204).json({
+          success: false,
+          statuscode: 4,
+          message: "account already in Blocked state",
+          error: "No Content",
+        });
+      }
+      (user_response.status = "Blocked"), await user_response.save();
+      return res.status(200).json({
+        success: true,
+        statuscode: 5,
+        message: "user account Blocked successfully",
+      });
+    }
+    if (user_response.status !== "Blocked") {
       res.status(204).json({
         success: false,
         statuscode: 4,
-        message: "account already in Blocked state",
+        message: "account already in unblocked",
         error: "No Content",
       });
     }
-    (user_response.status = "Blocked"), 
-    await user_response.save();
+    (user_response.status = "active"), await user_response.save();
     return res.status(200).json({
       success: true,
       statuscode: 5,
-      message: "user account set terminate successfully",
+      message: "user account unblocked successfully",
     });
   } catch (error) {
     return res.status(500).json({
@@ -328,11 +394,11 @@ exports.setUserInactive = async (req, res) => {
   }
 };
 
-//view all users : 
+//view all users :
 exports.viewAllUsers = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 2;
+    const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const allusers = await users
       .find({ accountType: { $ne: "admin" } })
@@ -345,7 +411,7 @@ exports.viewAllUsers = async (req, res) => {
         message: "products not found",
       });
     }
-    const total = allusers.length;
+    const total = await users.countDocuments();
     return res.status(200).json({
       currentPage: page,
       totalPages: Math.ceil(total / limit),
@@ -395,7 +461,133 @@ exports.viewUser = async (req, res) => {
   }
 };
 
-// ✅✅✅✅✅✅✅✅✅✅ Products  ✅✅✅✅✅✅✅✅✅✅✅✅✅
+exports.updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        succcess: false,
+        statuscode: 1,
+        message: "invalid ID",
+      });
+    }
+    const allowedFields = ["firstname", "lastname", "phone"];
+    const updatedData = {};
+
+    allowedFields.forEach((field) => {
+      const value = req.body[field];
+      if (value !== undefined) {
+        if (
+          field === "firstname" &&
+          (typeof value !== "string" || value.trim() === "")
+        ) {
+          return res.status(400).json({
+            succcess: false,
+            statuscode: 2,
+            message: "firstname is cannot be empty",
+            error: "Bad Request",
+          });
+        }
+        updatedData[field] = value;
+      }
+    });
+
+    const user_response = await users.findById(id);
+    if (!user_response) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 2,
+        message: "Account not found",
+        error: "Not Found",
+      });
+    }
+    const update_response = await users.findByIdAndUpdate(id, updatedData, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!update_response) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 3,
+        message: "error in user updation",
+        error: "Database error",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "user updated successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      statuscode: 500,
+      message: "Intenal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+exports.filterUsers = async (req, res) => {
+  try {
+    const { value } = req.query;
+
+    if (!value || value.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        statuscode: 0,
+        message: "Search value is required",
+        error: "Bad Request",
+      });
+    }
+
+    const searchValue = value.trim();
+    const orConditions = [
+      { firstname: { $regex: searchValue, $options: "i" } },
+      { lastname: { $regex: searchValue, $options: "i" } },
+      { email: { $regex: searchValue, $options: "i" } },
+    ];
+
+    // If value is a valid 10-digit number, check phone
+    if (/^\d{10}$/.test(searchValue)) {
+      orConditions.push({ phone: Number(searchValue) });
+    }
+
+    // Check if value matches one of the status enums
+    const allowedStatuses = ["active", "inactive", "Blocked"];
+    if (allowedStatuses.includes(searchValue.toLowerCase())) {
+      orConditions.push({ status: searchValue.toLowerCase() });
+    }
+
+    const userList = await users.find({ $or: orConditions }).sort({ createdAt: -1 });
+
+    if (!userList || userList.length === 0) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 1,
+        message: "No users found matching the input",
+        error: "Not Found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Users fetched successfully",
+      count: userList.length,
+      data: userList,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+
+// ✅✅✅✅✅✅✅✅✅✅ Products : ✅✅✅✅✅✅✅✅✅✅✅✅✅
 
 //get all products fro the admin :
 exports.getAllProductsForAdmim = async (req, res) => {
@@ -446,7 +638,10 @@ exports.getProductByIdForAdmin = async (req, res) => {
       });
     }
 
-    const product_response = await products.findById(id).populate("product_Matrix").exec();
+    const product_response = await products
+      .findById(id)
+      .populate("product_Matrix")
+      .exec();
     if (!product_response) {
       return res.status(404).json({
         success: false,
@@ -552,7 +747,6 @@ exports.publishProduct = async (req, res) => {
   }
 };
 
-
 exports.setViewinProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -599,7 +793,7 @@ exports.setViewinProduct = async (req, res) => {
   }
 };
 
-// ❌❌❌❌❌❌❌❌ Discount calls ❌❌❌❌❌❌❌❌
+//❌❌❌❌❌❌❌❌ Discount calls ❌❌❌❌❌❌❌❌
 
 //set a discount for a product:
 exports.setDiscountOnProduct = async (req, res) => {
@@ -673,7 +867,7 @@ exports.removeDiscountOnProduct = async (req, res) => {
   }
 };
 
-// ✅✅✅✅✅✅✅✅✅ Action on Orders ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
+//✅✅✅✅✅✅✅✅✅ Action on Orders ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 
 //view all inprogess orders :
 exports.viewAllRecentOrders = async (req, res) => {
@@ -692,15 +886,18 @@ exports.viewAllRecentOrders = async (req, res) => {
       .skip(skip)
       .sort({ _id: -1 })
       .exec();
-    if (allorders.length === 0) {
+    if (allorders.length === 0 || !allorders) {
       return res.status(404).json({
         success: true,
         message: "No current active orders",
       });
     }
+    const total = await orders.countDocuments();
     res.status(200).json({
       success: true,
-      totla_items: allorders.length,
+      page: page,
+      totalPages: Math.ceil(total / limit),
+      totalitems: total,
       message: "recent orders are retrieved ",
       data: allorders,
     });
@@ -749,7 +946,7 @@ exports.viewAllRefundedOrders = async (req, res) => {
 exports.viewAllUsersOrders = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 2;
+    const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
     const allorders = await orders
@@ -758,6 +955,7 @@ exports.viewAllUsersOrders = async (req, res) => {
       .populate("productId")
       .limit(limit)
       .skip(skip)
+      .sort({ _id: -1 })
       .exec();
     if (allorders.length === 0) {
       return res.status(404).json({
@@ -765,10 +963,12 @@ exports.viewAllUsersOrders = async (req, res) => {
         message: "No Active orders found",
       });
     }
+    const total = await orders.countDocuments();
     res.status(200).json({
       success: true,
       page: page,
-      totalPages: Math.ceil(allorders.length / limit),
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
       message: "all users orders retrieved successfully",
       data: allorders,
     });
@@ -821,32 +1021,84 @@ exports.viewAllCancelRequestedOrders = async (req, res) => {
 exports.confirmCancelOrder = async (req, res) => {
   try {
     const { id } = req.params;
-    if(!mongoose.Types.ObjectId.isValid(id)){
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         statuscode: 1,
         message: "Invalid ID",
-        error: 'Bad Request',
-      })
+        error: "Bad Request",
+      });
     }
 
+    const { accept } = req.body;
+
     const order_response = await orders.findById(id);
-    if(!order_response){
+    if (!order_response) {
       return res.status(404).json({
         success: false,
         statuscode: 2,
         message: "order not found",
-        error: "Not Found"
-      })
+        error: "Not Found",
+      });
     }
 
-    if(order_response.status !== "requested_for_cancel"){
+    if (order_response.status !== "requested_for_cancel") {
       return res.status(402).json({
         succcess: false,
         statuscode: 3,
         message: "user doesnot requested for cancel",
-        error: "Not Authorized"
-      })
+        error: "Not Authorized",
+      });
+    }
+
+    if (accept === true) {
+      order_response.status = "cancelled";
+      await order_response.save();
+      return res.status(200).json({
+      success: false,
+      statuscode: 4,
+      message: "request accepted successfully",
+    });
+    }
+
+    order_response.status = "confirmed";
+    await order_response.save();
+
+    return res.status(200).json({
+      success: false,
+      statuscode: 4,
+      message: "request rejected successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      statuscode: 500,
+      message: "Intenal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+exports.CancelOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        statuscode: 1,
+        message: "Invalid ID",
+        error: "Bad Request",
+      });
+    }
+
+    const order_response = await orders.findById(id);
+    if (!order_response) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 2,
+        message: "order not found",
+        error: "Not Found",
+      });
     }
 
     order_response.status = "cancelled";
@@ -856,17 +1108,16 @@ exports.confirmCancelOrder = async (req, res) => {
       success: false,
       statuscode: 4,
       message: "order cancelled successfully",
-
-    })
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
       statuscode: 500,
       message: "Intenal Server Error",
-      error: error.message
-    })
+      error: error.message,
+    });
   }
-}
+};
 
 //view all completed orders:
 exports.viewAllPendingOrders = async (req, res) => {
@@ -905,9 +1156,84 @@ exports.viewAllPendingOrders = async (req, res) => {
   }
 };
 
+exports.searchOrders = async (req, res) => {
+  try {
+    const { value } = req.query;
+
+    if (!value || value.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        statuscode: 0,
+        message: "Search value is required",
+        error: "Bad Request",
+      });
+    }
+
+    const searchValue = value.trim();
+
+    const orConditions = [
+      { email: { $regex: searchValue, $options: "i" } },
+      { orderId: { $regex: searchValue, $options: "i" } },
+    ];
+
+    // Check if numeric
+    if (/^\d+$/.test(searchValue)) {
+      orConditions.push({ phone: Number(searchValue) });
+    }
+
+    // Add enums only if input matches allowed values
+    const allowedPaymentModes = ["online", "COD"];
+    const allowedStatuses = [
+      "in_progress",
+      "confirmed",
+      "shipped",
+      "requested_for_cancel",
+      "out_for_delivery",
+      "delivered",
+      "cancelled",
+      "pending"
+    ];
+
+    if (allowedPaymentModes.includes(searchValue.toLowerCase())) {
+      orConditions.push({ payment_mode: searchValue.toLowerCase() });
+    }
+
+    if (allowedStatuses.includes(searchValue.toLowerCase())) {
+      orConditions.push({ status: searchValue.toLowerCase() });
+    }
+
+    const ordersList_response = await orders.find({
+      $or: orConditions,
+    }).sort({ createdAt: -1 });
+
+    if (!ordersList_response || ordersList_response.length === 0) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 1,
+        message: "No orders found matching the input",
+        error: "Not Found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Orders fetched successfully",
+      data: ordersList_response,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+
+
 // ✅✅✅✅✅✅✅✅✅ Action on User-Orders ✅✅✅✅✅✅✅✅✅✅
 
-//getting user order by id : 
+//getting user order by id :
 exports.getUserOrderById = async (req, res) => {
   try {
     const id = req.params;
@@ -1122,7 +1448,7 @@ exports.viewallContactUsRequests = async (req, res) => {
         error: "Not Found",
       });
     }
-    const total =  contactUsRequests_response.length;
+    const total = contactUsRequests_response.length;
     return res.status(200).json({
       succcess: true,
       statuscode: 2,
@@ -1136,6 +1462,6 @@ exports.viewallContactUsRequests = async (req, res) => {
       statuscode: 500,
       message: "Internal Server Error",
       error: error.message,
-    })
+    });
   }
 };

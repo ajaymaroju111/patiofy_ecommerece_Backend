@@ -1123,7 +1123,7 @@ exports.deleteAddress = async (req, res) => {
     }
 
     if(deleted_response1.isDefault === true){
-      return res.status(403).json({
+      return res.status(400).json({
         success: false,
         statuscode: 4,
         message: "default address cannot be deleted",

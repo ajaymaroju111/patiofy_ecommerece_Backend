@@ -5842,12 +5842,14 @@ paths:
 
   /patiofy/auth/admin/update:
      patch:
+      patch:
       tags:
         - Admin
       security:
         - BearerAuth: []
       summary: Update Admin Profile
-      description: Allows an authenticated admin to update their profile details.
+      description: Updates allowed fields of the admin profile (firstname, lastname, phone).
+      operationId: adminProfileUpdate
       requestBody:
         required: true
         content:
@@ -5863,10 +5865,8 @@ paths:
                   example: Kumar
                 phone:
                   type: string
-                  example: "+91-9876543210"
-                Address:
-                  type: string
-                  example: "123 Main St, New Delhi, India"
+                  example: "+919999999999"
+              additionalProperties: false
       responses:
         '200':
           description: Profile updated successfully
@@ -5878,32 +5878,14 @@ paths:
                   success:
                     type: boolean
                     example: true
+                  statuscode:
+                    type: integer
+                    example: 2
                   message:
                     type: string
                     example: Profile updated successfully
-                  updatedUser:
-                    type: object
-                    properties:
-                      _id:
-                        type: string
-                        example: 60d0fe4f5311236168a109ca
-                      firstname:
-                        type: string
-                        example: Ajay
-                      lastname:
-                        type: string
-                        example: Kumar
-                      phone:
-                        type: string
-                        example: "+91-9876543210"
-                      Address:
-                        type: string
-                        example: "123 Main St, New Delhi, India"
-                      email:
-                        type: string
-                        example: ajay@example.com
-        '500':
-          description: Internal server error
+        '404':
+          description: Admin account not found
           content:
             application/json:
               schema:
@@ -5912,12 +5894,35 @@ paths:
                   success:
                     type: boolean
                     example: false
+                  statuscode:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: account not found or updated
+                  error:
+                    type: string
+                    example: Not Found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statuscode:
+                    type: integer
+                    example: 500
                   message:
                     type: string
                     example: Internal Server Error
                   error:
                     type: string
-                    example: Something went wrong    
+                    example: Something went wrong
+    
 
   /patiofy/auth/admin/password/update:
     patch:

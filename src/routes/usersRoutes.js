@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 const users = require("../models/userschema.js");
 const jwt = require('jsonwebtoken');
-const upload = require("../middlewares/multer.js");
-const userImage = upload.single('image');
+const {profileImages} = require("../middlewares/multer.js");
+const userImage = profileImages.single('image');
 
 const {
   setNewPassword,
@@ -87,7 +87,7 @@ router.get(
     // });
 
     res.redirect(
-      `https://patiofy.comfortbikes.in/?token=${token}&firstname=${newUser.firstname}&lastname=${newUser.lastname}&role=${newUser.accountType}&userId=${newUser._id}`
+      `https://patiofy.comfortbikes.in/?token=${token}&firstname=${newUser.firstname}&lastname=${newUser.lastname}&role=${newUser.accountType}&email=${newUser.email}&phone=${newUser.phone}`
     );
   }
 );
@@ -143,7 +143,7 @@ router.delete("/address/:id", authenticate, deleteAddress);
 router.post("/query", authenticateifNeeded, contactUs);
 
 // ✅✅✅✅✅✅✅✅ Blogs  ✅✅✅✅✅✅✅✅✅
-router.get('/blog/:id',  getBlogById);
 router.get('/blog/all', getallBlogs);
+router.get('/blog/:id',  getBlogById);
 
 module.exports = router;

@@ -1,9 +1,10 @@
 const { default: mongoose } = require("mongoose");
 const blogs = require("../models/blogsschema");
+const { deleteOldImages } = require("../middlewares/S3_bucket");
 
 exports.createBlog = async (req, res) => {
   try {
-    const { heading, content } = req.body;
+    const { heading, content, facebook, instagram, twitter } = req.body;
     if (!heading || !content) {
       return res.status(400).json({
         success: false,
@@ -28,6 +29,9 @@ exports.createBlog = async (req, res) => {
       heading: heading,
       content: content,
       blogimage: blogimage,
+      facebook: facebook,
+      instagram: instagram,
+      twitter: twitter,
     });
 
     if (!blog_response) {
@@ -65,7 +69,13 @@ exports.updateBlogbyId = async (req, res) => {
       });
     }
     const updateData = {};
-    const allowed_fields = ["heading", "content"];
+    const allowed_fields = [
+      "heading",
+      "content",
+      "facebook",
+      "instagram",
+      "twitter",
+    ];
 
     allowed_fields.forEach((field) => {
       if (req.body[field] !== undefined) {
@@ -153,6 +163,21 @@ exports.deleteBlogById = async (req, res) => {
         error: "Bad Request",
       });
     }
+
+    const blog_exist = await blogs.findById(id);
+    if (!blog_exist) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 2,
+        message: "blog not found",
+        error: "Not Found",
+      });
+    }
+
+    const key = decodeURIComponent(
+      new URL(blog_response.blogimage).pathname
+    ).substring(1);
+    await deleteOldImages(key);
     const blog_response = await blogs.findByIdAndDelete(id);
     if (!blog_response) {
       return res.status(404).json({
@@ -162,7 +187,7 @@ exports.deleteBlogById = async (req, res) => {
         error: "Not Found",
       });
     }
-    return res.status({
+    return res.status(200).json({
       success: true,
       statuscode: 3,
       message: "blog deleted successfully",
@@ -180,7 +205,7 @@ exports.deleteBlogById = async (req, res) => {
 
 exports.getallBlogs = async (req, res) => {
   try {
-    const allBlogs_response = await blogs.find();
+    const allBlogs_response = await blogs.find().sort({_id: -1}).exec();
     if (!allBlogs_response) {
       return res.status(404).json({
         success: false,
@@ -189,6 +214,11 @@ exports.getallBlogs = async (req, res) => {
         error: "Not Found",
       });
     }
+    return res.status(200).json({
+      success: true,
+      message: "blogs retrieved successfully",
+      allBlogs_response,
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -218,7 +248,7 @@ exports.updateblogPicture = async (req, res) => {
         error: "Bad Request",
       });
     }
-    
+
     const blog_response = await blogs.findById(id).populate("userId");
     if (!blog_response) {
       return res.status(404).json({
@@ -233,7 +263,7 @@ exports.updateblogPicture = async (req, res) => {
       const key = decodeURIComponent(
         new URL(blog_response.blogimage).pathname
       ).substring(1);
-      await deleteOldImages(key); 
+      await deleteOldImages(key);
     }
 
     blog_response.blogimage = blogImage;

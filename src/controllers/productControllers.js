@@ -144,95 +144,6 @@ exports.createProduct = async (req, res) => {
 };
 
 //update product Product :
-// exports.updateProduct = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-
-//     if (!mongoose.Types.ObjectId.isValid(id)) {
-//       return res.status(400).json({
-//         success: false,
-//         statuscode: 1,
-//         message: "Invalid ID",
-//         error: "Bad Request",
-//       });
-//     }
-
-//     const allowedFields = [
-//       "name",
-//       "description",
-//       "tags",
-//       "viewIn",
-//       "fabric",
-//       "category",
-//       "stock",
-//       "ProductStatus",
-//     ];
-//     const allowedViews = [
-//       "new_collection",
-//       "best_seller",
-//       "trending",
-//       "all",
-//       "none",
-//     ];
-
-//     if (!allowedViews.includes(viewin)) {
-//       return res.status(400).json({
-//         success: false,
-//         statuscode: 2,
-//         message: `Invalid view type. Allowed values are: ${allowedViews.join(
-//           ", "
-//         )}`,
-//         error: "Bad Request",
-//       });
-//     }
-
-//     const newData = {};
-//     allowedFields.forEach((field) => {
-//       if (req.body[field] !== undefined) {
-//         if (field === "tags" && typeof req.body.tags === "string") {
-//           newData.tags = req.body.tags
-//             .split(",")
-//             .map((tag) => tag.trim().toLowerCase());
-//         } else {
-//           newData[field] = req.body[field];
-//         }
-//       }
-//     });
-
-//     const updatedproduct_response = await products.findByIdAndUpdate(
-//       id,
-//       newData,
-//       {
-//         new: true,
-//         runValidators: true,
-//       }
-//     );
-//     if (!updatedproduct_response) {
-//       return res.status(404).json({
-//         success: false,
-//         statuscode: 3,
-//         message: "Product not found",
-//         error: "Not Found",
-//       });
-//     }
-
-//     return res.status(200).json({
-//       success: true,
-//       statuscode: 4,
-//       message: "Product updated successfully",
-//       data: updatedproduct_response,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     return res.status(500).json({
-//       success: false,
-//       statuscode: 500,
-//       message: "Internal Server Error",
-//       error: error.message,
-//     });
-//   }
-// };
-
 exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -329,7 +240,7 @@ exports.updateProduct = async (req, res) => {
 };
 
 //updating the product Images :
-exports.updateImages = async (req, res) => {
+exports.replaceAllImages = async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -381,6 +292,226 @@ exports.updateImages = async (req, res) => {
       success: false,
       statuscode: 500,
       message: "Internal Server",
+      error: error.message,
+    });
+  }
+};
+
+//replace images based on the provided index values
+exports.replaceImages = async (req, res) => {
+  try {
+    const { Id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(Id)) {
+      return res.status(400).json({
+        success: false,
+        statuscode: 1,
+        message: "Invalid ID",
+        error: "Bad Request",
+      });
+    }
+
+    const { indexes } = req.body;
+
+    if (!indexes || !Array.isArray(indexes)) {
+      return res.status(400).json({
+        success: false,
+        statuscode: 2,
+        message: "Indexes array is required in body",
+        error: "Bad Request",
+      });
+    }
+
+    if (!req.files || req.files.length !== indexes.length) {
+      return res.status(400).json({
+        success: false,
+        statuscode: 3,
+        message: `Number of images (${req.files?.length || 0}) must match number of indexes (${indexes.length})`,
+        error: "Bad Request",
+      });
+    }
+
+    const product_response = await products.findById(Id);
+    if (!product_response) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+        error: "Not Found",
+      });
+    }
+
+    const oldImageKeys = [];
+
+    // Step 1: Collect keys of old images to delete
+    for (let i = 0; i < indexes.length; i++) {
+      const index = parseInt(indexes[i]);
+
+      if (index >= product_response.imagesUrl.length) continue;
+
+      const oldUrl = product_response.imagesUrl[index];
+      if (oldUrl) {
+        const key = decodeURIComponent(new URL(oldUrl).pathname).substring(1);
+        oldImageKeys.push(key);
+      }
+    }
+
+    // Step 2: Delete old images from S3
+    await deleteOldImages(oldImageKeys);
+
+    // Step 3: Replace with new images directly in product_response.imagesUrl
+    for (let i = 0; i < indexes.length; i++) {
+      const index = parseInt(indexes[i]);
+      if (index >= product_response.imagesUrl.length) continue;
+
+      product_response.imagesUrl[index] = req.files[i].location; // assuming Multer-S3
+    }
+
+    await product_response.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Images replaced successfully",
+      updatedImages: product_response.imagesUrl,
+    });
+  } catch (error) {
+    console.error("Error replacing images:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+//adding new images to the exsiting images :
+exports.addImagesToProduct = async (req, res) => {
+  try {
+    const { Id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(Id)) {
+      return res.status(400).json({
+        success: false,
+        statuscode: 1,
+        message: "Invalid product ID",
+        error: "Bad Request",
+      });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        statuscode: 2,
+        message: "No images uploaded",
+        error: "Bad Request",
+      });
+    }
+
+    const product_response = await products.findById(Id);
+    if (!product_response) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+        error: "Not Found",
+      });
+    }
+
+    // Extract new image URLs
+    const newImageUrls = req.files.map(file => file.location); // for multer-s3
+    product_response.imagesUrl.push(...newImageUrls);
+
+    // Save updated product
+    await product_response.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Images added successfully",
+      updatedImages: product_response.imagesUrl,
+    });
+  } catch (error) {
+    console.error("Error adding images:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+//delete a single image : 
+exports.deleteSingleImage = async (req, res) => {
+  try {
+    const { Id } = req.params;
+    const { index } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(Id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product ID",
+        statuscode: 1,
+        error: "Bad Request",
+      });
+    }
+ 
+    if (index === undefined || isNaN(parseInt(index))) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid image index is required",
+        statuscode: 2,
+        error: "Bad Request",
+      });
+    }
+
+    const product = await products.findById(Id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+        statuscode: 3,
+        error: "Not Found",
+      });
+    }
+
+    const imgIndex = parseInt(index);
+
+    if (imgIndex < 0 || imgIndex >= product.imagesUrl.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Index out of bounds",
+        statuscode: 4,
+        error: "Bad Request",
+      });
+    }
+
+    const imageToDelete = product.imagesUrl[imgIndex];
+    const imageKey = decodeURIComponent(new URL(imageToDelete).pathname).substring(1);
+
+    // Delete from S3
+    try {
+      await deleteOldImages([imageKey]);
+    } catch (s3Error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to delete image from S3",
+        error: s3Error.message,
+        statuscode: 5,
+      });
+    }
+
+    // Remove the image directly from the array
+    product.imagesUrl.splice(imgIndex, 1);
+
+    // Save updated product
+    await product.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Image at index ${imgIndex} deleted successfully`,
+      updatedImages: product.imagesUrl,
+    });
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
       error: error.message,
     });
   }
@@ -1065,13 +1196,13 @@ exports.findBestSellerProducts = async (req, res) => {
 // search products - name (case-sensitive)
 exports.searchProducts = async (req, res) => {
   try {
-    const query = req.query.q || '';
-    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape regex chars
+    const query = req.query.q || "";
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // escape regex chars
 
     const output_response = await products
       .find({
         $or: [
-          { name: { $regex: escapedQuery, $options: "i" } } // removed $options: "i" for case-sensitive match
+          { name: { $regex: escapedQuery, $options: "i" } }, // removed $options: "i" for case-sensitive match
         ],
       })
       .populate({
@@ -1092,7 +1223,6 @@ exports.searchProducts = async (req, res) => {
       message: "search products received successfully",
       data: output_response,
     });
-
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -1101,7 +1231,6 @@ exports.searchProducts = async (req, res) => {
     });
   }
 };
-
 
 //*****************        PRODUCT CART ROUTES               ***********************/
 
@@ -1172,7 +1301,7 @@ exports.addToCart = async (req, res) => {
       if (quantity > productMatrix.stock || !productMatrix.stock) {
         return res.status(401).json({
           success: false,
-          message: `product out of stock!! only ${productMatrix.stock} items left in ${size} size`,
+          message: `only ${productMatrix.stock} items left in ${size} size`,
           error: "Bad Request",
         });
       }
@@ -1201,7 +1330,7 @@ exports.addToCart = async (req, res) => {
     if (final_quantity > productMatrix.stock || !productMatrix.stock) {
       return res.status(401).json({
         success: false,
-        message: `product out of stock !! only ${productMatrix.stock} items left in ${size} size`,
+        message: `only ${productMatrix.stock} items left in ${size} size`,
         error: "Bad Request",
       });
     }
@@ -1309,7 +1438,7 @@ exports.updateCart = async (req, res) => {
     if (quantity > Matrix.stock || !Matrix.stock) {
       return res.status(402).json({
         success: false,
-        message: `product limit exceeded!! only ${Matrix.stock} items left in ${size} size`,
+        message: `only ${Matrix.stock} items left in ${size} size`,
         error: "Stock limit exceeded",
       });
     }
@@ -1661,7 +1790,7 @@ exports.updateProductMatrix = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Bulk update processed",
+      message: "pricing updated successfully",
       results,
     });
   } catch (error) {
@@ -1715,7 +1844,7 @@ exports.getProductMatrixById = async (req, res) => {
   }
 };
 
-//delete pproduct_matrix :
+//delete product_matrix :
 exports.deleteProductMatrix = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1824,7 +1953,7 @@ exports.getallReviewsByProduct = async (req, res) => {
     const allreviews_response = await reviews
       .find({ productId: id })
       .sort({ createdAt: -1 })
-      .populate('userId','firstname lastname')
+      .populate("userId", "firstname lastname")
       .limit(limit)
       .skip(skip)
       .exec();
@@ -1894,7 +2023,7 @@ exports.createReview = async (req, res) => {
         success: false,
         statuscode: 3,
         message: "Product not found",
-        error: "Not Found"
+        error: "Not Found",
       });
     }
 
@@ -1929,7 +2058,7 @@ exports.createReview = async (req, res) => {
   }
 };
 
-//get a sinfle rating of a product :
+//get a single rating of a product :
 exports.getReviewsByProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1939,18 +2068,18 @@ exports.getReviewsByProduct = async (req, res) => {
         success: false,
         statuscode: 1,
         message: "Invalid product ID",
-        error: "Bad Request"
+        error: "Bad Request",
       });
     }
 
     const product_response = await products.findById(id);
-    if(!product_response){
+    if (!product_response) {
       return res.status(404).json({
         success: false,
         statuscode: 4,
         message: "product not found",
-        error: "Not Found"
-      })
+        error: "Not Found",
+      });
     }
 
     // Fetch reviews

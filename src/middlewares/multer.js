@@ -156,7 +156,7 @@ const s3Client = new S3Client({
   }
 });
 
-const upload = multer({
+const ProductsImages = multer({
   storage: multers3({
     s3: s3Client,
     bucket: process.env.application_bucket_name,
@@ -185,8 +185,76 @@ const upload = multer({
 
 });
 
-console.log("S3 Bucket is on Live 🚀");
+console.log("S3 Bucket products is on Live 🚀");
+
+const profileImages = multer({
+  storage: multers3({
+    s3: s3Client,
+    bucket: process.env.application_bucket_name,
+    contentType:  multers3.AUTO_CONTENT_TYPE,
+    cacheControl: 'public, max-age=31536000',
+  //   contentType: (req, file, cb) => {
+  //     cb(null, file.mimetype || 'image/jpeg'); 
+  //  },
+  
+    contentDisposition: 'inline',
+    key: function (req, file, cb) {
+      const filename = Date.now().toString() + '-' + file.originalname;
+      cb(null, `profileImages/${filename}`);
+    },
+    // acl: 'public-read',    // this is not permitted in aws console
+  }),
+  limits:{
+    fileSize: 20 * 1024 * 1024, // 20MB
+  },
+   fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("Only image files are allowed."), false);
+    }
+    cb(null, true);
+  },
+
+});
+
+console.log("S3 Bucket User is on Live 🚀");
+
+//for the blogs images : 
+const blogImages = multer({
+  storage: multers3({
+    s3: s3Client,
+    bucket: process.env.application_bucket_name,
+    contentType:  multers3.AUTO_CONTENT_TYPE,
+    cacheControl: 'public, max-age=31536000',
+  //   contentType: (req, file, cb) => {
+  //     cb(null, file.mimetype || 'image/jpeg'); 
+  //  },
+  
+    contentDisposition: 'inline',
+    key: function (req, file, cb) {
+      const filename = Date.now().toString() + '-' + file.originalname;
+      cb(null, `blogImages/${filename}`);
+    },
+    // acl: 'public-read',    // this is not permitted in aws console
+  }),
+  limits:{
+    fileSize: 20 * 1024 * 1024, // 20MB
+  },
+   fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("Only image files are allowed."), false);
+    }
+    cb(null, true);
+  },
+
+});
+
+console.log("S3 Bucket blog is on Live 🚀");
 
 
-module.exports = upload;
+module.exports = {
+  ProductsImages,
+  profileImages,
+  blogImages,
+};
+
 

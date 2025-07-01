@@ -984,7 +984,7 @@ exports.setNewPasswordTemplate = (decoded, firstname) => {
     <p class="username">Hello, ${firstname}!</p>
     <p>We received a request to reset your password. Click the button below to set a new password:</p>
 
-    <a href="http://192.168.1.38:5173/create-password?decodedGoogleId=${decoded}" class="reset-btn">Set New Password</a>
+    <a href="https://patiofy.comfortbikes.in/create-password?decodedGoogleId=${decoded}" class="reset-btn">Set New Password</a>
 
     <p>This link will expire in 1 hour. If you didn’t request a password reset, please ignore this email.</p>
   </div>
