@@ -78,10 +78,25 @@ exports.updateBlogbyId = async (req, res) => {
     ];
 
     allowed_fields.forEach((field) => {
-      if (req.body[field] !== undefined) {
-        updateData[field] = req.body[field];
+      const value = req.body[field];
+
+      if (value !== undefined) {
+        if (
+          ["heading", "content"].includes(field) &&
+          (value === null || (typeof value === "string" && value.trim() === ""))
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: `Field '${field}' cannot be empty.`,
+            error: "Bad Request"
+          })
+          
+        }
+
+        updateData[field] = value;
       }
     });
+
     const blog_response = await blogs.findByIdAndUpdate(
       id,
       {
@@ -205,7 +220,7 @@ exports.deleteBlogById = async (req, res) => {
 
 exports.getallBlogs = async (req, res) => {
   try {
-    const allBlogs_response = await blogs.find().sort({_id: -1}).exec();
+    const allBlogs_response = await blogs.find().sort({ _id: -1 }).exec();
     if (!allBlogs_response) {
       return res.status(404).json({
         success: false,

@@ -4,8 +4,13 @@ const products = require("../models/productschema");
 const orders = require("../models/ordersschema.js");
 const admins = require("../models/adminSchema.js");
 const queryForm = require("../models/contactschema.js");
-const { generateUserToken } = require("../middlewares/authUser.js");
+const {
+  generateUserToken,
+  isValidPassword,
+} = require("../middlewares/authUser.js");
 const { deleteOldImages } = require("../middlewares/S3_bucket.js");
+const { forgetPassword } = require("../utils/emailTemplates.js");
+const { sendEmail } = require("../utils/sendEmail.js");
 
 //✅✅✅✅✅✅✅✅✅ Admin Calls ✅✅✅✅✅✅✅✅✅✅✅
 
@@ -18,6 +23,13 @@ exports.adminSignup = async (req, res) => {
         statuscode: 1,
         message: "All fields are required",
         error: "Bad Request",
+      });
+    }
+    if (!isValidPassword(password)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password must be at least 8 characters and include at least one uppercase letter, one lowercase letter, one number, and one special character.",
       });
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -168,6 +180,13 @@ exports.changePassword = async (req, res) => {
         error: "all fields are required",
       });
     }
+    if (!isValidPassword(newpassword)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password must be at least 8 characters and include at least one uppercase letter, one lowercase letter, one number, and one special character.",
+      });
+    }
     const user_response = await admins
       .findById(req.user._id)
       .select("password");
@@ -311,6 +330,106 @@ exports.adminGetById = async (req, res) => {
       statuscode: 3,
       message: "user retrieved successfully",
       user_response,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      statuscode: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+//forget password :
+exports.adminForgetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "email is reqiured",
+        statuscode: 1,
+        error: "Bad Request",
+      });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or missing email address",
+        statuscode: 2,
+      });
+    }
+    const user_response = await admins.findOne({ email });
+    if (!user_response) {
+      return res.status(404).json({
+        success: false,
+        message: "admin doesn't found",
+        statuscode: 3,
+        error: "Bad Request",
+      });
+    }
+    const fullname = user_response.firstname + " " + user_response.lastname;
+    const role = user_response.accountType;
+    // const securedEmail = await doubleEncrypt(user.email);
+    await sendEmail({
+      to: email,
+      subject: "forget password link",
+      text: forgetPassword(fullname, user_response.email, role),
+    });
+    return res.status(200).json({
+      success: true,
+      statuscode: 4,
+      message: "A password reset link has been sent to your email.",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      statuscode: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+exports.adminSetNewPassword = async (req, res) => {
+  const { newpassword, email } = req.body;
+  if (!newpassword || !email) {
+    return res.status(400).json({
+      success: false,
+      statuscode: 1,
+      message: "all fields are required",
+      error: "Bad Request",
+    });
+  }
+
+  if (!isValidPassword(newpassword)) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Password must be at least 8 characters and include at least one uppercase letter, one lowercase letter, one number, and one special character.",
+    });
+  }
+
+  try {
+    const user_response = await admins
+      .findOne({ email: email })
+      .select("password email");
+    if (!user_response) {
+      return res.status(404).json({
+        success: false,
+        statuscode: 2,
+        message: "User not found",
+        error: "Not Found",
+      });
+    }
+    user_response.password = newpassword;
+    await user_response.save();
+    return res.status(200).json({
+      success: true,
+      statuscode: 4,
+      message: "password updated successfully, please login",
     });
   } catch (error) {
     return res.status(500).json({
@@ -582,7 +701,7 @@ exports.filterUsers = async (req, res) => {
     return res.status(200).json({
       success: true,
       page: page,
-      totalPages: Math.ceil(total/limit),
+      totalPages: Math.ceil(total / limit),
       message: "Users fetched successfully",
       count: userList.length,
       data: userList,
@@ -1004,6 +1123,7 @@ exports.viewAllCancelRequestedOrders = async (req, res) => {
       .populate("productId")
       .skip(skip)
       .limit(limit)
+      .sort({_id: -1})
       .exec();
     if (allorders.length === 0) {
       return res.status(404).json({
@@ -1237,7 +1357,7 @@ exports.searchOrders = async (req, res) => {
     return res.status(200).json({
       success: true,
       page: page,
-      totalPages: Math.ceil(total/limit),
+      totalPages: Math.ceil(total / limit),
       message: "Orders fetched successfully",
       data: ordersList_response,
     });

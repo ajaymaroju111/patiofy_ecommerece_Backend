@@ -193,14 +193,23 @@ exports.updateProduct = async (req, res) => {
 
     const newData = {};
     allowedFields.forEach((field) => {
-      if (req.body[field] !== undefined) {
-        if (field === "tags" && typeof req.body.tags === "string") {
-          newData.tags = req.body.tags
-            .split(",")
-            .map((tag) => tag.trim().toLowerCase());
-        } else {
-          newData[field] = req.body[field];
-        }
+      const value = req.body[field];
+
+      if (
+        value === undefined ||
+        value === null ||
+        (typeof value === "string" && value.trim() === "")
+      ) {
+        throw new Error(`Field '${field}' is required and cannot be empty.`);
+      }
+
+      if (field === "tags" && typeof value === "string") {
+        newData.tags = value
+          .split(",")
+          .map((tag) => tag.trim().toLowerCase())
+          .filter((tag) => tag); // removes empty tags
+      } else {
+        newData[field] = value;
       }
     });
 
@@ -326,7 +335,9 @@ exports.replaceImages = async (req, res) => {
       return res.status(400).json({
         success: false,
         statuscode: 3,
-        message: `Number of images (${req.files?.length || 0}) must match number of indexes (${indexes.length})`,
+        message: `Number of images (${
+          req.files?.length || 0
+        }) must match number of indexes (${indexes.length})`,
         error: "Bad Request",
       });
     }
@@ -415,7 +426,7 @@ exports.addImagesToProduct = async (req, res) => {
     }
 
     // Extract new image URLs
-    const newImageUrls = req.files.map(file => file.location); // for multer-s3
+    const newImageUrls = req.files.map((file) => file.location); // for multer-s3
     product_response.imagesUrl.push(...newImageUrls);
 
     // Save updated product
@@ -436,7 +447,7 @@ exports.addImagesToProduct = async (req, res) => {
   }
 };
 
-//delete a single image : 
+//delete a single image :
 exports.deleteSingleImage = async (req, res) => {
   try {
     const { Id } = req.params;
@@ -450,7 +461,7 @@ exports.deleteSingleImage = async (req, res) => {
         error: "Bad Request",
       });
     }
- 
+
     if (index === undefined || isNaN(parseInt(index))) {
       return res.status(400).json({
         success: false,
@@ -482,7 +493,9 @@ exports.deleteSingleImage = async (req, res) => {
     }
 
     const imageToDelete = product.imagesUrl[imgIndex];
-    const imageKey = decodeURIComponent(new URL(imageToDelete).pathname).substring(1);
+    const imageKey = decodeURIComponent(
+      new URL(imageToDelete).pathname
+    ).substring(1);
 
     // Delete from S3
     try {
@@ -1740,9 +1753,17 @@ exports.updateProductMatrix = async (req, res) => {
       let valid = true;
 
       allowedFields.forEach((field) => {
-        if (data[field] !== undefined) {
-          updateData[field] = data[field];
+        const value = data[field];
+
+        if (
+          value === undefined ||
+          value === null ||
+          (typeof value === "string" && value.trim() === "")
+        ) {
+          throw new Error(`Field '${field}' is required and cannot be empty.`);
         }
+
+        updateData[field] = value;
       });
 
       if (

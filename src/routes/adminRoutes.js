@@ -36,6 +36,8 @@ const {
   CancelOrder,
   searchOrders,
   filterUsers,
+  adminForgetPassword,
+  adminSetNewPassword,
 } = require('../controllers/adminControllers.js')
 const {
   authenticate,
@@ -130,8 +132,10 @@ router.post('/signup', adminSignup);
 router.post('/login',  adminLogin);
 router.patch('/update',  adminAuthenticate, isAdmin, adminProfileUpdate);
 router.put('/password/update',  adminAuthenticate, isAdmin, changePassword);
+router.post('/password/forget', adminForgetPassword);
+router.put('/password/setpassword', adminSetNewPassword);
 router.get('/view',  adminAuthenticate, isAdmin, adminGetById);
-router.post('/profile', adminAuthenticate, isAdmin, profileImage, uploadadminProfilePic)
+router.post('/profile', adminAuthenticate, isAdmin, profileImage, uploadadminProfilePic);
 
 // ✅✅✅✅✅✅✅✅✅✅ categories ✅✅✅✅✅✅✅✅✅✅✅✅✅✅
 

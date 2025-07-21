@@ -87,7 +87,7 @@ router.get(
     // });
 
     res.redirect(
-      `https://patiofy.comfortbikes.in/?token=${token}&firstname=${newUser.firstname}&lastname=${newUser.lastname}&role=${newUser.accountType}&email=${newUser.email}&phone=${newUser.phone}`
+      `https://patiofy.comfortbikes.in/?token=${token}&firstname=${newUser.firstname}&lastname=${newUser.lastname}&role=${newUser.accountType}&email=${newUser.email}&phone=${newUser.phone}&userId=${newUser._id}`
     );
   }
 );

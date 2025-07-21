@@ -176,6 +176,14 @@ exports.isAdmin = async (req, res, next) => {
   }
 };
 
+exports.isValidPassword = (value) => {
+  if (typeof value !== "string") return false;
+  if (value.startsWith("$2b$")) return true;
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  return passwordRegex.test(value);
+}
+
+
 
 const key1 = Buffer.from(process.env.KEY1, 'utf8');
 const iv1 = Buffer.from(process.env.IV1, 'utf8');

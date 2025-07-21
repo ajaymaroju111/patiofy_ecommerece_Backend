@@ -298,16 +298,16 @@ exports.makeOrder = async (req, res) => {
     }
 
     const user_response = await users.findById(req.user._id);
-    if(!user_response){
+    if (!user_response) {
       return res.status(404).json({
         success: false,
         statuscode: 3,
         message: "session expired, please login",
-        error: "UnAuthorized"
-      })
+        error: "UnAuthorized",
+      });
     }
 
-    if(!user_response.phone || user_response.phone === undefined){
+    if (!user_response.phone || user_response.phone === undefined) {
       user_response.phone = phone;
       await user_response.save();
     }
@@ -327,8 +327,6 @@ exports.makeOrder = async (req, res) => {
         message: "Invalid or missing email address",
       });
     }
-
-    
 
     const totalPay = Number(total_pay);
 
@@ -402,10 +400,14 @@ exports.makeOrder = async (req, res) => {
         });
       }
       const isAlreadyCart_response = await carts.findOne({
-        $and: [{ productId: product._id }, { size: size }, {userId: req.user._id}],
+        $and: [
+          { productId: product._id },
+          { size: size },
+          { userId: req.user._id },
+        ],
       });
 
-      if (!isAlreadyCart_response) {
+      if (payment_mode === "online" && !isAlreadyCart_response) {
         const cart_response = await carts.create({
           cartImages: product.imagesUrl,
           quantity: quantity,
@@ -478,6 +480,7 @@ exports.makeOrder = async (req, res) => {
         },
         email,
         phone: phone,
+        status: payment_mode !== "online" ? "confirmed" : "pending",
         quantity: quantity,
         payment_mode: payment_mode,
         final_cost: finalCost,
@@ -497,6 +500,8 @@ exports.makeOrder = async (req, res) => {
           error: "Database error",
         });
       }
+
+
 
       return res.status(200).json({
         success: true,
@@ -564,28 +569,29 @@ exports.makeOrder = async (req, res) => {
           userId: req.user._id,
           productId: cart.productId,
           shipping_address: {
-          country: Scountry,
-          firstname: Sfirstname,
-          lastname: Slastname,
-          address: Saddress,
-          pincode: Spincode,
-          house_number: Shouse_number,
-          city: Scity,
-          state: Sstate,
-          landmark: Slandmark,
-        },
-        billing_address: {
-          country: Bcountry,
-          firstname: Bfirstname,
-          lastname: Blastname,
-          address: Baddress,
-          pincode: Bpincode,
-          house_number: Bhouse_number,
-          city: Bcity,
-          state: Bstate,
-          landmark: Blandmark,
-        },
+            country: Scountry,
+            firstname: Sfirstname,
+            lastname: Slastname,
+            address: Saddress,
+            pincode: Spincode,
+            house_number: Shouse_number,
+            city: Scity,
+            state: Sstate,
+            landmark: Slandmark,
+          },
+          billing_address: {
+            country: Bcountry,
+            firstname: Bfirstname,
+            lastname: Blastname,
+            address: Baddress,
+            pincode: Bpincode,
+            house_number: Bhouse_number,
+            city: Bcity,
+            state: Bstate,
+            landmark: Blandmark,
+          },
           email,
+          status: payment_mode !== "online" ? "confirmed" : "pending",
           phone: phone,
           quantity,
           size: matrix.size,
@@ -606,10 +612,14 @@ exports.makeOrder = async (req, res) => {
           continue;
         }
 
+
         matrix.stock -= quantity;
         await matrix.save();
 
         allOrders.push(newOrder_response);
+        if (payment_mode !== "online") {
+          await carts.findByIdAndDelete(cartId);
+        }
       }
 
       return res.status(200).json({

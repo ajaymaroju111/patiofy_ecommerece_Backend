@@ -322,78 +322,186 @@ exports.conformSignup = (username, securityKey) => {
   `;
 };
 
-exports.forgetPassword = (username, email) => {
+exports.forgetPassword = (username, email, role) => {
   return `
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reset Your Password</title>
+  <title>Reset Your Password | Patiofy</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f9fafb;
+    * {
       margin: 0;
       padding: 0;
-      color: #333;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     }
-    .container {
-      width: 100%;
-      max-width: 600px;
-      margin: 40px auto;
-      background-color: #ffffff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-    }
-    .header {
-      background-color: #007bff;
-      color: white;
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f8fafc;
+      flex-direction: column;
       text-align: center;
-      padding: 20px;
+      line-height: 1.6;
+      color: #334155;
+    }
+
+    .container {
+      background: #ffffff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
+      margin-bottom: 25px;
+      border-top: 4px solid #275a53;
+    }
+
+    .logo {
+      margin-bottom: 20px;
+      font-size: 24px;
+      font-weight: 700;
+      color: #275a53;
+    }
+
+    h2 {
+      color: #0f172a;
+      margin-bottom: 15px;
       font-size: 24px;
     }
-    .content {
-      padding: 40px 20px;
-      text-align: center;
+
+    .username {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e3a34;
+      margin-bottom: 15px;
     }
-    .reset-link {
+
+    p {
+      color: #475569;
+      margin-bottom: 20px;
+      font-size: 15px;
+    }
+
+    .reset-btn {
       display: inline-block;
-      background-color: #007bff;
-      color: white;
-      padding: 12px 24px;
+      padding: 12px 30px;
+      background: #275a53;
+      color: #fff;
       font-size: 16px;
-      border-radius: 8px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
       text-decoration: none;
-      margin-top: 20px;
+      transition: all 0.3s ease;
+      margin: 15px 0;
+      box-shadow: 0 2px 10px rgba(39, 90, 83, 0.3);
     }
-    .footer {
-      font-size: 12px;
-      color: #777;
+
+    .reset-btn:hover {
+      background: #1f4a45;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(39, 90, 83, 0.4);
+    }
+
+    .company-info {
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
       text-align: center;
-      padding: 20px;
+      max-width: 500px;
+      width: 90%;
+      border-top: 4px solid #275a53;
+    }
+
+    .company-info h3 {
+      color: #0f172a;
+      margin-bottom: 15px;
+      font-size: 20px;
+    }
+
+    .company-info p {
+      color: #475569;
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+
+    .contact-link {
+      color: #275a53;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .contact-link:hover {
+      text-decoration: underline;
+    }
+
+    .footer-text {
+      margin-top: 20px;
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 25px 0;
+    }
+
+    @media (max-width: 480px) {
+      .container, .company-info {
+        padding: 25px;
+      }
+
+      h2 {
+        font-size: 22px;
+      }
+
+      .reset-btn {
+        font-size: 15px;
+        padding: 10px 25px;
+      }
     }
   </style>
 </head>
 <body>
+
   <div class="container">
-    <div class="header">Reset Your Password</div>
-    <div class="content">
-      <p>Hi <strong>${username}</strong>,</p>
-      <p>We received a request to reset your password. Click the button below to proceed with resetting your password.</p>
-      <a href="https://patiofy.comfortbikes.in/forget-password?email=${email}" class="reset-link">Reset Password</a>
-      <p>If you did not request a password reset, please ignore this email or contact our support team.</p>
-      <p>Thank you!<br>The Team</p>
-    </div>
-    <div class="footer">
-      &copy; 2025 Patiofy. All rights reserved.
-    </div>
+    <div class="logo">Patiofy</div>
+    <h2>Password Reset Request</h2>
+    <p class="username">Hi ${username},</p>
+    <p>We received a request to reset your password. Click the button below to proceed:</p>
+    
+    <a href="https://patiofy.comfortbikes.in/forget-password?email=${email}&role=${role}" class="reset-btn">Reset Password</a>
+    
+    <p>This link will expire in 24 hours. If you didn’t request this, you can ignore this email.</p>
   </div>
+
+  <div class="company-info">
+    <h3>About Patiofy</h3>
+    <p>Patiofy is a trusted e-commerce platform delivering quality and satisfaction.</p>
+    
+    <div class="divider"></div>
+    
+    <p><strong>Email Support:</strong> <a href="mailto:support@patiofy.com" class="contact-link">support@patiofy.com</a></p>
+    <p><strong>Website:</strong> <a href="https://patiofy.comfortbikes.in/" class="contact-link">https://patiofy.comfortbikes.in/</a></p>
+    <p><strong>Business Hours:</strong> Mon–Fri, 9AM–6PM</p>
+
+    <p class="footer-text">
+      &copy; 2025 Patiofy Tech Solutions Inc. All rights reserved.<br>
+      [1-17/25, RG colony], [Rajasthan], [India]
+    </p>
+  </div>
+
 </body>
 </html>
-
-  `;
+`;
 };
 
 exports.forgetUsername = (fullname, username) => {

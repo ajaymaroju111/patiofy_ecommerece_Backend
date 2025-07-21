@@ -48,8 +48,8 @@ router.put('/cart/:id', authenticate, updateCart);
 router.delete('/cart/:id', authenticate, deleteCart);
 
 // Rating Routes : 
-router.get("/reviews/all/:id", authenticate, getallReviewsByProduct);
-router.get("/review/:id", authenticate, getReviewsByProduct);
+router.get("/reviews/all/:id", getallReviewsByProduct);
+router.get("/review/:id", getReviewsByProduct);
 router.post("/review/:id", authenticate, createReview);
 
 module.exports = router;

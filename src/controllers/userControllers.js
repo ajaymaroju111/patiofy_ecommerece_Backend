@@ -6,13 +6,14 @@ const { sendEmail } = require("../utils/sendEmail.js");
 const {
   generateUserToken,
   doubleEncrypt,
+  isValidPassword,
 } = require("../middlewares/authUser.js");
 const {
   conformSignup,
   forgetPassword,
   getSuccessMark,
   sessionExpired,
-  userNotFound,
+  userNotFound,  
   setNewPasswordTemplate,
 } = require("../utils/emailTemplates.js");
 const { default: mongoose, mongo } = require("mongoose");
@@ -25,7 +26,7 @@ const ProductMatrix = require("../models/productmatrixschema.js");
 
 //set password after google oauth signup :
 exports.setNewPassword = async (req, res) => {
-  const { newpassword, email } = req.body; 
+  const { newpassword, email } = req.body;
   if (!newpassword || !email) {
     return res.status(400).json({
       success: false,
@@ -34,8 +35,19 @@ exports.setNewPassword = async (req, res) => {
       error: "Bad Request",
     });
   }
+
+  if (!isValidPassword(newpassword)) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Password must be at least 8 characters and include at least one uppercase letter, one lowercase letter, one number, and one special character.",
+    });
+  }
+
   try {
-    const user_response = await users.findOne({ email }).select('password email');
+    const user_response = await users
+      .findOne({ email })
+      .select("password email");
     if (!user_response) {
       return res.status(404).json({
         success: false,
@@ -139,8 +151,7 @@ exports.signUp = async (req, res) => {
     }
     return res.status(200).json({
       success: true,
-      message:
-        "A verification email has been sent. Please check your inbox.",
+      message: "A verification email has been sent. Please check your inbox.",
       statuscode: 7,
     });
   } catch (error) {
@@ -212,7 +223,9 @@ exports.passwordsetresend = async (req, res) => {
     });
   }
   try {
-    const user_response = await users.findOne({ email: email }).select('password set_password_expiry googleId');
+    const user_response = await users
+      .findOne({ email: email })
+      .select("password set_password_expiry googleId");
     if (!user_response) {
       return res.status(404).json({
         success: false,
@@ -221,13 +234,13 @@ exports.passwordsetresend = async (req, res) => {
         error: "Not Found",
       });
     }
-    if(user_response.password){
+    if (user_response.password) {
       return res.status(402).json({
         success: false,
         statuscode: 3,
         message: "Password has already been set, please login",
-        error: "Invalid Action"
-      })
+        error: "Invalid Action",
+      });
     }
     const decodedGoogleId = Buffer.from(
       user_response.googleId.toString(),
@@ -340,7 +353,9 @@ exports.signIn = async (req, res) => {
       .findOne({
         email: email,
       })
-      .select("password firstname lastname accountType phone email googleId status");
+      .select(
+        "password firstname lastname accountType phone email googleId status"
+      );
     if (!user_respose) {
       return res.status(401).json({
         success: false,
@@ -494,11 +509,12 @@ exports.forgetPassword = async (req, res) => {
       });
     }
     const fullname = user_response.firstname + " " + user_response.lastname;
+    const role = user_response.accountType;
     // const securedEmail = await doubleEncrypt(user.email);
     await sendEmail({
       to: email,
       subject: "forget password link",
-      text: forgetPassword(fullname, user_response.email),
+      text: forgetPassword(fullname, user_response.email, role),
     });
     return res.status(200).json({
       success: true,
@@ -528,6 +544,14 @@ exports.setPassword = async (req, res) => {
         error: "Bad Request",
       });
     }
+    if (!isValidPassword(newpassword)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password must be at least 8 characters and include at least one uppercase letter, one lowercase letter, one number, and one special character.",
+      });
+    }
+
     const decodedId = Buffer.from(decodedGoogleId, "base64").toString("utf-8");
     if (!decodedId) {
       return res.status(404).json({
@@ -549,13 +573,13 @@ exports.setPassword = async (req, res) => {
         error: "Not Found",
       });
     }
-    if(Date.now() > user_response.set_password_expiry){
+    if (Date.now() > user_response.set_password_expiry) {
       return res.status(400).json({
         success: false,
         statuscode: 3,
         message: "time expired, please resend link",
-        error: "Bad Request"
-      })
+        error: "Bad Request",
+      });
     }
     user_response.password = newpassword;
     await user_response.save();
@@ -584,6 +608,7 @@ exports.changePassword = async (req, res) => {
       error: "all fields are required",
     });
   }
+  
   try {
     const user_response = await users.findById(req.user._id).select("password");
     if (!user_response) {
@@ -626,6 +651,17 @@ exports.update = async (req, res) => {
     const updatedData = {};
     allowed.forEach((field) => {
       if (req.body[field] !== undefined) {
+        if (
+          field === "firstname" &&
+          (typeof req.body[field] !== "string" || req.body[field].trim() === "")
+        ) {
+          return res.status(400).json({
+            succcess: false,
+            statuscode: 2,
+            message: "firstname is cannot be empty",
+            error: "Bad Request",
+          });
+        }
         updatedData[field] = req.body[field];
       }
     });
@@ -662,7 +698,7 @@ exports.update = async (req, res) => {
   }
 };
 
-//upload user profile :
+//upload user profile : 
 exports.uploadUserProfilePic = async (req, res) => {
   try {
     if (!req.file) {
@@ -706,7 +742,7 @@ exports.uploadUserProfilePic = async (req, res) => {
   }
 };
 
-//list all products of a user :
+//list all products of a user : 
 exports.myProducts = async (req, res) => {
   try {
     const id = req.user._id;
@@ -747,7 +783,7 @@ exports.myProducts = async (req, res) => {
   }
 };
 
-// user sign out :
+// user sign out : 
 exports.signOut = async (req, res) => {
   try {
     return res.status(200).json({
@@ -763,7 +799,7 @@ exports.signOut = async (req, res) => {
   }
 };
 
-//deleting user account :
+//deleting user account : 
 exports.deleteUser = async (req, res) => {
   try {
     const id = req.user._id;
@@ -999,17 +1035,26 @@ exports.updateAddress = async (req, res) => {
       "city",
       "state",
       "country",
-      "isDefault", // Fixed typo here
+      "isDefault",
       "isBilling",
       "pincode",
     ];
 
-    // Build update object
-    shippingFields.forEach((field) => {
-      if (req.body[field] !== undefined) {
-        updateData[field] = req.body[field];
+    // Build update object with conditional non-empty validation
+    for (const field of shippingFields) {
+      const value = req.body[field];
+
+      if (value !== undefined) {
+        if (typeof value === "string" && value.trim() === "") {
+          return res.status(400).json({
+            success: false,
+            statuscode: 3,
+            message: `Field '${field}' cannot be empty if provided.`,
+          });
+        }
+        updateData[field] = value;
       }
-    });
+    }
 
     // Handle shipping address uniqueness
     if (updateData.isBilling === true) {
@@ -1021,7 +1066,6 @@ exports.updateAddress = async (req, res) => {
 
     // Handle default address uniqueness
     if (updateData.isDefault === true) {
-      // Fixed typo here
       await userAddresses.updateMany(
         { userId: req.user._id, isDefault: true, _id: { $ne: id } },
         { $set: { isDefault: false } }
@@ -1122,13 +1166,13 @@ exports.deleteAddress = async (req, res) => {
       });
     }
 
-    if(deleted_response1.isDefault === true){
+    if (deleted_response1.isDefault === true) {
       return res.status(400).json({
         success: false,
         statuscode: 4,
         message: "default address cannot be deleted",
-        error: "Not Authorized"
-      })
+        error: "Not Authorized",
+      });
     }
     const deleted_response = await userAddresses.findByIdAndDelete(id);
     if (!deleted_response) {
@@ -1230,10 +1274,10 @@ exports.contactUs = async (req, res) => {
     } else if (req.user) {
       const userContactForm_response = await queryForm.create({
         userId: req.user._id,
-        firstname: firstname || req.user.firstname,
-        lastname: lastname || req.user.lastname,
-        email: email || req.user.email,
-        phone: number,
+        firstname: firstname || req.user?.firstname,
+        lastname: lastname || req.user?.lastname,
+        email: email || req.user?.email,
+        phone: number || req.user?.phone,
         message,
       });
       if (!userContactForm_response) {
